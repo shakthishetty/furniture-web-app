@@ -161,12 +161,12 @@ export default function Home() {
 
       {/* Furniture Collection Showcase */}
       <section className="py-0 bg-white">
-        <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-screen border-8 border-white">
           {/* Left Column */}
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full border-r-4 border-white">
             {/* Modern Collection - Top */}
             <div 
-              className="relative h-2/3 overflow-hidden group"
+              className="relative h-2/3 overflow-hidden border-b-4 border-white"
               style={{
                 backgroundImage: `url(${redChairImage})`,
                 backgroundSize: 'cover',
@@ -176,19 +176,23 @@ export default function Home() {
             >
               {/* Modern Overlay */}
               <div 
-                className="absolute top-6 left-6 px-6 py-8 max-w-xs"
-                style={{ backgroundColor: '#254127' }}
+                className="absolute top-8 left-8 px-5 py-6"
+                style={{ 
+                  backgroundColor: '#254127',
+                  width: '280px',
+                  height: '200px'
+                }}
               >
-                <h3 className="text-white font-serif mb-4" style={{ fontSize: '40px', lineHeight: '100%' }}>
+                <h3 className="text-white font-serif mb-3" style={{ fontSize: '32px', lineHeight: '100%' }}>
                   Modern
                 </h3>
-                <p className="text-white font-sans mb-6" style={{ fontSize: '16px', lineHeight: '150%' }}>
+                <p className="text-white font-sans mb-4" style={{ fontSize: '14px', lineHeight: '150%' }}>
                   The Modern Collection brings together graceful lines and luxurious finishes.
                 </p>
                 <a 
                   href="#" 
                   className="inline-flex items-center text-white font-sans hover:underline transition-all"
-                  style={{ fontSize: '16px', lineHeight: '150%' }}
+                  style={{ fontSize: '14px', lineHeight: '150%' }}
                   data-testid="link-modern-collection"
                 >
                   View Collection
@@ -201,7 +205,7 @@ export default function Home() {
 
             {/* Wood Collection - Bottom */}
             <div 
-              className="relative h-1/3 overflow-hidden group"
+              className="relative h-1/3 overflow-hidden"
               style={{
                 backgroundImage: `url(${woodenChairImage})`,
                 backgroundSize: 'cover',
@@ -211,23 +215,27 @@ export default function Home() {
             >
               {/* Wood Overlay */}
               <div 
-                className="absolute top-4 left-4 px-4 py-6 max-w-xs"
-                style={{ backgroundColor: '#254127' }}
+                className="absolute top-4 left-4 px-4 py-4"
+                style={{ 
+                  backgroundColor: '#254127',
+                  width: '200px',
+                  height: '140px'
+                }}
               >
-                <h3 className="text-white font-serif mb-3" style={{ fontSize: '40px', lineHeight: '100%' }}>
+                <h3 className="text-white font-serif mb-2" style={{ fontSize: '28px', lineHeight: '100%' }}>
                   Wood
                 </h3>
-                <p className="text-white font-sans mb-4" style={{ fontSize: '16px', lineHeight: '150%' }}>
+                <p className="text-white font-sans mb-3" style={{ fontSize: '12px', lineHeight: '150%' }}>
                   The Modern Collection brings together graceful lines and luxurious finishes.
                 </p>
                 <a 
                   href="#" 
                   className="inline-flex items-center text-white font-sans hover:underline transition-all"
-                  style={{ fontSize: '16px', lineHeight: '150%' }}
+                  style={{ fontSize: '12px', lineHeight: '150%' }}
                   data-testid="link-wood-collection"
                 >
                   View Collection
-                  <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </a>
@@ -237,7 +245,7 @@ export default function Home() {
 
           {/* Right Column - Modern Collection */}
           <div 
-            className="relative h-full overflow-hidden group"
+            className="relative h-full overflow-hidden"
             style={{
               backgroundImage: `url(${greenChairImage})`,
               backgroundSize: 'cover',
@@ -247,18 +255,22 @@ export default function Home() {
           >
             {/* Modern Overlay - White */}
             <div 
-              className="absolute bottom-6 left-6 bg-white px-6 py-8 max-w-xs"
+              className="absolute bottom-8 left-8 bg-white px-5 py-6"
+              style={{ 
+                width: '280px',
+                height: '200px'
+              }}
             >
-              <h3 className="font-serif mb-4" style={{ fontSize: '40px', lineHeight: '100%', color: '#000000' }}>
+              <h3 className="font-serif mb-3" style={{ fontSize: '32px', lineHeight: '100%', color: '#000000' }}>
                 Modern
               </h3>
-              <p className="font-sans mb-6" style={{ fontSize: '16px', lineHeight: '150%', color: '#000000' }}>
+              <p className="font-sans mb-4" style={{ fontSize: '14px', lineHeight: '150%', color: '#000000' }}>
                 The Modern Collection brings together graceful lines and luxurious finishes.
               </p>
               <a 
                 href="#" 
                 className="inline-flex items-center font-sans hover:underline transition-all"
-                style={{ fontSize: '16px', lineHeight: '150%', color: '#000000' }}
+                style={{ fontSize: '14px', lineHeight: '150%', color: '#000000' }}
                 data-testid="link-modern-collection-alt"
               >
                 View Collection
