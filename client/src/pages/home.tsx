@@ -7,6 +7,7 @@ import greenChairImage from "../assets/green-chair.jpg";
 import redChairImage from "../assets/red-chair.jpg";
 import woodenChairImage from "../assets/wooden-chair.jpg";
 import livingRoomSceneImage from "../assets/living-room-scene.jpg";
+import bedroomSceneImage from "../assets/bedroom-scene.jpg";
 
 export default function Home() {
   return (
@@ -327,6 +328,50 @@ export default function Home() {
                 Explore Collection
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Nature Section */}
+      <section className="py-0 bg-white">
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
+          {/* Left Side - Green Text Area */}
+          <div 
+            className="relative h-full flex items-center justify-center px-16"
+            style={{ backgroundColor: '#254127' }}
+          >
+            <div className="text-left text-white max-w-lg">
+              <h2 className="font-serif mb-2" style={{ fontSize: '56px', lineHeight: '100%' }}>
+                Rooted in nature.
+              </h2>
+              <h3 className="font-serif italic mb-8" style={{ fontSize: '48px', lineHeight: '100%' }}>
+                Designed for quiet moments.
+              </h3>
+              <p className="font-sans mb-12" style={{ fontSize: '16px', lineHeight: '150%' }}>
+                Crafted from sustainably sourced teak, our bedroom pieces bring the quiet elegance of 
+                nature into your home. With clean lines, warm tones, and thoughtful details, each piece is 
+                made to turn your space into a restful retreat that ages beautifully with time.
+              </p>
+              <Button 
+                className="bg-transparent border-2 border-white text-white px-8 py-3 font-sans hover:bg-white hover:text-black transition-all duration-300"
+                style={{ fontSize: '16px', lineHeight: '150%' }}
+                data-testid="button-explore-collection-nature"
+              >
+                Explore Collection
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Side - Bedroom Scene */}
+          <div 
+            className="relative h-full overflow-hidden"
+            style={{
+              backgroundImage: `url(${bedroomSceneImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
           </div>
         </div>
       </section>
