@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye } from "lucide-react";
 import * as THREE from 'three';
+import { createFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions } from "@/utils/3d-models";
 
 interface Configuration {
   material?: string;
@@ -36,7 +37,7 @@ export default function Configurator() {
   const sceneRef = useRef<THREE.Scene>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
-  const meshRef = useRef<THREE.Mesh>();
+  const furnitureRef = useRef<THREE.Group>();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [configuration, setConfiguration] = useState<Configuration>({});
@@ -57,6 +58,10 @@ export default function Configurator() {
   // Fetch materials
   const { data: materialsData } = useQuery({
     queryKey: ['/api/configurator/materials'],
+    queryFn: async () => {
+      const response = await fetch('/api/configurator/materials');
+      return await response.json();
+    },
   });
 
   // Fetch pricing
@@ -75,7 +80,7 @@ export default function Configurator() {
 
   const product = productData?.product;
   const options = optionsData?.options || [];
-  const materials = materialsData?.materials || [];
+  const materials = (materialsData as any)?.materials || [];
 
   // Save configuration mutation
   const saveConfigurationMutation = useMutation({
@@ -137,13 +142,12 @@ export default function Configurator() {
     directionalLight.castShadow = true;
     scene.add(directionalLight);
 
-    // Create a basic furniture model (box for now)
-    const geometry = new THREE.BoxGeometry(2, 1, 1);
-    const material = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Teak brown
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = true;
-    scene.add(mesh);
-    meshRef.current = mesh;
+    // Create furniture model based on product type
+    if (product) {
+      const furnitureGroup = createFurnitureModel(product.name, scene);
+      scene.add(furnitureGroup);
+      furnitureRef.current = furnitureGroup;
+    }
 
     // Add a ground plane
     const planeGeometry = new THREE.PlaneGeometry(20, 20);
@@ -167,9 +171,9 @@ export default function Configurator() {
       const deltaX = event.clientX - mouseX;
       const deltaY = event.clientY - mouseY;
       
-      if (meshRef.current) {
-        meshRef.current.rotation.y += deltaX * 0.01;
-        meshRef.current.rotation.x += deltaY * 0.01;
+      if (furnitureRef.current) {
+        furnitureRef.current.rotation.y += deltaX * 0.01;
+        furnitureRef.current.rotation.x += deltaY * 0.01;
       }
       
       mouseX = event.clientX;
@@ -194,29 +198,28 @@ export default function Configurator() {
         canvasRef.current.removeEventListener('mousemove', handleMouseMove);
       }
     };
-  }, []);
+  }, [product]);
 
   // Update 3D model based on configuration
   useEffect(() => {
-    if (!meshRef.current || !product) return;
+    if (!furnitureRef.current || !product) return;
 
     // Update dimensions
     if (configuration.dimensions) {
-      const { width, height, depth } = configuration.dimensions;
-      meshRef.current.scale.set(width / 2, height, depth);
+      updateFurnitureDimensions(furnitureRef.current, configuration.dimensions, product.name);
     }
 
     // Update material/color
     if (configuration.material) {
       const selectedMaterial = materials.find(m => m.id === configuration.material);
-      if (selectedMaterial && meshRef.current.material instanceof THREE.MeshPhongMaterial) {
-        meshRef.current.material.color.setHex(parseInt(selectedMaterial.color?.replace('#', '0x') || '0x8B4513'));
+      if (selectedMaterial && selectedMaterial.color) {
+        updateFurnitureMaterial(furnitureRef.current, selectedMaterial.color);
       }
     }
 
     // Update color directly
-    if (configuration.color && meshRef.current.material instanceof THREE.MeshPhongMaterial) {
-      meshRef.current.material.color.setHex(parseInt(configuration.color.replace('#', '0x')));
+    if (configuration.color) {
+      updateFurnitureMaterial(furnitureRef.current, configuration.color);
     }
   }, [configuration, materials, product]);
 
