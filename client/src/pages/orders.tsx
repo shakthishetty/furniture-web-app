@@ -129,11 +129,8 @@ function OrderCard({ order }: { order: Order }) {
   };
 
   const handleDownloadInvoice = () => {
-    // In a real app, this would generate and download a PDF invoice
-    toast({
-      title: "Invoice download",
-      description: "Invoice download feature would be implemented here.",
-    });
+    // Download the actual invoice using the implemented endpoint
+    window.open(`/api/orders/${order.id}/invoice`, '_blank');
   };
 
   const canCancelOrder = order.status === "pending" || order.status === "paid" || order.status === "processing";
@@ -146,7 +143,7 @@ function OrderCard({ order }: { order: Order }) {
             <CardTitle className="text-lg">Order #{order.orderNumber}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">
               <Calendar className="h-4 w-4 inline mr-1" />
-              {new Date(order.createdAt).toLocaleDateString()}
+              {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
             </p>
           </div>
           <div className="text-right">
@@ -236,24 +233,24 @@ function OrderCard({ order }: { order: Order }) {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>Subtotal:</span>
-                          <span>${parseFloat(order.subtotal).toFixed(2)}</span>
+                          <span>${parseFloat(order.subtotal || "0").toFixed(2)}</span>
                         </div>
-                        {parseFloat(order.discountAmount) > 0 && (
+                        {parseFloat(order.discountAmount || "0") > 0 && (
                           <div className="flex justify-between text-green-600">
                             <span>Discount:</span>
-                            <span>-${parseFloat(order.discountAmount).toFixed(2)}</span>
+                            <span>-${parseFloat(order.discountAmount || "0").toFixed(2)}</span>
                           </div>
                         )}
-                        {parseFloat(order.taxAmount) > 0 && (
+                        {parseFloat(order.taxAmount || "0") > 0 && (
                           <div className="flex justify-between">
                             <span>Tax:</span>
-                            <span>${parseFloat(order.taxAmount).toFixed(2)}</span>
+                            <span>${parseFloat(order.taxAmount || "0").toFixed(2)}</span>
                           </div>
                         )}
-                        {parseFloat(order.shippingAmount) > 0 && (
+                        {parseFloat(order.shippingAmount || "0") > 0 && (
                           <div className="flex justify-between">
                             <span>Shipping:</span>
-                            <span>${parseFloat(order.shippingAmount).toFixed(2)}</span>
+                            <span>${parseFloat(order.shippingAmount || "0").toFixed(2)}</span>
                           </div>
                         )}
                         <Separator />
