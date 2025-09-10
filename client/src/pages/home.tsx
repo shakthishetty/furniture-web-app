@@ -10,6 +10,7 @@ import livingRoomSceneImage from "../assets/living-room-scene.jpg";
 import bedroomSceneImage from "../assets/bedroom-scene.jpg";
 import chairSceneImage from "../assets/chair-scene.jpg";
 import modernLivingRoomImage from "../assets/modern-living-room.jpg";
+import centeredLivingRoomImage from "../assets/centered-living-room.jpg";
 
 export default function Home() {
   return (
@@ -437,6 +438,71 @@ export default function Home() {
               >
                 Explore Collection
               </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Centered Living Room Section */}
+      <section className="py-0 bg-white">
+        <div 
+          className="relative h-screen overflow-hidden"
+          style={{
+            backgroundImage: `url(${centeredLivingRoomImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          {/* Text Overlay - Center */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-white max-w-md">
+              <h2 className="font-serif mb-2" style={{ fontSize: '56px', lineHeight: '100%' }}>
+                Rooted in nature.
+              </h2>
+              <h3 className="font-serif italic mb-8" style={{ fontSize: '48px', lineHeight: '100%' }}>
+                Designed for quiet moments.
+              </h3>
+              <Button 
+                className="bg-transparent border-2 border-white text-white px-8 py-3 font-sans hover:bg-white hover:text-black transition-all duration-300"
+                style={{ fontSize: '16px', lineHeight: '150%' }}
+                data-testid="button-explore-collection-centered"
+              >
+                Explore Collection
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Features */}
+      <section 
+        className="py-6"
+        style={{ backgroundColor: '#254127' }}
+      >
+        <div className="max-w-6xl mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center text-white">
+            <div className="flex items-center justify-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 7L12 3L4 7L12 11L20 7Z" />
+                <path d="M4 12L12 16L20 12" />
+              </svg>
+              <span className="font-sans" style={{ fontSize: '16px' }}>Free Shipping over $500</span>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 12L11 14L15 10" />
+                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" />
+              </svg>
+              <span className="font-sans" style={{ fontSize: '16px' }}>5 Year Warranty</span>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12H22" />
+                <path d="M12 2A15.3 15.3 0 0 1 16 12A15.3 15.3 0 0 1 12 22A15.3 15.3 0 0 1 8 12A15.3 15.3 0 0 1 12 2Z" />
+              </svg>
+              <span className="font-sans" style={{ fontSize: '16px' }}>Worldwide Shipping</span>
             </div>
           </div>
         </div>
