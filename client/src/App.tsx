@@ -1,10 +1,11 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import Navigation from "@/components/navigation";
+import AdminLayout from "@/components/AdminLayout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Product from "@/pages/product";
@@ -26,10 +27,29 @@ import Favourites from "@/pages/favourites";
 import Checkout from "@/pages/checkout";
 import Orders from "@/pages/orders";
 import Cart from "@/pages/cart";
+import AdminDashboard from "@/pages/admin/dashboard";
+
+function AdminRouter() {
+  return (
+    <AdminLayout>
+      <Switch>
+        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/users" component={() => <div>Admin Users - Coming Soon</div>} />
+        <Route path="/admin/products" component={() => <div>Admin Products - Coming Soon</div>} />
+        <Route path="/admin/orders" component={() => <div>Admin Orders - Coming Soon</div>} />
+        <Route path="/admin/discounts" component={() => <div>Admin Discounts - Coming Soon</div>} />
+        <Route path="/admin/analytics" component={() => <div>Admin Analytics - Coming Soon</div>} />
+        <Route path="/admin/settings" component={() => <div>Admin Settings - Coming Soon</div>} />
+        <Route component={() => <div>Admin Page Not Found</div>} />
+      </Switch>
+    </AdminLayout>
+  );
+}
 
 function Router() {
   return (
     <Switch>
+      <Route path="/admin" nest component={AdminRouter} />
       <Route path="/" component={Home} />
       <Route path="/product" component={Product} />
       <Route path="/new" component={New} />
@@ -56,12 +76,15 @@ function Router() {
 }
 
 function App() {
+  const [location] = useLocation();
+  const isAdminRoute = location.startsWith("/admin");
+
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         <TooltipProvider>
           <Toaster />
-          <Navigation />
+          {!isAdminRoute && <Navigation />}
           <Router />
         </TooltipProvider>
       </CartProvider>
