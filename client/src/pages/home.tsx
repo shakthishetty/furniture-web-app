@@ -286,6 +286,50 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Durability Section */}
+      <section className="py-0 bg-white">
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
+          {/* Left Side - Living Room Scene */}
+          <div 
+            className="relative h-full overflow-hidden"
+            style={{
+              backgroundImage: `url(${livingRoomSceneImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+          </div>
+
+          {/* Right Side - Green Text Area */}
+          <div 
+            className="relative h-full flex items-center justify-center px-16"
+            style={{ backgroundColor: '#254127' }}
+          >
+            <div className="text-center text-white max-w-lg">
+              <h2 className="font-serif mb-2" style={{ fontSize: '56px', lineHeight: '100%' }}>
+                Designed for durability,
+              </h2>
+              <h3 className="font-serif italic mb-8" style={{ fontSize: '48px', lineHeight: '100%' }}>
+                Made for rest.
+              </h3>
+              <p className="font-sans mb-12" style={{ fontSize: '16px', lineHeight: '150%' }}>
+                Built with solid teak and timeless joinery, our bedroom collection is made to last through years 
+                of daily use without compromising on comfort. From beds to side tables, every piece is 
+                thoughtfully designed to support restful living, day after day.
+              </p>
+              <Button 
+                className="bg-transparent border-2 border-white text-white px-8 py-3 font-sans hover:bg-white hover:text-black transition-all duration-300"
+                style={{ fontSize: '16px', lineHeight: '150%' }}
+                data-testid="button-explore-collection-durability"
+              >
+                Explore Collection
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
