@@ -12,6 +12,8 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   googleId: varchar("google_id").unique(),
   profileImage: varchar("profile_image"),
+  isAdmin: boolean("is_admin").default(false),
+  status: varchar("status").default("active"), // active, inactive, suspended
   emailVerified: boolean("email_verified").default(false),
   emailVerificationToken: varchar("email_verification_token"),
   passwordResetToken: varchar("password_reset_token"),
@@ -264,6 +266,32 @@ export const wishlist = pgTable("wishlist", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Admin-specific tables
+export const shipments = pgTable("shipments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  carrier: varchar("carrier").notNull(), // "FedEx", "UPS", "USPS", etc.
+  trackingNumber: varchar("tracking_number").notNull(),
+  status: varchar("status").default("processing"), // processing, shipped, in_transit, delivered, exception
+  estimatedDelivery: timestamp("estimated_delivery"),
+  actualDelivery: timestamp("actual_delivery"),
+  events: text("events"), // JSON array of tracking events
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const adminAuditLog = pgTable("admin_audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminUserId: varchar("admin_user_id").notNull(),
+  action: varchar("action").notNull(), // "create", "update", "delete", "status_change"
+  resourceType: varchar("resource_type").notNull(), // "user", "product", "order", "discount"
+  resourceId: varchar("resource_id").notNull(),
+  oldValues: text("old_values"), // JSON of previous values
+  newValues: text("new_values"), // JSON of new values
+  metadata: text("metadata"), // JSON of additional context
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Order Management Schemas
 export const createAddressSchema = createInsertSchema(addresses).omit({
   id: true,
@@ -328,3 +356,28 @@ export type WishlistItem = typeof wishlist.$inferSelect;
 export type CreateWishlistItemRequest = z.infer<typeof createWishlistItemSchema>;
 
 export type ApplyDiscountRequest = z.infer<typeof applyDiscountSchema>;
+
+// Admin Types
+export type Shipment = typeof shipments.$inferSelect;
+export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
+
+// Admin Schemas
+export const createShipmentSchema = createInsertSchema(shipments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateShipmentSchema = createShipmentSchema.partial();
+
+export const adminUpdateUserSchema = z.object({
+  isAdmin: z.boolean().optional(),
+  status: z.enum(["active", "inactive", "suspended"]).optional(),
+  email: z.string().email().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+});
+
+export type CreateShipmentRequest = z.infer<typeof createShipmentSchema>;
+export type UpdateShipmentRequest = z.infer<typeof updateShipmentSchema>;
+export type AdminUpdateUserRequest = z.infer<typeof adminUpdateUserSchema>;
