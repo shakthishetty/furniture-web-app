@@ -1,7 +1,102 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Package, ShoppingCart, DollarSign } from "lucide-react";
+import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/queryClient";
+
+interface AnalyticsSummary {
+  revenue: number;
+  orders: number;
+  users: number;
+  avgOrderValue: number;
+}
+
+interface OrdersByDay {
+  date: string;
+  orders: number;
+  revenue: number;
+}
+
+function MetricCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  change, 
+  isLoading,
+  testId,
+  formatValue 
+}: {
+  title: string;
+  value: number | string;
+  icon: any;
+  change?: string;
+  isLoading: boolean;
+  testId: string;
+  formatValue?: (val: number | string) => string;
+}) {
+  if (isLoading) {
+    return (
+      <Card data-testid={testId}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-20 mb-2" />
+          <Skeleton className="h-3 w-24" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const displayValue = formatValue ? formatValue(value) : value;
+  const isPositive = change && change.startsWith('+');
+  const isNegative = change && change.startsWith('-');
+
+  return (
+    <Card data-testid={testId}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold" data-testid={`${testId}-value`}>{displayValue}</div>
+        {change && (
+          <p className={`text-xs flex items-center gap-1 ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+            {isPositive && <TrendingUp className="h-3 w-3" />}
+            {isNegative && <TrendingDown className="h-3 w-3" />}
+            {change}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AdminDashboard() {
+  const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsSummary>({
+    queryKey: ["/api/admin/analytics/summary"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const { data: ordersByDay, isLoading: ordersLoading } = useQuery<OrdersByDay[]>({
+    queryKey: ["/api/admin/analytics/orders-by-day"],
+  });
+
+  const formatCurrency = (value: number | string) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD' 
+    }).format(num);
+  };
+
+  const formatNumber = (value: number | string) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('en-US').format(num);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -12,116 +107,122 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card data-testid="card-total-users">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-users-count">1,234</div>
-            <p className="text-xs text-muted-foreground">
-              +12% from last month
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Users"
+          value={analytics?.users || 0}
+          icon={Users}
+          change="+12% from last month"
+          isLoading={analyticsLoading}
+          testId="card-total-users"
+          formatValue={formatNumber}
+        />
 
-        <Card data-testid="card-total-products">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-products-count">89</div>
-            <p className="text-xs text-muted-foreground">
-              +3 new this week
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Orders"
+          value={analytics?.orders || 0}
+          icon={ShoppingCart}
+          change="+8% from last month"
+          isLoading={analyticsLoading}
+          testId="card-total-orders"
+          formatValue={formatNumber}
+        />
 
-        <Card data-testid="card-total-orders">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-orders-count">456</div>
-            <p className="text-xs text-muted-foreground">
-              +8% from last month
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Revenue"
+          value={analytics?.revenue || 0}
+          icon={DollarSign}
+          change="+15% from last month"
+          isLoading={analyticsLoading}
+          testId="card-total-revenue"
+          formatValue={formatCurrency}
+        />
 
-        <Card data-testid="card-total-revenue">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-revenue-amount">$45,231</div>
-            <p className="text-xs text-muted-foreground">
-              +15% from last month
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Avg Order Value"
+          value={analytics?.avgOrderValue || 0}
+          icon={Package}
+          change="+3.2% from last month"
+          isLoading={analyticsLoading}
+          testId="card-avg-order-value"
+          formatValue={formatCurrency}
+        />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card data-testid="card-recent-activity">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card data-testid="card-orders-chart">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest actions in your store</CardDescription>
+            <CardTitle>Orders Over Time</CardTitle>
+            <CardDescription>Daily order volume for the last 30 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">New order #1234</p>
-                  <p className="text-xs text-muted-foreground">2 minutes ago</p>
-                </div>
+            {ordersLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-[250px] w-full" />
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">User John Doe registered</p>
-                  <p className="text-xs text-muted-foreground">5 minutes ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Product "Teak Chair" updated</p>
-                  <p className="text-xs text-muted-foreground">10 minutes ago</p>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={ordersByDay || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                    formatter={(value: number, name: string) => [
+                      name === 'revenue' ? formatCurrency(value) : formatNumber(value),
+                      name === 'revenue' ? 'Revenue' : 'Orders'
+                    ]}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="orders" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        <Card data-testid="card-quick-stats">
+        <Card data-testid="card-revenue-chart">
           <CardHeader>
-            <CardTitle>Quick Stats</CardTitle>
-            <CardDescription>Performance metrics at a glance</CardDescription>
+            <CardTitle>Revenue Over Time</CardTitle>
+            <CardDescription>Daily revenue for the last 30 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Conversion Rate</span>
-                <span className="text-sm font-medium" data-testid="text-conversion-rate">2.4%</span>
+            {ordersLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <Skeleton className="h-[250px] w-full" />
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Average Order Value</span>
-                <span className="text-sm font-medium" data-testid="text-avg-order-value">$127.32</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Customer Satisfaction</span>
-                <span className="text-sm font-medium" data-testid="text-satisfaction-rate">4.8/5</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Return Rate</span>
-                <span className="text-sm font-medium" data-testid="text-return-rate">1.2%</span>
-              </div>
-            </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={ordersByDay || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                    formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="hsl(var(--chart-2))" 
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--chart-2))", strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
