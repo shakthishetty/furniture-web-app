@@ -9,15 +9,35 @@ import {
   type SavedConfiguration,
   type CreateConfigurationRequest,
   type UpdateConfigurationRequest,
+  type Address,
+  type CreateAddressRequest,
+  type UpdateAddressRequest,
+  type DiscountCode,
+  type CreateDiscountCodeRequest,
+  type Order,
+  type OrderItem,
+  type CreateOrderRequest,
+  type CancelOrderRequest,
+  type WishlistItem,
+  type CreateWishlistItemRequest,
+  type Refund,
+  type OrderStatusHistory,
   users, 
   sessions,
   products,
   materials,
   configurationOptions,
-  savedConfigurations
+  savedConfigurations,
+  addresses,
+  discountCodes,
+  orders,
+  orderItems,
+  orderStatusHistory,
+  refunds,
+  wishlist
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, sql } from "drizzle-orm";
 import { hashPassword, generateRandomToken } from "./utils/auth";
 
 export interface IStorage {
@@ -66,6 +86,44 @@ export interface IStorage {
   updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined>;
   deleteConfiguration(id: string): Promise<void>;
   getPublicConfigurations(): Promise<SavedConfiguration[]>;
+
+  // Address operations
+  createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address>;
+  getUserAddresses(userId: string): Promise<Address[]>;
+  getAddress(id: string): Promise<Address | undefined>;
+  updateAddress(id: string, updates: UpdateAddressRequest): Promise<Address | undefined>;
+  deleteAddress(id: string): Promise<void>;
+  setDefaultAddress(userId: string, addressId: string): Promise<void>;
+
+  // Discount Code operations  
+  createDiscountCode(codeData: CreateDiscountCodeRequest): Promise<DiscountCode>;
+  getDiscountCode(code: string): Promise<DiscountCode | undefined>;
+  validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }>;
+  useDiscountCode(code: string): Promise<void>;
+
+  // Order operations
+  createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order>;
+  getUserOrders(userId: string): Promise<Order[]>;
+  getOrder(id: string): Promise<Order | undefined>;
+  getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined>;
+  updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined>;
+  updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined>;
+  cancelOrder(id: string, cancelData: CancelOrderRequest): Promise<Order | undefined>;
+
+  // Order Item operations
+  createOrderItem(itemData: Omit<OrderItem, 'id' | 'createdAt'>): Promise<OrderItem>;
+  getOrderItems(orderId: string): Promise<OrderItem[]>;
+
+  // Refund operations
+  createRefund(refundData: Omit<Refund, 'id' | 'createdAt'>): Promise<Refund>;
+  getOrderRefunds(orderId: string): Promise<Refund[]>;
+  updateRefundStatus(id: string, status: string, stripeRefundId?: string): Promise<Refund | undefined>;
+
+  // Wishlist operations
+  addToWishlist(userId: string, itemData: CreateWishlistItemRequest): Promise<WishlistItem>;
+  getUserWishlist(userId: string): Promise<WishlistItem[]>;
+  removeFromWishlist(userId: string, productId: string): Promise<void>;
+  isInWishlist(userId: string, productId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -294,6 +352,275 @@ export class DatabaseStorage implements IStorage {
   async getPublicConfigurations(): Promise<SavedConfiguration[]> {
     return await db.select().from(savedConfigurations)
       .where(eq(savedConfigurations.isPublic, true));
+  }
+
+  // Address operations
+  async createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address> {
+    const [address] = await db
+      .insert(addresses)
+      .values({
+        userId,
+        ...addressData,
+      })
+      .returning();
+    
+    return address;
+  }
+
+  async getUserAddresses(userId: string): Promise<Address[]> {
+    return await db.select().from(addresses)
+      .where(eq(addresses.userId, userId));
+  }
+
+  async getAddress(id: string): Promise<Address | undefined> {
+    const [address] = await db.select().from(addresses)
+      .where(eq(addresses.id, id));
+    return address;
+  }
+
+  async updateAddress(id: string, updates: UpdateAddressRequest): Promise<Address | undefined> {
+    const [address] = await db
+      .update(addresses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(addresses.id, id))
+      .returning();
+    
+    return address;
+  }
+
+  async deleteAddress(id: string): Promise<void> {
+    await db.delete(addresses).where(eq(addresses.id, id));
+  }
+
+  async setDefaultAddress(userId: string, addressId: string): Promise<void> {
+    // First remove default from all user addresses
+    await db
+      .update(addresses)
+      .set({ isDefault: false })
+      .where(eq(addresses.userId, userId));
+
+    // Then set the specified address as default
+    await db
+      .update(addresses)
+      .set({ isDefault: true })
+      .where(and(eq(addresses.id, addressId), eq(addresses.userId, userId)));
+  }
+
+  // Discount Code operations  
+  async createDiscountCode(codeData: CreateDiscountCodeRequest): Promise<DiscountCode> {
+    const [discountCode] = await db
+      .insert(discountCodes)
+      .values(codeData)
+      .returning();
+    
+    return discountCode;
+  }
+
+  async getDiscountCode(code: string): Promise<DiscountCode | undefined> {
+    const [discountCode] = await db.select().from(discountCodes)
+      .where(eq(discountCodes.code, code));
+    return discountCode;
+  }
+
+  async validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }> {
+    const discount = await this.getDiscountCode(code);
+    
+    if (!discount) {
+      return { valid: false, error: "Discount code not found" };
+    }
+
+    if (!discount.isActive) {
+      return { valid: false, error: "Discount code is no longer active" };
+    }
+
+    if (discount.expiresAt && new Date() > discount.expiresAt) {
+      return { valid: false, error: "Discount code has expired" };
+    }
+
+    const currentUsage = discount.currentUsageCount || 0;
+    if (discount.maxUsageCount && currentUsage >= discount.maxUsageCount) {
+      return { valid: false, error: "Discount code has reached its usage limit" };
+    }
+
+    const minOrderAmount = parseFloat(discount.minimumOrderAmount || "0");
+    if (subtotal < minOrderAmount) {
+      return { valid: false, error: `Minimum order amount of $${minOrderAmount} required` };
+    }
+
+    return { valid: true, discount };
+  }
+
+  async useDiscountCode(code: string): Promise<void> {
+    await db
+      .update(discountCodes)
+      .set({ 
+        currentUsageCount: sql`${discountCodes.currentUsageCount} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(discountCodes.code, code));
+  }
+
+  // Order operations
+  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order> {
+    const [order] = await db
+      .insert(orders)
+      .values({
+        userId: orderData.userId,
+        orderNumber: orderData.orderNumber,
+        paymentMethod: orderData.paymentMethod,
+        subtotal: orderData.subtotal.toString(),
+        totalAmount: orderData.totalAmount.toString(),
+        refundableAmount: orderData.totalAmount.toString(),
+        shippingAddressId: orderData.shippingAddressId,
+        billingAddressId: orderData.billingAddressId || orderData.shippingAddressId,
+        discountCodeUsed: orderData.discountCode,
+      })
+      .returning();
+    
+    return order;
+  }
+
+  async getUserOrders(userId: string): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(orders.createdAt);
+  }
+
+  async getOrder(id: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders)
+      .where(eq(orders.id, id));
+    return order;
+  }
+
+  async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined> {
+    const order = await this.getOrder(id);
+    if (!order) return undefined;
+
+    const items = await this.getOrderItems(id);
+    return { ...order, items };
+  }
+
+  async updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined> {
+    const [order] = await db
+      .update(orders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(orders.id, id))
+      .returning();
+
+    // Add to order status history
+    if (order) {
+      await db.insert(orderStatusHistory).values({
+        orderId: id,
+        status,
+        comment,
+      });
+    }
+    
+    return order;
+  }
+
+  async updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined> {
+    const [order] = await db
+      .update(orders)
+      .set({ 
+        stripePaymentIntentId: paymentData.stripePaymentIntentId,
+        stripeChargeId: paymentData.stripeChargeId,
+        paymentStatus: paymentData.paymentStatus,
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    return order;
+  }
+
+  async cancelOrder(id: string, cancelData: CancelOrderRequest): Promise<Order | undefined> {
+    const [order] = await db
+      .update(orders)
+      .set({ 
+        status: "canceled",
+        canceledAt: new Date(),
+        cancelReason: cancelData.reason,
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    return order;
+  }
+
+  // Order Item operations
+  async createOrderItem(itemData: Omit<OrderItem, 'id' | 'createdAt'>): Promise<OrderItem> {
+    const [orderItem] = await db
+      .insert(orderItems)
+      .values(itemData)
+      .returning();
+    
+    return orderItem;
+  }
+
+  async getOrderItems(orderId: string): Promise<OrderItem[]> {
+    return await db.select().from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+  }
+
+  // Refund operations
+  async createRefund(refundData: Omit<Refund, 'id' | 'createdAt'>): Promise<Refund> {
+    const [refund] = await db
+      .insert(refunds)
+      .values(refundData)
+      .returning();
+    
+    return refund;
+  }
+
+  async getOrderRefunds(orderId: string): Promise<Refund[]> {
+    return await db.select().from(refunds)
+      .where(eq(refunds.orderId, orderId));
+  }
+
+  async updateRefundStatus(id: string, status: string, stripeRefundId?: string): Promise<Refund | undefined> {
+    const [refund] = await db
+      .update(refunds)
+      .set({ 
+        status,
+        stripeRefundId,
+        processedAt: status === 'processed' ? new Date() : undefined
+      })
+      .where(eq(refunds.id, id))
+      .returning();
+    
+    return refund;
+  }
+
+  // Wishlist operations
+  async addToWishlist(userId: string, itemData: CreateWishlistItemRequest): Promise<WishlistItem> {
+    const [wishlistItem] = await db
+      .insert(wishlist)
+      .values({
+        userId,
+        ...itemData,
+      })
+      .returning();
+    
+    return wishlistItem;
+  }
+
+  async getUserWishlist(userId: string): Promise<WishlistItem[]> {
+    return await db.select().from(wishlist)
+      .where(eq(wishlist.userId, userId))
+      .orderBy(wishlist.createdAt);
+  }
+
+  async removeFromWishlist(userId: string, productId: string): Promise<void> {
+    await db.delete(wishlist)
+      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
+  }
+
+  async isInWishlist(userId: string, productId: string): Promise<boolean> {
+    const [item] = await db.select().from(wishlist)
+      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
+    return !!item;
   }
 }
 
