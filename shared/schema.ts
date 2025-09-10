@@ -291,7 +291,7 @@ export const createOrderSchema = z.object({
   shippingAddressId: z.string(),
   billingAddressId: z.string().optional(),
   discountCode: z.string().optional(),
-  paymentMethod: z.enum(["stripe", "paypal"]),
+  paymentMethod: z.enum(["stripe", "paypal", "dummy_payment"]),
 });
 
 export const cancelOrderSchema = z.object({
