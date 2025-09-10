@@ -8,6 +8,7 @@ import redChairImage from "../assets/red-chair.jpg";
 import woodenChairImage from "../assets/wooden-chair.jpg";
 import livingRoomSceneImage from "../assets/living-room-scene.jpg";
 import bedroomSceneImage from "../assets/bedroom-scene.jpg";
+import chairSceneImage from "../assets/chair-scene.jpg";
 
 export default function Home() {
   return (
@@ -372,6 +373,38 @@ export default function Home() {
               backgroundRepeat: 'no-repeat'
             }}
           >
+          </div>
+        </div>
+      </section>
+
+      {/* Chair Scene Section */}
+      <section className="py-0 bg-white">
+        <div 
+          className="relative h-screen overflow-hidden"
+          style={{
+            backgroundImage: `url(${chairSceneImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          {/* Text Overlay - Top Left */}
+          <div className="absolute top-12 left-12">
+            <div className="text-left text-white max-w-md">
+              <h2 className="font-serif mb-2" style={{ fontSize: '56px', lineHeight: '100%' }}>
+                Rooted in nature.
+              </h2>
+              <h3 className="font-serif italic mb-8" style={{ fontSize: '48px', lineHeight: '100%' }}>
+                Designed for quiet moments.
+              </h3>
+              <Button 
+                className="bg-transparent border-2 border-white text-white px-8 py-3 font-sans hover:bg-white hover:text-black transition-all duration-300"
+                style={{ fontSize: '16px', lineHeight: '150%' }}
+                data-testid="button-explore-collection-chair"
+              >
+                Explore Collection
+              </Button>
+            </div>
           </div>
         </div>
       </section>
