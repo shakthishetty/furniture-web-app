@@ -1,4 +1,5 @@
 import { TreePine } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Footer() {
   const footerSections = [
@@ -104,10 +105,19 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-border mt-12 pt-8 text-center">
-          <p className="text-muted-foreground">
-            © 2024 Teak Theory. All rights reserved.
-          </p>
+        <div className="border-t border-border mt-12 pt-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-muted-foreground">
+              © 2024 Teak Theory. All rights reserved.
+            </p>
+            <Link 
+              href="/admin" 
+              className="text-muted-foreground hover:text-primary transition-colors font-medium"
+              data-testid="link-admin"
+            >
+              ADMIN
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
