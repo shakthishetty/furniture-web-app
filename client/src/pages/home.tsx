@@ -609,7 +609,16 @@ export default function Home() {
         >
           <div className="max-w-6xl mx-auto px-8 flex justify-between items-center text-white text-xs font-sans">
             <span>© 2025 Teak Theory.</span>
-            <span>Designed by Wisdom Tooth Technologies</span>
+            <div className="flex items-center gap-6">
+              <Link 
+                href="/admin" 
+                className="text-white hover:underline font-medium"
+                data-testid="link-admin"
+              >
+                ADMIN
+              </Link>
+              <span>Designed by Wisdom Tooth Technologies</span>
+            </div>
           </div>
         </div>
       </section>
