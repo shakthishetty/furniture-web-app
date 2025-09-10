@@ -9,9 +9,9 @@ export default function Wishlist() {
   const productImages = [productChairGreen, productChairRed, productChairWood];
   
   const wishlistItems = [
-    { id: 1, name: "Modern Lounge Chair", price: "$1,200", image: productImages[0], category: "Living Room" },
-    { id: 2, name: "Dining Table", price: "$2,800", image: productImages[1], category: "Dining" },
-    { id: 3, name: "Teak Nightstand", price: "$650", image: productImages[2], category: "Bedroom" }
+    { id: 1, name: "STRATA TEAK LOUNGE CHAIR", memberPrice: "$960", regularPrice: "$1,200", image: productImages[0], category: "Living Room", colors: ["#8B4513", "#A0522D"] },
+    { id: 2, name: "STRATA TEAK DINING TABLE", memberPrice: "$2240", regularPrice: "$2,800", image: productImages[1], category: "Dining", colors: ["#D2691E", "#DEB887"] },
+    { id: 3, name: "STRATA TEAK NIGHTSTAND", memberPrice: "$520", regularPrice: "$650", image: productImages[2], category: "Bedroom", colors: ["#8B4513", "#CD853F"] }
   ];
 
   return (
@@ -94,9 +94,9 @@ export default function Wishlist() {
 
         {/* Wishlist Items */}
         {wishlistItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {wishlistItems.map((item) => (
-              <div key={item.id} className="group relative" data-testid={`wishlist-item-${item.id}`}>
+              <div key={item.id} className="relative" data-testid={`wishlist-item-${item.id}`}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -108,19 +108,30 @@ export default function Wishlist() {
                 
                 <Link href="/product">
                   <div className="cursor-pointer">
-                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+                    <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-6">
                       <img 
                         src={item.image} 
                         alt={item.name} 
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-lg group-hover:text-gray-600 transition-colors" data-testid={`product-name-${item.id}`}>
+                    <div className="text-center space-y-3">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Available in multiple finishes</p>
+                      <h3 className="font-normal text-sm tracking-wide text-gray-800" data-testid={`product-name-${item.id}`}>
                         {item.name}
                       </h3>
-                      <p className="text-sm text-gray-500" data-testid={`product-category-${item.id}`}>{item.category}</p>
-                      <p className="font-semibold text-lg" data-testid={`product-price-${item.id}`}>{item.price}</p>
+                      <p className="text-sm text-gray-600" data-testid={`product-price-${item.id}`}>
+                        Starting at <span className="font-medium">{item.memberPrice} Member</span> / {item.regularPrice} Regular
+                      </p>
+                      <div className="flex justify-center space-x-2 mt-3">
+                        {item.colors.map((color, index) => (
+                          <div 
+                            key={index}
+                            className="w-4 h-4 rounded-full border border-gray-300"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </Link>

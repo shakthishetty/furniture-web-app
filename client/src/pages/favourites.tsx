@@ -9,10 +9,10 @@ export default function Favourites() {
   const productImages = [productChairGreen, productChairRed, productChairWood];
   
   const favouriteItems = [
-    { id: 1, name: "Scandinavian Armchair", price: "$1,450", image: productImages[0], category: "Living Room" },
-    { id: 2, name: "Teak Dining Set", price: "$3,200", image: productImages[1], category: "Dining" },
-    { id: 3, name: "Platform Bed", price: "$2,100", image: productImages[2], category: "Bedroom" },
-    { id: 4, name: "Executive Desk", price: "$1,800", image: productImages[0], category: "Study" }
+    { id: 1, name: "STRATA TEAK ARMCHAIR", memberPrice: "$1160", regularPrice: "$1,450", image: productImages[0], category: "Living Room", colors: ["#8B4513", "#A0522D"] },
+    { id: 2, name: "STRATA TEAK DINING SET", memberPrice: "$2560", regularPrice: "$3,200", image: productImages[1], category: "Dining", colors: ["#D2691E", "#DEB887"] },
+    { id: 3, name: "STRATA TEAK PLATFORM BED", memberPrice: "$1680", regularPrice: "$2,100", image: productImages[2], category: "Bedroom", colors: ["#8B4513", "#CD853F"] },
+    { id: 4, name: "STRATA TEAK EXECUTIVE DESK", memberPrice: "$1440", regularPrice: "$1,800", image: productImages[0], category: "Study", colors: ["#A0522D", "#DEB887"] }
   ];
 
   return (
@@ -97,9 +97,9 @@ export default function Favourites() {
 
         {/* Favourite Items */}
         {favouriteItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {favouriteItems.map((item) => (
-              <div key={item.id} className="group relative" data-testid={`favourite-item-${item.id}`}>
+              <div key={item.id} className="relative" data-testid={`favourite-item-${item.id}`}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -111,19 +111,30 @@ export default function Favourites() {
                 
                 <Link href="/product">
                   <div className="cursor-pointer">
-                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+                    <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4">
                       <img 
                         src={item.image} 
                         alt={item.name} 
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-lg group-hover:text-gray-600 transition-colors" data-testid={`product-name-${item.id}`}>
+                    <div className="text-center space-y-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Available in multiple finishes</p>
+                      <h3 className="font-normal text-sm tracking-wide text-gray-800" data-testid={`product-name-${item.id}`}>
                         {item.name}
                       </h3>
-                      <p className="text-sm text-gray-500" data-testid={`product-category-${item.id}`}>{item.category}</p>
-                      <p className="font-semibold text-lg" data-testid={`product-price-${item.id}`}>{item.price}</p>
+                      <p className="text-sm text-gray-600" data-testid={`product-price-${item.id}`}>
+                        Starting at <span className="font-medium">{item.memberPrice} Member</span> / {item.regularPrice} Regular
+                      </p>
+                      <div className="flex justify-center space-x-2 mt-2">
+                        {item.colors.map((color, index) => (
+                          <div 
+                            key={index}
+                            className="w-3 h-3 rounded-full border border-gray-300"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </Link>
