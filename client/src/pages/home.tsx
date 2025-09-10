@@ -477,33 +477,122 @@ export default function Home() {
 
       {/* Footer Features */}
       <section 
-        className="py-6"
+        className="border-t-8 border-white"
         style={{ backgroundColor: '#254127' }}
       >
-        <div className="max-w-6xl mx-auto px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center text-white">
-            <div className="flex items-center justify-center gap-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 7L12 3L4 7L12 11L20 7Z" />
-                <path d="M4 12L12 16L20 12" />
-              </svg>
-              <span className="font-sans" style={{ fontSize: '16px' }}>Free Shipping over $500</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 text-center text-white">
+          <div className="flex items-center justify-center gap-3 py-4 border-r-2 border-white">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 7L12 3L4 7L12 11L20 7Z" />
+              <path d="M4 12L12 16L20 12" />
+            </svg>
+            <span className="font-sans text-sm">Free Shipping over $500</span>
+          </div>
+          <div className="flex items-center justify-center gap-3 py-4 border-r-2 border-white">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 12L11 14L15 10" />
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" />
+            </svg>
+            <span className="font-sans text-sm">5 Year Warranty</span>
+          </div>
+          <div className="flex items-center justify-center gap-3 py-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12H22" />
+              <path d="M12 2A15.3 15.3 0 0 1 16 12A15.3 15.3 0 0 1 12 22A15.3 15.3 0 0 1 8 12A15.3 15.3 0 0 1 12 2Z" />
+            </svg>
+            <span className="font-sans text-sm">Worldwide Shipping</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Footer */}
+      <section 
+        className="border-t-2 border-white"
+        style={{ backgroundColor: '#254127' }}
+      >
+        <div className="max-w-6xl mx-auto px-8 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 text-white">
+            {/* Logo */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <svg width="32" height="32" viewBox="0 0 100 100" fill="currentColor">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="3"/>
+                  <path d="M30 35 L50 25 L70 35 L70 45 L50 35 L30 45 Z" fill="currentColor"/>
+                  <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
+                  <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
+                </svg>
+                <span className="font-serif text-xl">TEAK THEORY</span>
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 12L11 14L15 10" />
-                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" />
-              </svg>
-              <span className="font-sans" style={{ fontSize: '16px' }}>5 Year Warranty</span>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-sans font-medium mb-4 text-sm">Quick links</h4>
+              <ul className="space-y-2 text-sm font-sans">
+                <li><a href="#" className="hover:underline">Home</a></li>
+                <li><a href="#" className="hover:underline">About us</a></li>
+                <li><a href="#" className="hover:underline">Why choose us</a></li>
+                <li><a href="#" className="hover:underline">Contact us</a></li>
+              </ul>
             </div>
-            <div className="flex items-center justify-center gap-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M2 12H22" />
-                <path d="M12 2A15.3 15.3 0 0 1 16 12A15.3 15.3 0 0 1 12 22A15.3 15.3 0 0 1 8 12A15.3 15.3 0 0 1 12 2Z" />
-              </svg>
-              <span className="font-sans" style={{ fontSize: '16px' }}>Worldwide Shipping</span>
+
+            {/* Shop */}
+            <div>
+              <h4 className="font-sans font-medium mb-4 text-sm">Shop</h4>
+              <ul className="space-y-2 text-sm font-sans">
+                <li><a href="#" className="hover:underline">Furniture</a></li>
+                <li><a href="#" className="hover:underline">Collections</a></li>
+                <li><a href="#" className="hover:underline">Bedroom</a></li>
+                <li><a href="#" className="hover:underline">Outdoor</a></li>
+              </ul>
             </div>
+
+            {/* Terms */}
+            <div>
+              <h4 className="font-sans font-medium mb-4 text-sm">Terms and Conditions</h4>
+              <ul className="space-y-2 text-sm font-sans">
+                <li><a href="#" className="hover:underline">Privacy Policy</a></li>
+                <li><a href="#" className="hover:underline">Return Policy</a></li>
+                <li><a href="#" className="hover:underline">Shopping Policy</a></li>
+              </ul>
+            </div>
+
+            {/* Newsletter */}
+            <div>
+              <h4 className="font-sans font-medium mb-4 text-sm">Join our newsletter and get 20% off your first purchase</h4>
+              <div className="space-y-4">
+                <div className="flex">
+                  <input 
+                    type="email" 
+                    placeholder="name@gmail.com"
+                    className="flex-1 px-3 py-2 text-black text-sm"
+                    data-testid="input-newsletter-email"
+                  />
+                  <Button 
+                    className="bg-white text-black px-6 py-2 text-sm font-sans hover:bg-gray-100"
+                    data-testid="button-subscribe"
+                  >
+                    Subscribe
+                  </Button>
+                </div>
+                <div>
+                  <p className="text-xs font-sans mb-2">Social Media</p>
+                  <p className="text-xs font-sans">Instagram / Facebook / LinkedIn</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Footer */}
+        <div 
+          className="border-t-2 border-white py-4"
+          style={{ backgroundColor: '#254127' }}
+        >
+          <div className="max-w-6xl mx-auto px-8 flex justify-between items-center text-white text-xs font-sans">
+            <span>© 2025 Teak Theory.</span>
+            <span>Designed by Wisdom Tooth Technologies</span>
           </div>
         </div>
       </section>
