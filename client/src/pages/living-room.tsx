@@ -1,15 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
+import productChairGreen from "../assets/product-chair-green.jpg";
+import productChairRed from "../assets/product-chair-red.jpg";
+import productChairWood from "../assets/product-chair-wood.jpg";
 
 export default function LivingRoom() {
+  const productImages = [productChairGreen, productChairRed, productChairWood];
+  
   const products = [
-    { id: 1, name: "Sectional Sofa", price: "$3,200", image: "/api/placeholder/300/300", category: "Seating" },
-    { id: 2, name: "Coffee Table", price: "$850", image: "/api/placeholder/300/300", category: "Tables" },
-    { id: 3, name: "Accent Chair", price: "$1,200", image: "/api/placeholder/300/300", category: "Seating" },
-    { id: 4, name: "Media Console", price: "$1,800", image: "/api/placeholder/300/300", category: "Storage" },
-    { id: 5, name: "Floor Lamp", price: "$450", image: "/api/placeholder/300/300", category: "Lighting" },
-    { id: 6, name: "Ottoman", price: "$650", image: "/api/placeholder/300/300", category: "Seating" }
+    { id: 1, name: "Sectional Sofa", price: "$3,200", image: productImages[2], category: "Seating" },
+    { id: 2, name: "Coffee Table", price: "$850", image: productImages[1], category: "Tables" },
+    { id: 3, name: "Accent Chair", price: "$1,200", image: productImages[0], category: "Seating" },
+    { id: 4, name: "Media Console", price: "$1,800", image: productImages[2], category: "Storage" },
+    { id: 5, name: "Floor Lamp", price: "$450", image: productImages[1], category: "Lighting" },
+    { id: 6, name: "Ottoman", price: "$650", image: productImages[0], category: "Seating" }
   ];
 
   return (
@@ -98,9 +103,11 @@ export default function LivingRoom() {
             <Link key={product.id} href="/product">
               <div className="group cursor-pointer" data-testid={`product-${product.id}`}>
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">Product Image</span>
-                  </div>
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-start">
