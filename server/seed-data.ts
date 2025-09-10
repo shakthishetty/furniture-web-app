@@ -1,6 +1,6 @@
 import { storage } from './storage';
 import { db } from './db';
-import { products, materials, configurationOptions } from '@shared/schema';
+import { products, materials, configurationOptions, discountCodes } from '@shared/schema';
 
 export async function seedSampleData() {
   try {
@@ -172,10 +172,61 @@ export async function seedSampleData() {
       }
     }
 
+    // Insert sample discount codes
+    const sampleDiscountCodes = [
+      {
+        code: 'WELCOME10',
+        description: '10% off for new customers',
+        discountType: 'percentage',
+        discountValue: '10.00',
+        minimumOrderAmount: '100.00',
+        maxUsageCount: 100,
+        currentUsageCount: 0,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        isActive: true,
+      },
+      {
+        code: 'SAVE25',
+        description: '$25 off orders over $200',
+        discountType: 'fixed',
+        discountValue: '25.00',
+        minimumOrderAmount: '200.00',
+        maxUsageCount: 50,
+        currentUsageCount: 0,
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days from now
+        isActive: true,
+      },
+      {
+        code: 'TEAKTEST',
+        description: '15% off for testing',
+        discountType: 'percentage',
+        discountValue: '15.00',
+        minimumOrderAmount: '0.00',
+        maxUsageCount: null, // unlimited
+        currentUsageCount: 0,
+        expiresAt: null, // no expiration
+        isActive: true,
+      },
+    ];
+
+    let insertedDiscountCodes: any[] = [];
+    for (const discount of sampleDiscountCodes) {
+      try {
+        const existing = await storage.getDiscountCode(discount.code);
+        if (!existing) {
+          const insertedDiscount = await storage.createDiscountCode(discount);
+          insertedDiscountCodes.push(insertedDiscount);
+        }
+      } catch (error) {
+        console.log(`Discount code ${discount.code} may already exist, skipping.`);
+      }
+    }
+
     console.log('Sample data seeded successfully!');
     console.log(`Inserted ${insertedProducts.length} products`);
     console.log(`Inserted ${insertedMaterials.length} materials`);
     console.log(`Inserted ${insertedProducts.length * 4} configuration options`);
+    console.log(`Inserted ${insertedDiscountCodes.length} discount codes`);
 
     return {
       products: insertedProducts,

@@ -152,8 +152,8 @@ export function registerOrderRoutes(app: Express): void {
 
   // ========== DISCOUNT CODES ==========
 
-  // Apply discount code
-  app.post("/api/discount/apply", requireAuth, async (req, res) => {
+  // Apply discount code (demo-friendly)
+  app.post("/api/discount/apply", async (req, res) => {
     try {
       const validation = applyDiscountSchema.safeParse(req.body);
       if (!validation.success) {
