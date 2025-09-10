@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +12,10 @@ import { Progress } from "@/components/ui/progress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye } from "lucide-react";
+import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye, ShoppingCart, Plus } from "lucide-react";
 import * as THREE from 'three';
 import { createFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions } from "@/utils/3d-models";
+import { useCart } from "@/hooks/useCart";
 
 interface Configuration {
   material?: string;
@@ -33,6 +34,8 @@ export default function Configurator() {
   const productId = params.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
+  const { addToCart } = useCart();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
@@ -42,6 +45,7 @@ export default function Configurator() {
   const [currentStep, setCurrentStep] = useState(0);
   const [configuration, setConfiguration] = useState<Configuration>({});
   const [configurationName, setConfigurationName] = useState("");
+  const [savedConfigurationId, setSavedConfigurationId] = useState<string | null>(null);
 
   // Fetch product details
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -92,7 +96,8 @@ export default function Configurator() {
       });
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setSavedConfigurationId(data.configuration.id);
       toast({
         title: 'Configuration saved',
         description: 'Your custom configuration has been saved successfully.',
@@ -239,6 +244,34 @@ export default function Configurator() {
   const saveConfiguration = () => {
     const name = configurationName || `${product?.name} Custom Configuration`;
     saveConfigurationMutation.mutate({ name, configuration });
+  };
+
+  const addToCartWithConfiguration = () => {
+    if (!product || !pricingData) return;
+    
+    addToCart({
+      productId: product.id,
+      configurationId: savedConfigurationId || undefined,
+      customConfiguration: configuration,
+      name: `${product.name} (Custom)`,
+      price: parseFloat(pricingData.totalPrice),
+      imageUrl: product.imageUrl,
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${product.name} with custom configuration has been added to your cart.`,
+    });
+  };
+
+  const addToCartAndGoToCart = () => {
+    addToCartWithConfiguration();
+    setLocation('/cart');
+  };
+
+  const addToCartAndContinueShopping = () => {
+    addToCartWithConfiguration();
+    setLocation('/catalog');
   };
 
   const configurationSteps = [
@@ -599,6 +632,79 @@ export default function Configurator() {
                           <div className="flex justify-between font-bold text-lg">
                             <span>Total:</span>
                             <span className="text-[#254127]">${parseFloat(pricingData.totalPrice).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Save Configuration and Add to Cart Section */}
+                    {!savedConfigurationId ? (
+                      <div className="space-y-4">
+                        <Button
+                          onClick={saveConfiguration}
+                          disabled={saveConfigurationMutation.isPending}
+                          className="w-full bg-[#254127] hover:bg-[#1a2f1b]"
+                          size="lg"
+                          data-testid="save-configuration-final"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {saveConfigurationMutation.isPending ? 'Saving Configuration...' : 'Save Configuration'}
+                        </Button>
+                        <p className="text-sm text-gray-600 text-center">
+                          Save your configuration to add it to cart
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                          <div className="text-green-800 font-medium mb-2">
+                            ✅ Configuration saved successfully!
+                          </div>
+                          <div className="text-sm text-green-700">
+                            Your custom configuration is ready to add to cart.
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Button
+                            onClick={addToCartAndGoToCart}
+                            className="w-full bg-[#254127] hover:bg-[#1a2f1b] text-lg py-3"
+                            size="lg"
+                            data-testid="add-to-cart-go-to-cart"
+                          >
+                            <ShoppingCart className="h-5 w-5 mr-2" />
+                            Add to Cart & Review Order
+                          </Button>
+                          
+                          <Button
+                            onClick={addToCartAndContinueShopping}
+                            variant="outline"
+                            className="w-full border-[#254127] text-[#254127] hover:bg-[#254127] hover:text-white text-lg py-3"
+                            size="lg"
+                            data-testid="add-to-cart-continue-shopping"
+                          >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add to Cart & Continue Shopping
+                          </Button>
+                          
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setSavedConfigurationId(null);
+                                setCurrentStep(0);
+                              }}
+                              className="flex-1"
+                            >
+                              Start Over
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => setSavedConfigurationId(null)}
+                              className="flex-1"
+                            >
+                              Edit Configuration
+                            </Button>
                           </div>
                         </div>
                       </div>
