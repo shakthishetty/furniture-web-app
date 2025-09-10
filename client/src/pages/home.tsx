@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
-import { Link } from "wouter";
 import heroImage from "../assets/hero-bedroom.jpg";
 import bedroomImage from "../assets/bedroom-category.jpg";
 import livingRoomImage from "../assets/living-room-category.jpg";
@@ -171,17 +170,16 @@ export default function Home() {
           {/* Left Column */}
           <div className="flex flex-col h-full border-r-4 border-white">
             {/* Modern Collection - Top */}
-            <Link href="/product">
-              <div 
-                className="relative h-2/3 overflow-hidden border-b-4 border-white"
-                style={{
-                  backgroundImage: `url(${redChairImage})`,
-                  backgroundSize: 'contain',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundColor: '#f0f0f0'
-                }}
-              >
+            <div 
+              className="relative h-2/3 overflow-hidden border-b-4 border-white"
+              style={{
+                backgroundImage: `url(${redChairImage})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#f0f0f0'
+              }}
+            >
               {/* Modern Overlay */}
               <div 
                 className="absolute top-8 left-8 px-5 py-6"
@@ -209,21 +207,19 @@ export default function Home() {
                   </svg>
                 </a>
               </div>
-              </div>
-            </Link>
+            </div>
 
             {/* Wood Collection - Bottom */}
-            <Link href="/product">
-              <div 
-                className="relative h-1/3 overflow-hidden"
-                style={{
-                  backgroundImage: `url(${woodenChairImage})`,
-                  backgroundSize: 'contain',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundColor: '#f0f0f0'
-                }}
-              >
+            <div 
+              className="relative h-1/3 overflow-hidden"
+              style={{
+                backgroundImage: `url(${woodenChairImage})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#f0f0f0'
+              }}
+            >
               {/* Wood Overlay */}
               <div 
                 className="absolute top-4 left-4 px-4 py-4"
@@ -251,22 +247,20 @@ export default function Home() {
                   </svg>
                 </a>
               </div>
-              </div>
-            </Link>
+            </div>
           </div>
 
           {/* Right Column - Modern Collection */}
-          <Link href="/product">
-            <div 
-              className="relative h-full overflow-hidden"
-              style={{
-                backgroundImage: `url(${greenChairImage})`,
-                backgroundSize: 'contain',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: '#f0f0f0'
-              }}
-            >
+          <div 
+            className="relative h-full overflow-hidden"
+            style={{
+              backgroundImage: `url(${greenChairImage})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#f0f0f0'
+            }}
+          >
             {/* Modern Overlay - White */}
             <div 
               className="absolute bottom-8 left-8 bg-white px-5 py-6"
@@ -293,8 +287,7 @@ export default function Home() {
                 </svg>
               </a>
             </div>
-            </div>
-          </Link>
+          </div>
         </div>
       </section>
 
