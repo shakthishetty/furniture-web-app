@@ -4,8 +4,12 @@ import { storage } from "./storage";
 import authRoutes from "./auth-routes";
 import googleAuthRoutes from "./google-auth";
 import configuratorRoutes from "./configurator-routes";
+import { initializeSampleData } from "./seed-data";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize sample data
+  await initializeSampleData();
+  
   // Authentication routes
   app.use('/api/auth', authRoutes);
   app.use('/api/auth', googleAuthRoutes);

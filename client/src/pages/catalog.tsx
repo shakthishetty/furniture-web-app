@@ -18,13 +18,13 @@ export default function Catalog() {
     queryKey: ['/api/configurator/products', selectedCategory !== "all" ? { category: selectedCategory } : {}],
   });
 
-  const products = productsData?.products || [];
+  const products = (productsData as any)?.products || [];
   const categories = ['all', 'living-room', 'dining', 'bedroom', 'study', 'outdoor'];
 
   // Filter and sort products
   const filteredProducts = products
-    .filter(product => selectedCategory === "all" || product.category === selectedCategory)
-    .sort((a, b) => {
+    .filter((product: any) => selectedCategory === "all" || product.category === selectedCategory)
+    .sort((a: any, b: any) => {
       if (sortBy === 'price') return parseFloat(a.basePrice) - parseFloat(b.basePrice);
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return 0;
@@ -175,7 +175,7 @@ export default function Catalog() {
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product: any) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`product-card-${product.id}`}>
                 <div className="aspect-square bg-gray-100 relative">
                   {product.imageUrl ? (
@@ -229,7 +229,7 @@ export default function Catalog() {
           </div>
         ) : (
           <div className="space-y-6">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product: any) => (
               <Card key={product.id} className="overflow-hidden" data-testid={`product-list-${product.id}`}>
                 <div className="flex flex-col md:flex-row">
                   <div className="w-full md:w-1/3 aspect-square md:aspect-auto">

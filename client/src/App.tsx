@@ -16,6 +16,8 @@ import Outdoor from "@/pages/outdoor";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
+import Catalog from "@/pages/catalog";
+import Configurator from "@/pages/configurator";
 import Search from "@/pages/search";
 import Wishlist from "@/pages/wishlist";
 import Favourites from "@/pages/favourites";
@@ -35,6 +37,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/catalog" component={Catalog} />
+      <Route path="/configurator/:id" component={Configurator} />
       <Route path="/search" component={Search} />
       <Route path="/wishlist" component={Wishlist} />
       <Route path="/favourites" component={Favourites} />
