@@ -68,6 +68,16 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
 
 // Admin-specific middleware
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  // DEVELOPMENT BYPASS: Allow admin access in development mode
+  if (process.env.NODE_ENV === 'development') {
+    req.user = {
+      userId: 'dev-admin-user',
+      email: 'admin@dev.com',
+      isAdmin: true
+    };
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
