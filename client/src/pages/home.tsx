@@ -155,6 +155,103 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Furniture Collection Showcase */}
+      <section className="py-0 bg-white">
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
+          {/* Left Column */}
+          <div className="flex flex-col h-full">
+            {/* Modern Collection - Top */}
+            <div className="relative h-2/3 bg-gray-200 overflow-hidden group">
+              {/* Placeholder for red chair image */}
+              <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600"></div>
+              
+              {/* Modern Overlay */}
+              <div 
+                className="absolute top-6 left-6 px-6 py-8 max-w-xs"
+                style={{ backgroundColor: '#254127' }}
+              >
+                <h3 className="text-white font-serif mb-4" style={{ fontSize: '40px', lineHeight: '100%' }}>
+                  Modern
+                </h3>
+                <p className="text-white font-sans mb-6" style={{ fontSize: '16px', lineHeight: '150%' }}>
+                  The Modern Collection brings together graceful lines and luxurious finishes.
+                </p>
+                <a 
+                  href="#" 
+                  className="inline-flex items-center text-white font-sans hover:underline transition-all"
+                  style={{ fontSize: '16px', lineHeight: '150%' }}
+                  data-testid="link-modern-collection"
+                >
+                  View Collection
+                  <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Wood Collection - Bottom */}
+            <div className="relative h-1/3 bg-gray-300 overflow-hidden group">
+              {/* Placeholder for wooden chair image */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-200 to-amber-400"></div>
+              
+              {/* Wood Overlay */}
+              <div 
+                className="absolute top-4 left-4 px-4 py-6 max-w-xs"
+                style={{ backgroundColor: '#254127' }}
+              >
+                <h3 className="text-white font-serif mb-3" style={{ fontSize: '40px', lineHeight: '100%' }}>
+                  Wood
+                </h3>
+                <p className="text-white font-sans mb-4" style={{ fontSize: '16px', lineHeight: '150%' }}>
+                  The Modern Collection brings together graceful lines and luxurious finishes.
+                </p>
+                <a 
+                  href="#" 
+                  className="inline-flex items-center text-white font-sans hover:underline transition-all"
+                  style={{ fontSize: '16px', lineHeight: '150%' }}
+                  data-testid="link-wood-collection"
+                >
+                  View Collection
+                  <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Modern Collection */}
+          <div className="relative h-full bg-gray-200 overflow-hidden group">
+            {/* Placeholder for green chair image */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-300 to-emerald-500"></div>
+            
+            {/* Modern Overlay - White */}
+            <div 
+              className="absolute bottom-6 left-6 bg-white px-6 py-8 max-w-xs"
+            >
+              <h3 className="font-serif mb-4" style={{ fontSize: '40px', lineHeight: '100%', color: '#000000' }}>
+                Modern
+              </h3>
+              <p className="font-sans mb-6" style={{ fontSize: '16px', lineHeight: '150%', color: '#000000' }}>
+                The Modern Collection brings together graceful lines and luxurious finishes.
+              </p>
+              <a 
+                href="#" 
+                className="inline-flex items-center font-sans hover:underline transition-all"
+                style={{ fontSize: '16px', lineHeight: '150%', color: '#000000' }}
+                data-testid="link-modern-collection-alt"
+              >
+                View Collection
+                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
