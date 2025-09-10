@@ -37,7 +37,7 @@ import {
   wishlist
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt, sql } from "drizzle-orm";
+import { eq, and, gt, sql, or, ilike, gte, lte } from "drizzle-orm";
 import { hashPassword, generateRandomToken } from "./utils/auth";
 
 export interface IStorage {
@@ -124,6 +124,15 @@ export interface IStorage {
   getUserWishlist(userId: string): Promise<WishlistItem[]>;
   removeFromWishlist(userId: string, productId: string): Promise<void>;
   isInWishlist(userId: string, productId: string): Promise<boolean>;
+
+  // Admin operations
+  getUserById(id: string): Promise<User | undefined>; // Alias for getUser
+  getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }>;
+  getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }>;
+  updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
+  getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: Order[]; total: number }>;
+  getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }>;
+  getOrdersByDay(days: number): Promise<{ date: string; orders: number; revenue: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -621,6 +630,149 @@ export class DatabaseStorage implements IStorage {
     const [item] = await db.select().from(wishlist)
       .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
     return !!item;
+  }
+
+  // Admin operations
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.getUser(id); // Alias for existing getUser method
+  }
+
+  async getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }> {
+    const { page, limit, search, status } = options;
+    const offset = (page - 1) * limit;
+
+    const base = db.select().from(users);
+    const baseCount = db.select({ count: sql<number>`count(*)` }).from(users);
+
+    const conditions = [
+      search ? or(
+        ilike(users.email, `%${search}%`),
+        ilike(users.firstName, `%${search}%`),
+        ilike(users.lastName, `%${search}%`)
+      ) : undefined,
+      status ? eq(users.status, status) : undefined,
+    ].filter(Boolean) as any[];
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    const listQuery = whereClause ? base.where(whereClause) : base;
+    const countQuery = whereClause ? baseCount.where(whereClause) : baseCount;
+
+    const [usersResult, totalResult] = await Promise.all([
+      listQuery.orderBy(users.createdAt).limit(limit).offset(offset),
+      countQuery
+    ]);
+
+    return {
+      users: usersResult,
+      total: totalResult[0]?.count || 0
+    };
+  }
+
+  async getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }> {
+    const { page, limit, category, status } = options;
+    const offset = (page - 1) * limit;
+
+    const base = db.select().from(products);
+    const baseCount = db.select({ count: sql<number>`count(*)` }).from(products);
+
+    const conditions = [
+      category ? eq(products.category, category) : undefined,
+      status ? eq(products.status, status) : undefined,
+    ].filter(Boolean) as any[];
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    const listQuery = whereClause ? base.where(whereClause) : base;
+    const countQuery = whereClause ? baseCount.where(whereClause) : baseCount;
+
+    const [productsResult, totalResult] = await Promise.all([
+      listQuery.orderBy(products.createdAt).limit(limit).offset(offset),
+      countQuery
+    ]);
+
+    return {
+      products: productsResult,
+      total: totalResult[0]?.count || 0
+    };
+  }
+
+  async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> {
+    const [product] = await db
+      .update(products)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+    
+    return product;
+  }
+
+  async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: Order[]; total: number }> {
+    const { page, limit, status, startDate, endDate } = options;
+    const offset = (page - 1) * limit;
+
+    const base = db.select().from(orders);
+    const baseCount = db.select({ count: sql<number>`count(*)` }).from(orders);
+
+    const conditions = [
+      status ? eq(orders.status, status) : undefined,
+      startDate ? gte(orders.createdAt, startDate) : undefined,
+      endDate ? lte(orders.createdAt, endDate) : undefined,
+    ].filter(Boolean) as any[];
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    const listQuery = whereClause ? base.where(whereClause) : base;
+    const countQuery = whereClause ? baseCount.where(whereClause) : baseCount;
+
+    const [ordersResult, totalResult] = await Promise.all([
+      listQuery.orderBy(orders.createdAt).limit(limit).offset(offset),
+      countQuery
+    ]);
+
+    return {
+      orders: ordersResult,
+      total: totalResult[0]?.count || 0
+    };
+  }
+
+  async getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }> {
+    const [revenueResult, ordersResult, usersResult] = await Promise.all([
+      db.select({ total: sql<number>`sum(cast(${orders.totalAmount} as decimal))` }).from(orders).where(eq(orders.paymentStatus, 'paid')),
+      db.select({ count: sql<number>`count(*)` }).from(orders),
+      db.select({ count: sql<number>`count(*)` }).from(users)
+    ]);
+
+    const revenue = Number(revenueResult[0]?.total || 0);
+    const orderCount = ordersResult[0]?.count || 0;
+    const userCount = usersResult[0]?.count || 0;
+    const avgOrderValue = orderCount > 0 ? revenue / orderCount : 0;
+
+    return {
+      revenue,
+      orders: orderCount,
+      users: userCount,
+      avgOrderValue
+    };
+  }
+
+  async getOrdersByDay(days: number): Promise<{ date: string; orders: number; revenue: number }[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const result = await db
+      .select({
+        date: sql<string>`date(${orders.createdAt})`,
+        orders: sql<number>`count(*)`,
+        revenue: sql<number>`sum(cast(${orders.totalAmount} as decimal))`
+      })
+      .from(orders)
+      .where(sql`${orders.createdAt} >= ${startDate}`)
+      .groupBy(sql`date(${orders.createdAt})`)
+      .orderBy(sql`date(${orders.createdAt})`);
+
+    return result.map(row => ({
+      date: row.date,
+      orders: row.orders,
+      revenue: Number(row.revenue || 0)
+    }));
   }
 }
 
