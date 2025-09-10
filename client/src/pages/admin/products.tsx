@@ -13,7 +13,7 @@ import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box } from "lucide
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { SimpleUploader } from "@/components/SimpleUploader";
 
 interface Category {
   id: string;
@@ -194,30 +194,50 @@ export default function AdminProducts() {
 
   const handleUpdateProduct = (data: Partial<Product>) => {
     if (editingProduct) {
-      updateProductMutation.mutate({ productId: editingProduct.id, data });
+      const transformedData = transformProductData(data);
+      updateProductMutation.mutate({ productId: editingProduct.id, data: transformedData });
     }
   };
 
-  const handleCreateProduct = () => {
-    createProductMutation.mutate(newProduct);
-  };
-
-  // Handle file upload helper functions
-  const getUploadParams = async () => {
-    const response = await apiRequest("POST", "/api/admin/objects/upload-url");
-    return response.json();
-  };
-
-  const finalizeUpload = async (uploadURL: string) => {
-    // Extract path from the upload URL
-    const path = uploadURL.split('?')[0].split('/').pop();
-    const response = await apiRequest("POST", "/api/admin/objects/finalize", {
-      path,
-      visibility: 'public'
+  // Transform frontend data to match backend schema
+  const transformProductData = (productData: ProductFormData | Partial<Product>) => {
+    const transformed: any = {
+      name: productData.name,
+      description: productData.description,
+      categoryId: productData.categoryId,
+      // Transform price to basePrice as string
+      basePrice: productData.price?.toString(),
+      // Transform modelUrl to model3dUrl
+      model3dUrl: (productData as any).modelUrl,
+      // Keep additionalImages as array for frontend, transform for backend
+      additionalImages: productData.additionalImages ? JSON.stringify(productData.additionalImages) : undefined,
+      // Map status values to backend expectations
+      status: productData.status === 'draft' ? 'inactive' : 
+              productData.status === 'active' ? 'active' : 
+              productData.status === 'archived' ? 'out_of_stock' :
+              productData.status || 'inactive',
+      imageUrl: productData.imageUrl,
+      pdfUrl: (productData as any).pdfUrl,
+      inStock: productData.inStock,
+      stock: productData.stock
+    };
+    
+    // Remove undefined values
+    Object.keys(transformed).forEach(key => {
+      if (transformed[key] === undefined) {
+        delete transformed[key];
+      }
     });
-    const result = await response.json();
-    return result.path;
+    
+    return transformed;
   };
+
+  const handleCreateProduct = () => {
+    const transformedData = transformProductData(newProduct);
+    createProductMutation.mutate(transformedData);
+  };
+
+  // File upload helper functions are now handled inside SimpleUploader component
 
   const handleFileUpload = (url: string, fileType: string, isEditing: boolean = false) => {
     if (isEditing && editingProduct) {
@@ -765,22 +785,13 @@ export default function AdminProducts() {
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <Label>Upload Additional Images</Label>
-                  <ObjectUploader
-                    onGetUploadParameters={getUploadParams}
-                    onComplete={async (result) => {
-                      if (result.successful && result.successful.length > 0) {
-                        const file = result.successful[0] as { uploadURL?: string };
-                        if (file.uploadURL) {
-                          const normalizedPath = await finalizeUpload(file.uploadURL);
-                          handleFileUpload(normalizedPath, 'image', true);
-                        }
-                      }
-                    }}
-                    allowedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
+                  <SimpleUploader
+                    onUploadSuccess={(url: string) => handleFileUpload(url, 'image', true)}
+                    allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
                     maxFileSize={5 * 1024 * 1024} // 5MB
                   >
                     Upload Images
-                  </ObjectUploader>
+                  </SimpleUploader>
                   {editingProduct.additionalImages && editingProduct.additionalImages.length > 0 && (
                     <div className="grid grid-cols-4 gap-2 mt-2">
                       {editingProduct.additionalImages.map((imageUrl, index) => (
@@ -811,22 +822,13 @@ export default function AdminProducts() {
                 {/* PDF Upload */}
                 <div className="space-y-2">
                   <Label>Product Documentation (PDF)</Label>
-                  <ObjectUploader
-                    onGetUploadParameters={getUploadParams}
-                    onComplete={async (result) => {
-                      if (result.successful && result.successful.length > 0) {
-                        const file = result.successful[0] as { uploadURL?: string };
-                        if (file.uploadURL) {
-                          const normalizedPath = await finalizeUpload(file.uploadURL);
-                          handleFileUpload(normalizedPath, 'pdf', true);
-                        }
-                      }
-                    }}
-                    allowedFileTypes={['application/pdf']}
+                  <SimpleUploader
+                    onUploadSuccess={(url: string) => handleFileUpload(url, 'pdf', true)}
+                    allowedTypes={['application/pdf']}
                     maxFileSize={10 * 1024 * 1024} // 10MB
                   >
                     Upload PDF
-                  </ObjectUploader>
+                  </SimpleUploader>
                   {editingProduct.pdfUrl && (
                     <div className="flex items-center gap-2 p-2 border rounded">
                       <FileText className="h-4 w-4" />
@@ -846,22 +848,13 @@ export default function AdminProducts() {
                 {/* 3D Model Upload */}
                 <div className="space-y-2">
                   <Label>3D Model (GLB format)</Label>
-                  <ObjectUploader
-                    onGetUploadParameters={getUploadParams}
-                    onComplete={async (result) => {
-                      if (result.successful && result.successful.length > 0) {
-                        const file = result.successful[0] as { uploadURL?: string };
-                        if (file.uploadURL) {
-                          const normalizedPath = await finalizeUpload(file.uploadURL);
-                          handleFileUpload(normalizedPath, '3d', true);
-                        }
-                      }
-                    }}
-                    allowedFileTypes={['model/gltf-binary', '.glb']}
+                  <SimpleUploader
+                    onUploadSuccess={(url: string) => handleFileUpload(url, '3d', true)}
+                    allowedTypes={['model/gltf-binary', '.glb']}
                     maxFileSize={50 * 1024 * 1024} // 50MB
                   >
                     Upload 3D Model
-                  </ObjectUploader>
+                  </SimpleUploader>
                   {editingProduct.modelUrl && (
                     <div className="flex items-center gap-2 p-2 border rounded">
                       <Box className="h-4 w-4" />
@@ -1011,22 +1004,13 @@ export default function AdminProducts() {
               {/* Additional Images Upload */}
               <div className="space-y-2">
                 <Label>Upload Additional Images</Label>
-                <ObjectUploader
-                  onGetUploadParameters={getUploadParams}
-                  onComplete={async (result) => {
-                    if (result.successful && result.successful.length > 0) {
-                      const file = result.successful[0] as { uploadURL?: string };
-                      if (file.uploadURL) {
-                        const normalizedPath = await finalizeUpload(file.uploadURL);
-                        handleFileUpload(normalizedPath, 'image', false);
-                      }
-                    }
-                  }}
-                  allowedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
+                <SimpleUploader
+                  onUploadSuccess={(url: string) => handleFileUpload(url, 'image', false)}
+                  allowedTypes={['image/jpeg', 'image/png', 'image/webp']}
                   maxFileSize={5 * 1024 * 1024} // 5MB
                 >
                   Upload Images
-                </ObjectUploader>
+                </SimpleUploader>
                 {newProduct.additionalImages && newProduct.additionalImages.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {newProduct.additionalImages.map((imageUrl, index) => (
@@ -1057,22 +1041,13 @@ export default function AdminProducts() {
               {/* PDF Upload */}
               <div className="space-y-2">
                 <Label>Product Documentation (PDF)</Label>
-                <ObjectUploader
-                  onGetUploadParameters={getUploadParams}
-                  onComplete={async (result) => {
-                    if (result.successful && result.successful.length > 0) {
-                      const file = result.successful[0] as { uploadURL?: string };
-                      if (file.uploadURL) {
-                        const normalizedPath = await finalizeUpload(file.uploadURL);
-                        handleFileUpload(normalizedPath, 'pdf', false);
-                      }
-                    }
-                  }}
-                  allowedFileTypes={['application/pdf']}
+                <SimpleUploader
+                  onUploadSuccess={(url: string) => handleFileUpload(url, 'pdf', false)}
+                  allowedTypes={['application/pdf']}
                   maxFileSize={10 * 1024 * 1024} // 10MB
                 >
                   Upload PDF
-                </ObjectUploader>
+                </SimpleUploader>
                 {newProduct.pdfUrl && (
                   <div className="flex items-center gap-2 p-2 border rounded">
                     <FileText className="h-4 w-4" />
@@ -1092,22 +1067,13 @@ export default function AdminProducts() {
               {/* 3D Model Upload */}
               <div className="space-y-2">
                 <Label>3D Model (GLB format)</Label>
-                <ObjectUploader
-                  onGetUploadParameters={getUploadParams}
-                  onComplete={async (result) => {
-                    if (result.successful && result.successful.length > 0) {
-                      const file = result.successful[0] as { uploadURL?: string };
-                      if (file.uploadURL) {
-                        const normalizedPath = await finalizeUpload(file.uploadURL);
-                        handleFileUpload(normalizedPath, '3d', false);
-                      }
-                    }
-                  }}
-                  allowedFileTypes={['model/gltf-binary', '.glb']}
+                <SimpleUploader
+                  onUploadSuccess={(url: string) => handleFileUpload(url, '3d', false)}
+                  allowedTypes={['model/gltf-binary', '.glb']}
                   maxFileSize={50 * 1024 * 1024} // 50MB
                 >
                   Upload 3D Model
-                </ObjectUploader>
+                </SimpleUploader>
                 {newProduct.modelUrl && (
                   <div className="flex items-center gap-2 p-2 border rounded">
                     <Box className="h-4 w-4" />
