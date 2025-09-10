@@ -28,18 +28,24 @@ import Checkout from "@/pages/checkout";
 import Orders from "@/pages/orders";
 import Cart from "@/pages/cart";
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
+import AdminProducts from "@/pages/admin/products";
+import AdminOrders from "@/pages/admin/orders";
+import AdminDiscounts from "@/pages/admin/discounts";
+import AdminAnalytics from "@/pages/admin/analytics";
+import AdminSettings from "@/pages/admin/settings";
 
 function AdminRouter() {
   return (
     <AdminLayout>
       <Switch>
         <Route path="/admin" component={AdminDashboard} />
-        <Route path="/admin/users" component={() => <div>Admin Users - Coming Soon</div>} />
-        <Route path="/admin/products" component={() => <div>Admin Products - Coming Soon</div>} />
-        <Route path="/admin/orders" component={() => <div>Admin Orders - Coming Soon</div>} />
-        <Route path="/admin/discounts" component={() => <div>Admin Discounts - Coming Soon</div>} />
-        <Route path="/admin/analytics" component={() => <div>Admin Analytics - Coming Soon</div>} />
-        <Route path="/admin/settings" component={() => <div>Admin Settings - Coming Soon</div>} />
+        <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/products" component={AdminProducts} />
+        <Route path="/admin/orders" component={AdminOrders} />
+        <Route path="/admin/discounts" component={AdminDiscounts} />
+        <Route path="/admin/analytics" component={AdminAnalytics} />
+        <Route path="/admin/settings" component={AdminSettings} />
         <Route component={() => <div>Admin Page Not Found</div>} />
       </Switch>
     </AdminLayout>
