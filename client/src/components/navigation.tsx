@@ -1,16 +1,31 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { 
   User, 
   Search, 
   Heart, 
   ShoppingBag, 
   Menu,
-  TreePine
+  TreePine,
+  X,
+  Package,
+  Truck,
+  RotateCcw,
+  HeadphonesIcon,
+  Settings,
+  FileText,
+  MapPin,
+  CreditCard
 } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
 
 export default function Navigation() {
-  const [cartCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { items } = useCart();
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
@@ -124,11 +139,131 @@ export default function Navigation() {
               size="sm" 
               className="md:hidden p-2 text-muted-foreground hover:text-primary"
               data-testid="button-mobile-menu"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <Menu className="h-5 w-5" />
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
+        
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 top-[73px] bg-background z-40 overflow-y-auto">
+            <div className="px-6 py-6 space-y-6">
+              
+              {/* Quick Actions */}
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h3>
+                <div className="space-y-2">
+                  <Link href="/orders" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-order-history">
+                    <Package className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">Order History</span>
+                    <Badge variant="secondary" className="ml-auto">3</Badge>
+                  </Link>
+                  
+                  <Link href="/orders" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-track-order">
+                    <Truck className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium">Track Delivery</span>
+                    <Badge variant="outline" className="ml-auto">Live</Badge>
+                  </Link>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-cancel-order">
+                    <RotateCcw className="h-5 w-5 text-orange-600" />
+                    <span className="text-sm font-medium">Cancel/Return Order</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-support">
+                    <HeadphonesIcon className="h-5 w-5 text-green-600" />
+                    <span className="text-sm font-medium">Customer Support</span>
+                    <Badge variant="destructive" className="ml-auto">24/7</Badge>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Account */}
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Account</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-profile">
+                    <User className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">My Profile</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-addresses">
+                    <MapPin className="h-5 w-5 text-indigo-600" />
+                    <span className="text-sm font-medium">Addresses</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-payment">
+                    <CreditCard className="h-5 w-5 text-purple-600" />
+                    <span className="text-sm font-medium">Payment Methods</span>
+                  </div>
+                  
+                  <Link href="/wishlist" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-wishlist">
+                    <Heart className="h-5 w-5 text-red-500" />
+                    <span className="text-sm font-medium">Wishlist</span>
+                  </Link>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-settings">
+                    <Settings className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">Settings</span>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Categories */}
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Shop Categories</h3>
+                <div className="space-y-2">
+                  <Link href="/new" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-new">
+                    <span className="text-sm font-medium">New Arrivals</span>
+                  </Link>
+                  <Link href="/furniture" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-furniture">
+                    <span className="text-sm font-medium">All Furniture</span>
+                  </Link>
+                  <Link href="/living-room" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-living">
+                    <span className="text-sm font-medium">Living Room</span>
+                  </Link>
+                  <Link href="/dining" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-dining">
+                    <span className="text-sm font-medium">Dining Room</span>
+                  </Link>
+                  <Link href="/bedroom" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-bedroom">
+                    <span className="text-sm font-medium">Bedroom</span>
+                  </Link>
+                  <Link href="/study" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-study">
+                    <span className="text-sm font-medium">Study & Office</span>
+                  </Link>
+                  <Link href="/outdoor" className="block p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-nav-outdoor">
+                    <span className="text-sm font-medium">Outdoor</span>
+                  </Link>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Cart & Search */}
+              <div className="space-y-2">
+                <Link href="/cart" className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors" data-testid="mobile-cart">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium text-primary">Shopping Cart</span>
+                  {cartCount > 0 && (
+                    <Badge className="ml-auto">{cartCount}</Badge>
+                  )}
+                </Link>
+                
+                <Link href="/search" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-search">
+                  <Search className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">Search Products</span>
+                </Link>
+              </div>
+              
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
