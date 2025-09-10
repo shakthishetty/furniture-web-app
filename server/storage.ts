@@ -98,6 +98,10 @@ export interface IStorage {
   // Discount Code operations  
   createDiscountCode(codeData: CreateDiscountCodeRequest): Promise<DiscountCode>;
   getDiscountCode(code: string): Promise<DiscountCode | undefined>;
+  getDiscountCodes(options: { page: number; limit: number }): Promise<{ discounts: DiscountCode[]; total: number }>;
+  getDiscountCodeById(id: string): Promise<DiscountCode | undefined>;
+  updateDiscountCode(id: string, updates: Partial<DiscountCode>): Promise<DiscountCode | undefined>;
+  deleteDiscountCode(id: string): Promise<boolean>;
   validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }>;
   useDiscountCode(code: string): Promise<void>;
 
@@ -457,6 +461,56 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { valid: true, discount };
+  }
+
+  async getDiscountCodes(options: { page: number; limit: number }): Promise<{ discounts: DiscountCode[]; total: number }> {
+    const { page, limit } = options;
+    const offset = (page - 1) * limit;
+
+    const base = db.select().from(discountCodes);
+    const baseCount = db.select({ count: sql<number>`count(*)` }).from(discountCodes);
+
+    const [discountsResult, totalResult] = await Promise.all([
+      base.orderBy(discountCodes.createdAt).limit(limit).offset(offset),
+      baseCount
+    ]);
+
+    return {
+      discounts: discountsResult,
+      total: Number(totalResult[0]?.count) || 0
+    };
+  }
+
+  async getDiscountCodeById(id: string): Promise<DiscountCode | undefined> {
+    const [discount] = await db.select().from(discountCodes)
+      .where(eq(discountCodes.id, id));
+    return discount;
+  }
+
+  async updateDiscountCode(id: string, updates: Partial<DiscountCode>): Promise<DiscountCode | undefined> {
+    const processedUpdates: any = { ...updates, updatedAt: new Date() };
+    
+    // Convert expiresAt string to Date if provided
+    if (updates.expiresAt && typeof updates.expiresAt === 'string') {
+      processedUpdates.expiresAt = new Date(updates.expiresAt);
+    }
+    
+    const [discount] = await db
+      .update(discountCodes)
+      .set(processedUpdates)
+      .where(eq(discountCodes.id, id))
+      .returning();
+    
+    return discount;
+  }
+
+  async deleteDiscountCode(id: string): Promise<boolean> {
+    const result = await db
+      .delete(discountCodes)
+      .where(eq(discountCodes.id, id))
+      .returning({ id: discountCodes.id });
+    
+    return result.length > 0;
   }
 
   async useDiscountCode(code: string): Promise<void> {

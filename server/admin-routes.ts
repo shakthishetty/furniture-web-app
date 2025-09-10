@@ -1,8 +1,34 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest } from "@shared/schema";
 import { z } from "zod";
+
+// Validation schemas for admin operations
+const orderStatusUpdateSchema = z.object({
+  status: z.enum(["pending", "paid", "processing", "shipped", "delivered", "canceled"]),
+  comment: z.string().optional()
+});
+
+const adminDiscountUpdateSchema = z.object({
+  code: z.string().min(1).max(50).optional(),
+  type: z.enum(["percentage", "fixed"]).optional(),
+  value: z.string().refine(val => !val || (parseFloat(val) >= 0), "Value must be a positive number").optional(),
+  minimumOrderAmount: z.string().refine(val => !val || (parseFloat(val) >= 0), "Minimum order amount must be positive").optional(),
+  maxUsageCount: z.number().int().min(1).optional(),
+  isActive: z.boolean().optional(),
+  expiresAt: z.string().optional()
+});
+
+const adminProductUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  basePrice: z.string().refine(val => !val || (parseFloat(val) >= 0), "Base price must be positive").optional(),
+  status: z.enum(["active", "inactive", "out_of_stock"]).optional(),
+  imageUrl: z.string().url().optional(),
+  model3dUrl: z.string().url().optional()
+});
 
 const router = express.Router();
 
@@ -108,20 +134,17 @@ router.get("/products", requireAdmin, async (req, res) => {
 
 router.patch("/products/:id", requireAdmin, async (req, res) => {
   try {
-    const allowedUpdates = ["name", "description", "category", "basePrice", "status", "imageUrl", "model3dUrl"];
-    const updates = Object.keys(req.body)
-      .filter(key => allowedUpdates.includes(key))
-      .reduce((obj, key) => {
-        obj[key] = req.body[key];
-        return obj;
-      }, {} as any);
+    const validation = adminProductUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid product data", details: validation.error.flatten() });
+    }
 
-    const updatedProduct = await storage.updateProduct(req.params.id, updates);
+    const updatedProduct = await storage.updateProduct(req.params.id, validation.data);
     if (!updatedProduct) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    console.log(`Admin ${req.user?.userId} updated product ${req.params.id}:`, updates);
+    console.log(`Admin ${req.user?.userId} updated product ${req.params.id}:`, validation.data);
     res.json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
@@ -155,11 +178,12 @@ router.get("/orders", requireAdmin, async (req, res) => {
 
 router.patch("/orders/:id/status", requireAdmin, async (req, res) => {
   try {
-    const { status, comment } = req.body;
-    if (!status) {
-      return res.status(400).json({ error: "Status is required" });
+    const validation = orderStatusUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid status or comment", details: validation.error.flatten() });
     }
 
+    const { status, comment } = validation.data;
     const updatedOrder = await storage.updateOrderStatus(req.params.id, status, comment);
     if (!updatedOrder) {
       return res.status(404).json({ error: "Order not found" });
@@ -192,6 +216,84 @@ router.get("/analytics/orders-by-day", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error fetching orders by day:", error);
     res.status(500).json({ error: "Failed to fetch orders by day" });
+  }
+});
+
+// Admin Discount Code Management Routes
+router.get("/discounts", requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100); // Cap at 100
+    
+    const discounts = await storage.getDiscountCodes({ page, limit });
+    res.json(discounts);
+  } catch (error) {
+    console.error("Error fetching discount codes:", error);
+    res.status(500).json({ error: "Failed to fetch discount codes" });
+  }
+});
+
+router.get("/discounts/:id", requireAdmin, async (req, res) => {
+  try {
+    const discount = await storage.getDiscountCodeById(req.params.id);
+    if (!discount) {
+      return res.status(404).json({ error: "Discount code not found" });
+    }
+    res.json(discount);
+  } catch (error) {
+    console.error("Error fetching discount code:", error);
+    res.status(500).json({ error: "Failed to fetch discount code" });
+  }
+});
+
+router.post("/discounts", requireAdmin, async (req, res) => {
+  try {
+    const validation = createDiscountCodeSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid discount code data", details: validation.error.flatten() });
+    }
+
+    const discount = await storage.createDiscountCode(validation.data);
+    console.log(`Admin ${req.user?.userId} created discount code ${discount.code}`);
+    res.status(201).json(discount);
+  } catch (error) {
+    console.error("Error creating discount code:", error);
+    res.status(500).json({ error: "Failed to create discount code" });
+  }
+});
+
+router.patch("/discounts/:id", requireAdmin, async (req, res) => {
+  try {
+    const validation = adminDiscountUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid update data", details: validation.error.flatten() });
+    }
+
+    const updatedDiscount = await storage.updateDiscountCode(req.params.id, validation.data);
+    if (!updatedDiscount) {
+      return res.status(404).json({ error: "Discount code not found" });
+    }
+
+    console.log(`Admin ${req.user?.userId} updated discount code ${req.params.id}`);
+    res.json(updatedDiscount);
+  } catch (error) {
+    console.error("Error updating discount code:", error);
+    res.status(500).json({ error: "Failed to update discount code" });
+  }
+});
+
+router.delete("/discounts/:id", requireAdmin, async (req, res) => {
+  try {
+    const deleted = await storage.deleteDiscountCode(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Discount code not found" });
+    }
+
+    console.log(`Admin ${req.user?.userId} deleted discount code ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting discount code:", error);
+    res.status(500).json({ error: "Failed to delete discount code" });
   }
 });
 
