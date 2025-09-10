@@ -169,9 +169,10 @@ export default function Home() {
               className="relative h-2/3 overflow-hidden border-b-4 border-white"
               style={{
                 backgroundImage: `url(${redChairImage})`,
-                backgroundSize: 'cover',
+                backgroundSize: 'contain',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#f0f0f0'
               }}
             >
               {/* Modern Overlay */}
@@ -208,9 +209,10 @@ export default function Home() {
               className="relative h-1/3 overflow-hidden"
               style={{
                 backgroundImage: `url(${woodenChairImage})`,
-                backgroundSize: 'cover',
+                backgroundSize: 'contain',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#f0f0f0'
               }}
             >
               {/* Wood Overlay */}
@@ -248,9 +250,10 @@ export default function Home() {
             className="relative h-full overflow-hidden"
             style={{
               backgroundImage: `url(${greenChairImage})`,
-              backgroundSize: 'cover',
+              backgroundSize: 'contain',
               backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#f0f0f0'
             }}
           >
             {/* Modern Overlay - White */}
