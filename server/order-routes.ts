@@ -464,6 +464,142 @@ export function registerOrderRoutes(app: Express): void {
     }
   });
 
+  // Download invoice
+  app.get("/api/orders/:id/invoice", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const order = await storage.getOrder(id);
+      if (!order || order.userId !== userId) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Generate invoice data (in production, this would create a proper PDF)
+      const invoiceData = {
+        orderNumber: order.orderNumber,
+        date: order.createdAt,
+        customer: {
+          name: order.firstName + " " + order.lastName,
+          email: order.email || "customer@teaktheory.com"
+        },
+        items: order.items || [],
+        subtotal: order.subtotal,
+        discountAmount: order.discountAmount || "0",
+        taxAmount: order.taxAmount || "0",
+        shippingAmount: order.shippingAmount || "0",
+        totalAmount: order.totalAmount,
+        paymentStatus: order.paymentStatus,
+        status: order.status
+      };
+
+      // Create a simple HTML invoice (in production, convert to PDF)
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice ${order.orderNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { text-align: center; margin-bottom: 40px; }
+            .company { font-size: 24px; font-weight: bold; color: #254127; }
+            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+            .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            .table th, .table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            .table th { background-color: #f5f5f5; }
+            .totals { text-align: right; margin-top: 20px; }
+            .total-row { display: flex; justify-content: space-between; margin: 5px 0; }
+            .final-total { font-weight: bold; font-size: 18px; border-top: 2px solid #254127; padding-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company">TEAK THEORY</div>
+            <p>Premium Sustainable Furniture</p>
+          </div>
+          
+          <div class="invoice-details">
+            <div>
+              <h3>Invoice #${order.orderNumber}</h3>
+              <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
+              <p>Status: ${order.status.toUpperCase()}</p>
+            </div>
+            <div>
+              <h3>Bill To:</h3>
+              <p>${invoiceData.customer.name}</p>
+              <p>${invoiceData.customer.email}</p>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(order.items || []).map(item => `
+                <tr>
+                  <td>${item.productName || 'Product'}</td>
+                  <td>${item.quantity || 1}</td>
+                  <td>$${parseFloat(item.unitPrice || "0").toFixed(2)}</td>
+                  <td>$${parseFloat(item.totalPrice || "0").toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <span>$${parseFloat(order.subtotal).toFixed(2)}</span>
+            </div>
+            ${parseFloat(order.discountAmount || "0") > 0 ? `
+            <div class="total-row">
+              <span>Discount:</span>
+              <span>-$${parseFloat(order.discountAmount).toFixed(2)}</span>
+            </div>` : ''}
+            ${parseFloat(order.taxAmount || "0") > 0 ? `
+            <div class="total-row">
+              <span>Tax:</span>
+              <span>$${parseFloat(order.taxAmount).toFixed(2)}</span>
+            </div>` : ''}
+            ${parseFloat(order.shippingAmount || "0") > 0 ? `
+            <div class="total-row">
+              <span>Shipping:</span>
+              <span>$${parseFloat(order.shippingAmount).toFixed(2)}</span>
+            </div>` : ''}
+            <div class="total-row final-total">
+              <span>Total:</span>
+              <span>$${parseFloat(order.totalAmount).toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 40px; text-align: center; color: #666; font-size: 12px;">
+            <p>Thank you for your business!</p>
+            <p>TEAK THEORY - Sustainable Furniture Crafted with Care</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Set headers for HTML download (in production, use PDF)
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `attachment; filename="invoice-${order.orderNumber}.html"`);
+      res.send(invoiceHTML);
+      
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      res.status(500).json({ message: "Failed to generate invoice" });
+    }
+  });
+
   // Webhook for Stripe payment confirmation
   app.post("/api/orders/stripe-webhook", async (req, res) => {
     if (!stripe) {
