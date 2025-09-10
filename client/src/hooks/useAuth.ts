@@ -9,7 +9,8 @@ export function useAuth() {
         const response = await apiRequest("GET", "/api/auth/me");
         return response.json();
       } catch (error: any) {
-        if (error.message?.includes("401")) {
+        if (error.message?.includes("401") || error.message?.includes("No token provided")) {
+          // Return null for unauthorized - user is not logged in
           return null;
         }
         throw error;

@@ -512,7 +512,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
 }
 
 export default function Checkout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { items, clearCart } = useCart();
 
@@ -529,19 +529,23 @@ export default function Checkout() {
   }));
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation("/login");
-    }
-  }, [isAuthenticated, setLocation]);
-
-  useEffect(() => {
     // Redirect to cart if no items
     if (items.length === 0) {
       setLocation("/cart");
     }
   }, [items.length, setLocation]);
 
-  if (!isAuthenticated || items.length === 0) {
+  // Show loading during auth check
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-[#254127] border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  // Allow checkout without authentication for demo purposes
+  if (items.length === 0) {
     return null;
   }
 
