@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
+import heroImage from "@assets/Rectangle 2 (1)_1757489905307.jpg";
 
 export default function Home() {
   return (
@@ -65,7 +66,7 @@ export default function Home() {
       <section 
         className="min-h-screen flex items-center justify-center relative"
         style={{
-          backgroundImage: 'url("@assets/Rectangle 2 (1)_1757489905307.jpg")',
+          backgroundImage: `url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
