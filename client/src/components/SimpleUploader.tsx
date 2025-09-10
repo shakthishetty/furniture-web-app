@@ -30,13 +30,17 @@ export function SimpleUploader({
   };
 
   const finalizeUpload = async (uploadURL: string) => {
-    // Extract path from the upload URL
-    const path = uploadURL.split('?')[0].split('/').pop();
+    // Extract full object key/path from upload URL
+    const urlParts = uploadURL.split('?')[0].split('/');
+    const bucketIndex = urlParts.findIndex(part => part.includes('repl-default-bucket'));
+    const path = urlParts.slice(bucketIndex + 1).join('/'); // Get everything after bucket name
+    
     const response = await apiRequest("POST", "/api/admin/objects/finalize", {
       path,
       visibility: 'public'
     });
     const result = await response.json();
+    // Return the normalized path from backend (e.g., /objects/filename)
     return result.path;
   };
 

@@ -234,7 +234,7 @@ export default function AdminProducts() {
 
   const handleCreateProduct = () => {
     const transformedData = transformProductData(newProduct);
-    createProductMutation.mutate(transformedData);
+    createProductMutation.mutate(transformedData as any);
   };
 
   // File upload helper functions are now handled inside SimpleUploader component
