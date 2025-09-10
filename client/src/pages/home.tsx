@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
-import heroImage from "@assets/Rectangle 2 (1)_1757490871756.jpg";
+import heroImage from "../assets/hero-bedroom.jpg";
 
 export default function Home() {
   return (
