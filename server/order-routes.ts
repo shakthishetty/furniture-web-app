@@ -478,15 +478,18 @@ export function registerOrderRoutes(app: Express): void {
         return res.status(404).json({ message: "Order not found" });
       }
 
+      // Get order items separately
+      const orderItems = await storage.getOrderItems(id);
+      
       // Generate invoice data (in production, this would create a proper PDF)
       const invoiceData = {
         orderNumber: order.orderNumber,
         date: order.createdAt,
         customer: {
-          name: order.firstName + " " + order.lastName,
-          email: order.email || "customer@teaktheory.com"
+          name: "Customer", // In production, get from user/address table
+          email: "customer@teaktheory.com"
         },
-        items: order.items || [],
+        items: orderItems || [],
         subtotal: order.subtotal,
         discountAmount: order.discountAmount || "0",
         taxAmount: order.taxAmount || "0",
@@ -524,7 +527,7 @@ export function registerOrderRoutes(app: Express): void {
           <div class="invoice-details">
             <div>
               <h3>Invoice #${order.orderNumber}</h3>
-              <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
+              <p>Date: ${order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</p>
               <p>Status: ${order.status.toUpperCase()}</p>
             </div>
             <div>
@@ -544,7 +547,7 @@ export function registerOrderRoutes(app: Express): void {
               </tr>
             </thead>
             <tbody>
-              ${(order.items || []).map(item => `
+              ${(orderItems || []).map(item => `
                 <tr>
                   <td>${item.productName || 'Product'}</td>
                   <td>${item.quantity || 1}</td>
@@ -558,26 +561,26 @@ export function registerOrderRoutes(app: Express): void {
           <div class="totals">
             <div class="total-row">
               <span>Subtotal:</span>
-              <span>$${parseFloat(order.subtotal).toFixed(2)}</span>
+              <span>$${parseFloat(order.subtotal || "0").toFixed(2)}</span>
             </div>
             ${parseFloat(order.discountAmount || "0") > 0 ? `
             <div class="total-row">
               <span>Discount:</span>
-              <span>-$${parseFloat(order.discountAmount).toFixed(2)}</span>
+              <span>-$${parseFloat(order.discountAmount || "0").toFixed(2)}</span>
             </div>` : ''}
             ${parseFloat(order.taxAmount || "0") > 0 ? `
             <div class="total-row">
               <span>Tax:</span>
-              <span>$${parseFloat(order.taxAmount).toFixed(2)}</span>
+              <span>$${parseFloat(order.taxAmount || "0").toFixed(2)}</span>
             </div>` : ''}
             ${parseFloat(order.shippingAmount || "0") > 0 ? `
             <div class="total-row">
               <span>Shipping:</span>
-              <span>$${parseFloat(order.shippingAmount).toFixed(2)}</span>
+              <span>$${parseFloat(order.shippingAmount || "0").toFixed(2)}</span>
             </div>` : ''}
             <div class="total-row final-total">
               <span>Total:</span>
-              <span>$${parseFloat(order.totalAmount).toFixed(2)}</span>
+              <span>$${parseFloat(order.totalAmount || "0").toFixed(2)}</span>
             </div>
           </div>
 
