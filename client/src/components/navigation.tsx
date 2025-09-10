@@ -95,17 +95,18 @@ export default function Navigation() {
           {/* User Actions */}
           <div className="flex items-center space-x-4">
             {/* Orders Button - Always visible */}
-            <Link href="/orders">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="p-2 text-muted-foreground hover:text-primary transition-colors"
-                data-testid="desktop-orders"
-              >
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2 text-muted-foreground hover:text-primary transition-colors"
+              data-testid="desktop-orders"
+              asChild
+            >
+              <Link href="/orders">
                 <Package className="h-4 w-4" />
                 <span className="ml-2 text-sm">Orders</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             
             <Button 
               variant="ghost" 
