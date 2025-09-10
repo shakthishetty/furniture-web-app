@@ -9,12 +9,12 @@ export default function Study() {
   const productImages = [productChairGreen, productChairRed, productChairWood];
   
   const products = [
-    { id: 1, name: "Executive Desk", price: "$1,800", image: productImages[0], category: "Desks" },
-    { id: 2, name: "Office Chair", price: "$950", image: productImages[1], category: "Seating" },
-    { id: 3, name: "Bookshelf", price: "$1,200", image: productImages[2], category: "Storage" },
-    { id: 4, name: "Filing Cabinet", price: "$650", image: productImages[0], category: "Storage" },
-    { id: 5, name: "Desk Lamp", price: "$280", image: productImages[1], category: "Lighting" },
-    { id: 6, name: "Side Table", price: "$450", image: productImages[2], category: "Tables" }
+    { id: 1, name: "STRATA TEAK EXECUTIVE DESK", memberPrice: "$1440", regularPrice: "$1,800", image: productImages[0], category: "Desks", colors: ["#8B4513", "#A0522D"] },
+    { id: 2, name: "STRATA TEAK OFFICE CHAIR", memberPrice: "$760", regularPrice: "$950", image: productImages[1], category: "Seating", colors: ["#D2691E", "#DEB887"] },
+    { id: 3, name: "STRATA TEAK BOOKSHELF", memberPrice: "$960", regularPrice: "$1,200", image: productImages[2], category: "Storage", colors: ["#8B4513", "#CD853F"] },
+    { id: 4, name: "STRATA TEAK FILING CABINET", memberPrice: "$520", regularPrice: "$650", image: productImages[0], category: "Storage", colors: ["#A0522D", "#D2691E"] },
+    { id: 5, name: "STRATA TEAK DESK LAMP", memberPrice: "$224", regularPrice: "$280", image: productImages[1], category: "Lighting", colors: ["#8B4513", "#DEB887"] },
+    { id: 6, name: "STRATA TEAK SIDE TABLE", memberPrice: "$360", regularPrice: "$450", image: productImages[2], category: "Tables", colors: ["#CD853F", "#A0522D"] }
   ];
 
   return (
@@ -98,28 +98,34 @@ export default function Study() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {products.map((product) => (
             <Link key={product.id} href="/product">
-              <div className="group cursor-pointer" data-testid={`product-${product.id}`}>
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+              <div className="cursor-pointer" data-testid={`product-${product.id}`}>
+                <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-6">
                   <img 
                     src={product.image} 
                     alt={product.name} 
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-lg group-hover:text-gray-600 transition-colors" data-testid={`product-name-${product.id}`}>
-                      {product.name}
-                    </h3>
-                    <Button variant="ghost" size="sm" className="p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Heart className="h-4 w-4" />
-                    </Button>
+                <div className="text-center space-y-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Available in multiple finishes</p>
+                  <h3 className="font-normal text-sm tracking-wide text-gray-800" data-testid={`product-name-${product.id}`}>
+                    {product.name}
+                  </h3>
+                  <p className="text-sm text-gray-600" data-testid={`product-price-${product.id}`}>
+                    Starting at <span className="font-medium">{product.memberPrice} Member</span> / {product.regularPrice} Regular
+                  </p>
+                  <div className="flex justify-center space-x-2 mt-3">
+                    {product.colors.map((color, index) => (
+                      <div 
+                        key={index}
+                        className="w-4 h-4 rounded-full border border-gray-300"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
                   </div>
-                  <p className="text-sm text-gray-500" data-testid={`product-category-${product.id}`}>{product.category}</p>
-                  <p className="font-semibold text-lg" data-testid={`product-price-${product.id}`}>{product.price}</p>
                 </div>
               </div>
             </Link>

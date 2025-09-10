@@ -9,12 +9,12 @@ export default function Bedroom() {
   const productImages = [productChairGreen, productChairRed, productChairWood];
   
   const products = [
-    { id: 1, name: "Platform Bed", price: "$2,400", image: productImages[2], category: "Beds" },
-    { id: 2, name: "Nightstand", price: "$650", image: productImages[0], category: "Storage" },
-    { id: 3, name: "Dresser", price: "$1,800", image: productImages[1], category: "Storage" },
-    { id: 4, name: "Wardrobe", price: "$2,800", image: productImages[2], category: "Storage" },
-    { id: 5, name: "Reading Chair", price: "$1,200", image: productImages[0], category: "Seating" },
-    { id: 6, name: "Mirror", price: "$450", image: productImages[1], category: "Decor" }
+    { id: 1, name: "STRATA TEAK PLATFORM BED", memberPrice: "$1920", regularPrice: "$2,400", image: productImages[2], category: "Beds", colors: ["#8B4513", "#DEB887"] },
+    { id: 2, name: "STRATA TEAK NIGHTSTAND", memberPrice: "$520", regularPrice: "$650", image: productImages[0], category: "Storage", colors: ["#A0522D", "#CD853F"] },
+    { id: 3, name: "STRATA TEAK DRESSER", memberPrice: "$1440", regularPrice: "$1,800", image: productImages[1], category: "Storage", colors: ["#8B4513", "#D2691E"] },
+    { id: 4, name: "STRATA TEAK WARDROBE", memberPrice: "$2240", regularPrice: "$2,800", image: productImages[2], category: "Storage", colors: ["#DEB887", "#A0522D"] },
+    { id: 5, name: "STRATA TEAK READING CHAIR", memberPrice: "$960", regularPrice: "$1,200", image: productImages[0], category: "Seating", colors: ["#8B4513", "#CD853F"] },
+    { id: 6, name: "STRATA TEAK MIRROR", memberPrice: "$360", regularPrice: "$450", image: productImages[1], category: "Decor", colors: ["#A0522D", "#DEB887"] }
   ];
 
   return (
@@ -98,28 +98,34 @@ export default function Bedroom() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {products.map((product) => (
             <Link key={product.id} href="/product">
-              <div className="group cursor-pointer" data-testid={`product-${product.id}`}>
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+              <div className="cursor-pointer" data-testid={`product-${product.id}`}>
+                <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-6">
                   <img 
                     src={product.image} 
                     alt={product.name} 
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-lg group-hover:text-gray-600 transition-colors" data-testid={`product-name-${product.id}`}>
-                      {product.name}
-                    </h3>
-                    <Button variant="ghost" size="sm" className="p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Heart className="h-4 w-4" />
-                    </Button>
+                <div className="text-center space-y-3">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Available in multiple finishes</p>
+                  <h3 className="font-normal text-sm tracking-wide text-gray-800" data-testid={`product-name-${product.id}`}>
+                    {product.name}
+                  </h3>
+                  <p className="text-sm text-gray-600" data-testid={`product-price-${product.id}`}>
+                    Starting at <span className="font-medium">{product.memberPrice} Member</span> / {product.regularPrice} Regular
+                  </p>
+                  <div className="flex justify-center space-x-2 mt-3">
+                    {product.colors.map((color, index) => (
+                      <div 
+                        key={index}
+                        className="w-4 h-4 rounded-full border border-gray-300"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
                   </div>
-                  <p className="text-sm text-gray-500" data-testid={`product-category-${product.id}`}>{product.category}</p>
-                  <p className="font-semibold text-lg" data-testid={`product-price-${product.id}`}>{product.price}</p>
                 </div>
               </div>
             </Link>
