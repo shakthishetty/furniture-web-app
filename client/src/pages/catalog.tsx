@@ -15,7 +15,14 @@ export default function Catalog() {
 
   // Fetch products from API
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['/api/configurator/products', selectedCategory !== "all" ? { category: selectedCategory } : {}],
+    queryKey: ['/api/configurator/products', selectedCategory],
+    queryFn: async () => {
+      const url = selectedCategory !== "all" 
+        ? `/api/configurator/products?category=${selectedCategory}`
+        : '/api/configurator/products';
+      const response = await fetch(url);
+      return await response.json();
+    },
   });
 
   const products = (productsData as any)?.products || [];
