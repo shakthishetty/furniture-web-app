@@ -33,8 +33,8 @@ export default function Home() {
               <Link href="/new" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-new">
                 New
               </Link>
-              <Link href="/furniture" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-furniture">
-                Furniture
+              <Link href="/catalog" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-catalog">
+                Catalog
               </Link>
               <Link href="/living-room" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-living-room">
                 Living Room
