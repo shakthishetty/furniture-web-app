@@ -2,6 +2,23 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 export function useAdminAuth() {
+  // TEMPORARY: Bypass authentication for development
+  const mockAdminUser = {
+    id: "temp-admin",
+    email: "admin@temp.com",
+    isAdmin: true,
+    name: "Temp Admin"
+  };
+
+  return {
+    adminUser: mockAdminUser,
+    isLoading: false,
+    isAdmin: true,
+    isAuthenticated: true,
+    error: null,
+  };
+
+  /* ORIGINAL CODE - COMMENTED OUT FOR DEVELOPMENT
   const { data: adminUser, isLoading, error } = useQuery({
     queryKey: ["/api/admin/auth/me"],
     queryFn: async () => {
@@ -27,4 +44,5 @@ export function useAdminAuth() {
     isAuthenticated: !!adminUser,
     error,
   };
+  */
 }
