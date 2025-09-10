@@ -173,7 +173,7 @@ export default function Home() {
             {/* Modern Collection - Top */}
             <Link href="/product">
               <div 
-                className="relative h-2/3 overflow-hidden border-b-4 border-white cursor-pointer hover:opacity-90 transition-opacity"
+                className="relative h-2/3 overflow-hidden border-b-4 border-white"
                 style={{
                   backgroundImage: `url(${redChairImage})`,
                   backgroundSize: 'contain',
@@ -215,7 +215,7 @@ export default function Home() {
             {/* Wood Collection - Bottom */}
             <Link href="/product">
               <div 
-                className="relative h-1/3 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                className="relative h-1/3 overflow-hidden"
                 style={{
                   backgroundImage: `url(${woodenChairImage})`,
                   backgroundSize: 'contain',
@@ -258,7 +258,7 @@ export default function Home() {
           {/* Right Column - Modern Collection */}
           <Link href="/product">
             <div 
-              className="relative h-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+              className="relative h-full overflow-hidden"
               style={{
                 backgroundImage: `url(${greenChairImage})`,
                 backgroundSize: 'contain',
