@@ -72,8 +72,8 @@ router.post('/google', async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
+    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
     
     // Store refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days

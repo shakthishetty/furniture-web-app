@@ -41,8 +41,8 @@ router.post('/register', async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
+    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
     
     // Store refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -87,8 +87,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
+    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
     
     // Store refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -136,8 +136,14 @@ router.post('/refresh', async (req, res) => {
       return res.status(401).json({ error: 'Session expired or invalid' });
     }
 
-    // Generate new access token
-    const accessToken = generateAccessToken({ userId: payload.userId, email: payload.email });
+    // Get fresh user data to include current admin status
+    const user = await storage.getUser(payload.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Generate new access token with current admin status
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
 
     res.json({ accessToken });
   } catch (error) {
