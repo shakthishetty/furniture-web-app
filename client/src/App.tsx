@@ -6,12 +6,34 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Product from "@/pages/product";
+import New from "@/pages/new";
+import Furniture from "@/pages/furniture";
+import LivingRoom from "@/pages/living-room";
+import Dining from "@/pages/dining";
+import Bedroom from "@/pages/bedroom";
+import Study from "@/pages/study";
+import Outdoor from "@/pages/outdoor";
+import Login from "@/pages/login";
+import Search from "@/pages/search";
+import Wishlist from "@/pages/wishlist";
+import Favourites from "@/pages/favourites";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/product" component={Product} />
+      <Route path="/new" component={New} />
+      <Route path="/furniture" component={Furniture} />
+      <Route path="/living-room" component={LivingRoom} />
+      <Route path="/dining" component={Dining} />
+      <Route path="/bedroom" component={Bedroom} />
+      <Route path="/study" component={Study} />
+      <Route path="/outdoor" component={Outdoor} />
+      <Route path="/login" component={Login} />
+      <Route path="/search" component={Search} />
+      <Route path="/wishlist" component={Wishlist} />
+      <Route path="/favourites" component={Favourites} />
       <Route component={NotFound} />
     </Switch>
   );

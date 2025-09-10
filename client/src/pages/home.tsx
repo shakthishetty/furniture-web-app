@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
+import { Link } from "wouter";
 import heroImage from "../assets/hero-bedroom.jpg";
 import bedroomImage from "../assets/bedroom-category.jpg";
 import livingRoomImage from "../assets/living-room-category.jpg";
@@ -29,41 +30,47 @@ export default function Home() {
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-new">
+              <Link href="/new" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-new">
                 New
-              </a>
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-furniture">
+              </Link>
+              <Link href="/furniture" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-furniture">
                 Furniture
-              </a>
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-living-room">
+              </Link>
+              <Link href="/living-room" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-living-room">
                 Living Room
-              </a>
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-dining">
+              </Link>
+              <Link href="/dining" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-dining">
                 Dining
-              </a>
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-bedroom">
+              </Link>
+              <Link href="/bedroom" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-bedroom">
                 Bedroom
-              </a>
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-study">
+              </Link>
+              <Link href="/study" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-study">
                 Study
-              </a>
-              <a href="#" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-outdoor">
+              </Link>
+              <Link href="/outdoor" className="text-sm font-medium text-white/90 hover:text-white" data-testid="nav-outdoor">
                 Outdoor
-              </a>
+              </Link>
             </div>
 
             {/* User Actions */}
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-login">
-                <User className="h-5 w-5" />
-                <span className="hidden md:inline ml-2 text-sm">Login</span>
-              </Button>
-              <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-search">
-                <Search className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-wishlist">
-                <Heart className="h-5 w-5" />
-              </Button>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-login">
+                  <User className="h-5 w-5" />
+                  <span className="hidden md:inline ml-2 text-sm">Login</span>
+                </Button>
+              </Link>
+              <Link href="/search">
+                <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-search">
+                  <Search className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-wishlist">
+                  <Heart className="h-5 w-5" />
+                </Button>
+              </Link>
               <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-cart">
                 <ShoppingBag className="h-5 w-5" />
               </Button>
