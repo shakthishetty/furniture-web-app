@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,14 +11,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, CreditCard, Tag } from "lucide-react";
+import { Plus, MapPin, CreditCard, Tag, AlertCircle, CheckCircle } from "lucide-react";
 import AddressForm from "@/components/AddressForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Address } from "@shared/schema";
-
-// Load Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY ? 
-  loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY) : null;
 
 interface CheckoutItem {
   productId: string;
@@ -39,8 +34,6 @@ interface CheckoutProps {
 }
 
 function CheckoutForm({ items, onSuccess }: CheckoutProps) {
-  const stripe = useStripe();
-  const elements = useElements();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -49,8 +42,16 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [clientSecret, setClientSecret] = useState("");
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  
+  // Dummy payment form fields
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [cardholderName, setCardholderName] = useState("");
+  const [simulateFailure, setSimulateFailure] = useState(false);
 
   // Fetch user addresses
   const { data: addresses = [] } = useQuery<Address[]>({
@@ -98,9 +99,16 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
     },
   });
 
-  // Create order mutation
-  const createOrderMutation = useMutation({
+  // Complete order with dummy payment
+  const completeOrderMutation = useMutation({
     mutationFn: async () => {
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (simulateFailure) {
+        throw new Error("Payment declined. Please try a different card.");
+      }
+      
       const orderData = {
         items: items.map(item => ({
           productId: item.productId,
@@ -109,20 +117,29 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
           quantity: item.quantity,
         })),
         shippingAddressId: selectedAddress,
-        billingAddressId: selectedAddress, // Using same address for billing
+        billingAddressId: selectedAddress,
         discountCode: appliedDiscount?.discount?.code,
-        paymentMethod: "stripe",
+        paymentMethod: "dummy_payment",
+        paymentDetails: {
+          method: paymentMethod,
+          cardLast4: cardNumber.slice(-4),
+          cardType: "Visa",
+        },
       };
 
       const response = await apiRequest("POST", "/api/orders", orderData);
       return response.json();
     },
     onSuccess: (data) => {
-      setClientSecret(data.paymentIntent.clientSecret);
+      toast({
+        title: "Order placed successfully!",
+        description: `Order #${data.orderNumber} has been created.`,
+      });
+      onSuccess?.();
     },
     onError: (error: any) => {
       toast({
-        title: "Order creation failed",
+        title: "Payment failed",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -140,7 +157,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
     setDiscountCode("");
   };
 
-  const handlePlaceOrder = () => {
+  const handleContinueToPayment = () => {
     if (!selectedAddress) {
       toast({
         title: "Address required",
@@ -149,39 +166,24 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
       });
       return;
     }
-    createOrderMutation.mutate();
+    setShowPaymentForm(true);
   };
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    // Basic validation
+    if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+      toast({
+        title: "Incomplete payment information",
+        description: "Please fill in all payment fields.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsProcessing(true);
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/order-confirmation`,
-      },
-    });
-
-    if (error) {
-      toast({
-        title: "Payment failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Payment successful!",
-        description: "Your order has been placed successfully.",
-      });
-      onSuccess?.();
-    }
-
+    completeOrderMutation.mutate();
     setIsProcessing(false);
   };
 
@@ -323,24 +325,106 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
             </Card>
 
             {/* Payment */}
-            {clientSecret && (
+            {showPaymentForm && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
                     Payment Information
                   </CardTitle>
+                  <p className="text-sm text-orange-600 flex items-center gap-1 mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    This is a demo checkout - no real payments will be processed
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handlePayment}>
-                    <PaymentElement />
+                  <form onSubmit={handlePayment} className="space-y-4">
+                    <div>
+                      <Label htmlFor="payment-method">Payment Method</Label>
+                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="credit_card">Credit Card</SelectItem>
+                          <SelectItem value="debit_card">Debit Card</SelectItem>
+                          <SelectItem value="paypal">PayPal (Demo)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {paymentMethod !== "paypal" && (
+                      <>
+                        <div>
+                          <Label htmlFor="cardholder-name">Cardholder Name</Label>
+                          <Input
+                            id="cardholder-name"
+                            placeholder="John Doe"
+                            value={cardholderName}
+                            onChange={(e) => setCardholderName(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="card-number">Card Number</Label>
+                          <Input
+                            id="card-number"
+                            placeholder="4242 4242 4242 4242"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value)}
+                            maxLength={19}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="expiry">Expiry Date</Label>
+                            <Input
+                              id="expiry"
+                              placeholder="MM/YY"
+                              value={expiryDate}
+                              onChange={(e) => setExpiryDate(e.target.value)}
+                              maxLength={5}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="cvv">CVV</Label>
+                            <Input
+                              id="cvv"
+                              placeholder="123"
+                              value={cvv}
+                              onChange={(e) => setCvv(e.target.value)}
+                              maxLength={4}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-2">Demo Options</h4>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={simulateFailure}
+                          onChange={(e) => setSimulateFailure(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">Simulate payment failure</span>
+                      </label>
+                    </div>
+
                     <Button
                       type="submit"
-                      disabled={!stripe || isProcessing}
-                      className="w-full mt-6"
+                      disabled={isProcessing || completeOrderMutation.isPending}
+                      className="w-full"
                       size="lg"
                     >
-                      {isProcessing ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
+                      {isProcessing || completeOrderMutation.isPending ? (
+                        "Processing..."
+                      ) : (
+                        `Complete Order - $${totalAmount.toFixed(2)}`
+                      )}
                     </Button>
                   </form>
                 </CardContent>
@@ -407,14 +491,14 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                   </div>
                 </div>
 
-                {!clientSecret && (
+                {!showPaymentForm && (
                   <Button
-                    onClick={handlePlaceOrder}
-                    disabled={!selectedAddress || createOrderMutation.isPending}
+                    onClick={handleContinueToPayment}
+                    disabled={!selectedAddress}
                     className="w-full"
                     size="lg"
                   >
-                    {createOrderMutation.isPending ? "Creating Order..." : "Continue to Payment"}
+                    Continue to Payment
                   </Button>
                 )}
               </CardContent>
@@ -459,20 +543,10 @@ export default function Checkout() {
     return null;
   }
 
-  if (!stripePromise) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-600">Payment processing is not configured.</p>
-      </div>
-    );
-  }
-
   return (
-    <Elements stripe={stripePromise}>
-      <CheckoutForm
-        items={checkoutItems}
-        onSuccess={() => setLocation("/orders")}
-      />
-    </Elements>
+    <CheckoutForm
+      items={checkoutItems}
+      onSuccess={() => setLocation("/orders")}
+    />
   );
 }

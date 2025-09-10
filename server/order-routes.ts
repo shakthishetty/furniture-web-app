@@ -262,20 +262,6 @@ export function registerOrderRoutes(app: Express): void {
       const shippingAmount = calculateShipping(discountedSubtotal);
       const totalAmount = discountedSubtotal + taxAmount + shippingAmount;
 
-      // Create Stripe Payment Intent
-      if (!stripe) {
-        return res.status(500).json({ message: "Payment processing not configured" });
-      }
-
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(totalAmount * 100), // Convert to cents
-        currency: "usd",
-        metadata: {
-          userId,
-          orderType: "furniture_order"
-        }
-      });
-
       // Create order in database
       const orderNumber = generateOrderNumber();
       const order = await storage.createOrder({
@@ -286,11 +272,49 @@ export function registerOrderRoutes(app: Express): void {
         totalAmount,
       });
 
-      // Update order with payment intent
-      await storage.updateOrderPayment(order.id, {
-        stripePaymentIntentId: paymentIntent.id,
-        paymentStatus: "pending"
-      });
+      let paymentResponse;
+      
+      if (orderData.paymentMethod === "dummy_payment") {
+        // Handle dummy payment for testing
+        await storage.updateOrderPayment(order.id, {
+          stripePaymentIntentId: `dummy_${Date.now()}`,
+          paymentStatus: "paid" // Immediately mark as paid for dummy payments
+        });
+        
+        // Update order status
+        await storage.updateOrderStatus(order.id, "paid");
+        
+        paymentResponse = {
+          success: true,
+          orderNumber: order.orderNumber,
+          paymentMethod: "dummy",
+          message: "Demo payment completed successfully"
+        };
+      } else if (stripe) {
+        // Handle real Stripe payment
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(totalAmount * 100), // Convert to cents
+          currency: "usd",
+          metadata: {
+            userId,
+            orderType: "furniture_order"
+          }
+        });
+        
+        await storage.updateOrderPayment(order.id, {
+          stripePaymentIntentId: paymentIntent.id,
+          paymentStatus: "pending"
+        });
+        
+        paymentResponse = {
+          paymentIntent: {
+            id: paymentIntent.id,
+            clientSecret: paymentIntent.client_secret,
+          }
+        };
+      } else {
+        return res.status(500).json({ message: "Payment processing not configured" });
+      }
 
       // Create order items
       for (const item of orderItems) {
@@ -306,11 +330,8 @@ export function registerOrderRoutes(app: Express): void {
       }
 
       res.status(201).json({
+        ...paymentResponse,
         order,
-        paymentIntent: {
-          id: paymentIntent.id,
-          clientSecret: paymentIntent.client_secret,
-        },
         pricing: {
           subtotal,
           discountAmount,
