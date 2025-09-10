@@ -104,11 +104,12 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const completeOrderMutation = useMutation({
     mutationFn: async () => {
       // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (simulateFailure) {
-        throw new Error("Payment declined. Please try a different card.");
-      }
+      // Always succeed for demo purposes
+      // if (simulateFailure) {
+      //   throw new Error("Payment declined. Please try a different card.");
+      // }
       
       const orderData = {
         items: items.map(item => ({
@@ -403,16 +404,10 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                     )}
 
                     <div className="border-t pt-4">
-                      <h4 className="font-medium mb-2">Demo Options</h4>
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={simulateFailure}
-                          onChange={(e) => setSimulateFailure(e.target.checked)}
-                          className="rounded"
-                        />
-                        <span className="text-sm">Simulate payment failure</span>
-                      </label>
+                      <h4 className="font-medium mb-2 text-green-700">Demo Payment</h4>
+                      <p className="text-sm text-green-600">
+                        ✅ This is a demo - all payments will succeed automatically!
+                      </p>
                     </div>
 
                     <Button
