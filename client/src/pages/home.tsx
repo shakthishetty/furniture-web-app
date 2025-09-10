@@ -165,15 +165,19 @@ export default function Home() {
           {/* Left Column */}
           <div className="flex flex-col h-full border-r-4 border-white">
             {/* Modern Collection - Top */}
-            <div className="relative h-2/3 overflow-hidden border-b-4 border-white bg-gray-100">
-              <img 
-                src={redChairImage}
-                alt="Red Modern Chair"
-                className="w-full h-full object-contain"
-              />
+            <div 
+              className="relative h-2/3 overflow-hidden border-b-4 border-white"
+              style={{
+                backgroundImage: `url(${redChairImage})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#f0f0f0'
+              }}
+            >
               {/* Modern Overlay */}
               <div 
-                className="absolute top-8 left-8 px-5 py-6 z-10"
+                className="absolute top-8 left-8 px-5 py-6"
                 style={{ 
                   backgroundColor: '#254127',
                   width: '280px',
@@ -201,15 +205,19 @@ export default function Home() {
             </div>
 
             {/* Wood Collection - Bottom */}
-            <div className="relative h-1/3 overflow-hidden bg-gray-100">
-              <img 
-                src={woodenChairImage}
-                alt="Wooden Chair"
-                className="w-full h-full object-contain"
-              />
+            <div 
+              className="relative h-1/3 overflow-hidden"
+              style={{
+                backgroundImage: `url(${woodenChairImage})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: '#f0f0f0'
+              }}
+            >
               {/* Wood Overlay */}
               <div 
-                className="absolute top-4 left-4 px-4 py-4 z-10"
+                className="absolute top-4 left-4 px-4 py-4"
                 style={{ 
                   backgroundColor: '#254127',
                   width: '200px',
@@ -238,15 +246,19 @@ export default function Home() {
           </div>
 
           {/* Right Column - Modern Collection */}
-          <div className="relative h-full overflow-hidden bg-gray-100">
-            <img 
-              src={greenChairImage}
-              alt="Green Modern Chair"
-              className="w-full h-full object-contain"
-            />
+          <div 
+            className="relative h-full overflow-hidden"
+            style={{
+              backgroundImage: `url(${greenChairImage})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#f0f0f0'
+            }}
+          >
             {/* Modern Overlay - White */}
             <div 
-              className="absolute bottom-8 left-8 bg-white px-5 py-6 z-10"
+              className="absolute bottom-8 left-8 bg-white px-5 py-6"
               style={{ 
                 width: '280px',
                 height: '200px'
