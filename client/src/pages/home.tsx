@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import heroImage from "../assets/hero-bedroom.jpg";
+import bedroomImage from "../assets/bedroom-category.jpg";
+import livingRoomImage from "../assets/living-room-category.jpg";
 
 export default function Home() {
   return (
@@ -87,6 +89,66 @@ export default function Home() {
             >
               Explore Collection
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 h-screen">
+          {/* Bedroom Category */}
+          <div 
+            className="relative flex items-center justify-center h-full"
+            style={{
+              backgroundImage: `url(${bedroomImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative z-10 text-center text-white px-6">
+              <h2 className="text-4xl md:text-5xl font-serif mb-4">Bedroom</h2>
+              <p className="text-lg mb-6 opacity-90">Crafted sanctuaries for your most peaceful hours.</p>
+              <a 
+                href="#" 
+                className="inline-block text-white underline hover:no-underline transition-all"
+                data-testid="link-bedroom-collection"
+              >
+                View Collection
+              </a>
+            </div>
+          </div>
+
+          {/* Living Room Category */}
+          <div 
+            className="relative flex items-center justify-center h-full"
+            style={{
+              backgroundImage: `url(${livingRoomImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative z-10 text-center text-white px-6">
+              <h2 className="text-4xl md:text-5xl font-serif mb-4">Living Room</h2>
+              <p className="text-lg mb-6 opacity-90">Crafted sanctuaries for your most peaceful hours.</p>
+              <a 
+                href="#" 
+                className="inline-block text-white underline hover:no-underline transition-all"
+                data-testid="link-living-room-collection"
+              >
+                View Collection
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Modern Tab */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="bg-green-600 text-white px-8 py-3 rounded-t-lg">
+            <span className="text-sm font-medium">Modern</span>
           </div>
         </div>
       </section>
