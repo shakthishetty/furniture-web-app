@@ -14,6 +14,8 @@ import Bedroom from "@/pages/bedroom";
 import Study from "@/pages/study";
 import Outdoor from "@/pages/outdoor";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
 import Search from "@/pages/search";
 import Wishlist from "@/pages/wishlist";
 import Favourites from "@/pages/favourites";
@@ -31,6 +33,8 @@ function Router() {
       <Route path="/study" component={Study} />
       <Route path="/outdoor" component={Outdoor} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/search" component={Search} />
       <Route path="/wishlist" component={Wishlist} />
       <Route path="/favourites" component={Favourites} />
