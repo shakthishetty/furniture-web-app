@@ -3,6 +3,7 @@ import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
 import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest } from "@shared/schema";
 import { z } from "zod";
+import { ObjectStorageService } from "./objectStorage";
 
 // Validation schemas for admin operations
 const orderStatusUpdateSchema = z.object({
@@ -390,6 +391,47 @@ router.delete("/categories/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error deleting category:", error);
     res.status(500).json({ error: "Failed to delete category" });
+  }
+});
+
+// Object Storage Routes
+router.post("/objects/upload-url", requireAdmin, async (req, res) => {
+  try {
+    const objectStorageService = new ObjectStorageService();
+    const uploadParams = await objectStorageService.getUploadUrl();
+    
+    res.json({
+      method: "PUT",
+      url: uploadParams.url
+    });
+  } catch (error) {
+    console.error("Error getting upload URL:", error);
+    res.status(500).json({ error: "Failed to get upload URL" });
+  }
+});
+
+router.post("/objects/finalize", requireAdmin, async (req, res) => {
+  try {
+    const { path, visibility } = req.body;
+    
+    if (!path) {
+      return res.status(400).json({ error: "Path is required" });
+    }
+
+    const objectStorageService = new ObjectStorageService();
+    
+    // Set object ACL based on visibility
+    if (visibility === 'public') {
+      await objectStorageService.trySetObjectEntityAclPolicy(path, 'public');
+    }
+    
+    // Return normalized path
+    const normalizedPath = `/objects/${path}`;
+    
+    res.json({ path: normalizedPath });
+  } catch (error) {
+    console.error("Error finalizing upload:", error);
+    res.status(500).json({ error: "Failed to finalize upload" });
   }
 });
 
