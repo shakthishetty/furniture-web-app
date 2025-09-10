@@ -78,8 +78,8 @@ export default function Configurator() {
     enabled: !!productId && Object.keys(configuration).length > 0,
   });
 
-  const product = productData?.product;
-  const options = optionsData?.options || [];
+  const product = (productData as any)?.product;
+  const options = (optionsData as any)?.options || [];
   const materials = (materialsData as any)?.materials || [];
 
   // Save configuration mutation
@@ -211,7 +211,7 @@ export default function Configurator() {
 
     // Update material/color
     if (configuration.material) {
-      const selectedMaterial = materials.find(m => m.id === configuration.material);
+      const selectedMaterial = materials.find((m: any) => m.id === configuration.material);
       if (selectedMaterial && selectedMaterial.color) {
         updateFurnitureMaterial(furnitureRef.current, selectedMaterial.color);
       }
@@ -385,7 +385,7 @@ export default function Configurator() {
                     <div>
                       <Label className="text-base font-medium mb-4 block">Choose Material</Label>
                       <div className="grid grid-cols-2 gap-4">
-                        {materials.filter(m => m.type === 'wood').map((material) => (
+                        {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
                           <div
                             key={material.id}
                             className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
@@ -548,7 +548,7 @@ export default function Configurator() {
                           <div className="flex justify-between">
                             <span>Material:</span>
                             <span className="font-medium">
-                              {materials.find(m => m.id === configuration.material)?.name}
+                              {materials.find((m: any) => m.id === configuration.material)?.name}
                             </span>
                           </div>
                         )}
