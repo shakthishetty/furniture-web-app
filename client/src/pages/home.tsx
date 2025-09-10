@@ -3,6 +3,9 @@ import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import heroImage from "../assets/hero-bedroom.jpg";
 import bedroomImage from "../assets/bedroom-category.jpg";
 import livingRoomImage from "../assets/living-room-category.jpg";
+import greenChairImage from "../assets/green-chair.jpg";
+import redChairImage from "../assets/red-chair.jpg";
+import woodenChairImage from "../assets/wooden-chair.jpg";
 
 export default function Home() {
   return (
@@ -162,10 +165,15 @@ export default function Home() {
           {/* Left Column */}
           <div className="flex flex-col h-full">
             {/* Modern Collection - Top */}
-            <div className="relative h-2/3 bg-gray-200 overflow-hidden group">
-              {/* Placeholder for red chair image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600"></div>
-              
+            <div 
+              className="relative h-2/3 overflow-hidden group"
+              style={{
+                backgroundImage: `url(${redChairImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
               {/* Modern Overlay */}
               <div 
                 className="absolute top-6 left-6 px-6 py-8 max-w-xs"
@@ -192,10 +200,15 @@ export default function Home() {
             </div>
 
             {/* Wood Collection - Bottom */}
-            <div className="relative h-1/3 bg-gray-300 overflow-hidden group">
-              {/* Placeholder for wooden chair image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-200 to-amber-400"></div>
-              
+            <div 
+              className="relative h-1/3 overflow-hidden group"
+              style={{
+                backgroundImage: `url(${woodenChairImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
               {/* Wood Overlay */}
               <div 
                 className="absolute top-4 left-4 px-4 py-6 max-w-xs"
@@ -223,10 +236,15 @@ export default function Home() {
           </div>
 
           {/* Right Column - Modern Collection */}
-          <div className="relative h-full bg-gray-200 overflow-hidden group">
-            {/* Placeholder for green chair image */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-300 to-emerald-500"></div>
-            
+          <div 
+            className="relative h-full overflow-hidden group"
+            style={{
+              backgroundImage: `url(${greenChairImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
             {/* Modern Overlay - White */}
             <div 
               className="absolute bottom-6 left-6 bg-white px-6 py-8 max-w-xs"
