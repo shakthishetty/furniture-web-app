@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest } from "@shared/schema";
 import { z } from "zod";
 
 // Validation schemas for admin operations
@@ -24,10 +24,13 @@ const adminProductUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   category: z.string().optional(),
+  categoryId: z.string().optional(),
   basePrice: z.string().refine(val => !val || (parseFloat(val) >= 0), "Base price must be positive").optional(),
   status: z.enum(["active", "inactive", "out_of_stock"]).optional(),
-  imageUrl: z.string().url().optional(),
-  model3dUrl: z.string().url().optional()
+  imageUrl: z.string().url().optional().nullable(),
+  model3dUrl: z.string().url().optional().nullable(),
+  pdfUrl: z.string().url().optional().nullable(),
+  additionalImages: z.string().optional()
 });
 
 const router = express.Router();
@@ -294,6 +297,99 @@ router.delete("/discounts/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error deleting discount code:", error);
     res.status(500).json({ error: "Failed to delete discount code" });
+  }
+});
+
+// Admin Category Management Routes
+router.get("/categories", requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Cap at 100
+    
+    const categories = await storage.getCategories({ page, limit });
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+});
+
+router.get("/categories/:id", requireAdmin, async (req, res) => {
+  try {
+    const category = await storage.getCategoryById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+    res.json(category);
+  } catch (error) {
+    console.error("Error fetching category:", error);
+    res.status(500).json({ error: "Failed to fetch category" });
+  }
+});
+
+router.post("/categories", requireAdmin, async (req, res) => {
+  try {
+    const validation = createCategorySchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid category data", details: validation.error.flatten() });
+    }
+
+    const category = await storage.createCategory(validation.data);
+    console.log(`Admin ${req.user?.userId} created category ${category.name}`);
+    res.status(201).json(category);
+  } catch (error) {
+    console.error("Error creating category:", error);
+    if (error.message?.includes("unique constraint")) {
+      return res.status(409).json({ error: "Category name or slug already exists" });
+    }
+    res.status(500).json({ error: "Failed to create category" });
+  }
+});
+
+router.patch("/categories/:id", requireAdmin, async (req, res) => {
+  try {
+    const validation = updateCategorySchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid update data", details: validation.error.flatten() });
+    }
+
+    const updatedCategory = await storage.updateCategory(req.params.id, validation.data);
+    if (!updatedCategory) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    console.log(`Admin ${req.user?.userId} updated category ${req.params.id}`);
+    res.json(updatedCategory);
+  } catch (error) {
+    console.error("Error updating category:", error);
+    if (error.message?.includes("unique constraint")) {
+      return res.status(409).json({ error: "Category name or slug already exists" });
+    }
+    res.status(500).json({ error: "Failed to update category" });
+  }
+});
+
+router.delete("/categories/:id", requireAdmin, async (req, res) => {
+  try {
+    // Check if category is being used by any products
+    const productsInCategory = await storage.getProductsByCategoryId(req.params.id);
+    if (productsInCategory && productsInCategory.length > 0) {
+      return res.status(400).json({ 
+        error: "Cannot delete category with associated products",
+        productCount: productsInCategory.length
+      });
+    }
+
+    const deleted = await storage.deleteCategory(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    console.log(`Admin ${req.user?.userId} deleted category ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({ error: "Failed to delete category" });
   }
 });
 

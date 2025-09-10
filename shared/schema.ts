@@ -67,17 +67,34 @@ export type RegisterRequest = z.infer<typeof registerSchema>;
 export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordRequest = z.infer<typeof resetPasswordSchema>;
 
+// Categories Schema
+export const categories = pgTable("categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  parentId: varchar("parent_id"), // for hierarchical categories
+  slug: varchar("slug").notNull().unique(),
+  imageUrl: varchar("image_url"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Product Configurator Schema
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   description: text("description"),
-  category: varchar("category").notNull(),
+  categoryId: varchar("category_id"), // foreign key to categories (nullable for backward compatibility)
+  category: varchar("category").notNull(), // keep existing for backward compatibility
   basePrice: varchar("base_price").notNull(), // stored as string to avoid float precision issues
   isCustomizable: boolean("is_customizable").default(true),
   status: varchar("status").default("active"), // active, inactive, discontinued
   imageUrl: varchar("image_url"),
   model3dUrl: varchar("model_3d_url"), // URL to 3D model file
+  pdfUrl: varchar("pdf_url"), // URL to PDF documentation/catalog
+  additionalImages: text("additional_images"), // JSON array of additional image URLs
   dimensions: text("dimensions"), // JSON string for default dimensions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -138,7 +155,19 @@ export const pricingRequestSchema = z.object({
   configuration: z.record(z.any()),
 });
 
+// Category Schemas
+export const createCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateCategorySchema = createCategorySchema.partial();
+
 // Types
+export type Category = typeof categories.$inferSelect;
+export type CreateCategoryRequest = z.infer<typeof createCategorySchema>;
+export type UpdateCategoryRequest = z.infer<typeof updateCategorySchema>;
 export type Product = typeof products.$inferSelect;
 export type Material = typeof materials.$inferSelect;
 export type ConfigurationOption = typeof configurationOptions.$inferSelect;

@@ -9,6 +9,9 @@ import {
   type SavedConfiguration,
   type CreateConfigurationRequest,
   type UpdateConfigurationRequest,
+  type Category,
+  type CreateCategoryRequest,
+  type UpdateCategoryRequest,
   type Address,
   type CreateAddressRequest,
   type UpdateAddressRequest,
@@ -28,6 +31,7 @@ import {
   materials,
   configurationOptions,
   savedConfigurations,
+  categories,
   addresses,
   discountCodes,
   orders,
@@ -71,6 +75,14 @@ export interface IStorage {
   getAllProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductsByCategory(category: string): Promise<Product[]>;
+  
+  // Categories
+  getCategories(options?: { page?: number; limit?: number; parentId?: string; isActive?: boolean }): Promise<{ categories: Category[]; total: number; page: number; limit: number; totalPages: number }>;
+  getCategoryById(categoryId: string): Promise<Category | null>;
+  createCategory(category: CreateCategoryRequest): Promise<Category>;
+  updateCategory(categoryId: string, updates: UpdateCategoryRequest): Promise<Category | null>;
+  deleteCategory(categoryId: string): Promise<boolean>;
+  getProductsByCategoryId(categoryId: string): Promise<Product[]>;
   
   // Materials
   getAllMaterials(): Promise<Material[]>;
@@ -301,6 +313,98 @@ export class DatabaseStorage implements IStorage {
   async getProductsByCategory(category: string): Promise<Product[]> {
     return await db.select().from(products)
       .where(and(eq(products.category, category), eq(products.status, 'active')));
+  }
+
+  // Category Management Methods
+  async getCategories(options?: { page?: number; limit?: number; parentId?: string; isActive?: boolean }): Promise<{ categories: Category[]; total: number; page: number; limit: number; totalPages: number }> {
+    const { page = 1, limit = 50, parentId, isActive } = options || {};
+    const offset = (page - 1) * limit;
+
+    let query = db.select().from(categories);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(categories);
+
+    const conditions = [];
+    if (parentId !== undefined) {
+      conditions.push(eq(categories.parentId, parentId));
+    }
+    if (isActive !== undefined) {
+      conditions.push(eq(categories.isActive, isActive));
+    }
+
+    if (conditions.length > 0) {
+      const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
+      query = query.where(whereClause);
+      countQuery = countQuery.where(whereClause);
+    }
+
+    const [categoryResults, countResults] = await Promise.all([
+      query.orderBy(categories.sortOrder, categories.name).limit(limit).offset(offset),
+      countQuery
+    ]);
+
+    const total = countResults[0]?.count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      categories: categoryResults,
+      total,
+      page,
+      limit,
+      totalPages
+    };
+  }
+
+  async getCategoryById(categoryId: string): Promise<Category | null> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, categoryId));
+    return category || null;
+  }
+
+  async createCategory(categoryData: CreateCategoryRequest): Promise<Category> {
+    // Generate slug from name if not provided
+    const slug = categoryData.slug || categoryData.name.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .trim();
+
+    const [category] = await db.insert(categories).values({
+      ...categoryData,
+      slug,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    return category;
+  }
+
+  async updateCategory(categoryId: string, updates: UpdateCategoryRequest): Promise<Category | null> {
+    // Generate slug from name if name is being updated and slug is not provided
+    if (updates.name && !updates.slug) {
+      updates.slug = updates.name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .trim();
+    }
+
+    const [category] = await db.update(categories)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(categories.id, categoryId))
+      .returning();
+
+    return category || null;
+  }
+
+  async deleteCategory(categoryId: string): Promise<boolean> {
+    const result = await db.delete(categories).where(eq(categories.id, categoryId));
+    return result.rowCount > 0;
+  }
+
+  async getProductsByCategoryId(categoryId: string): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.categoryId, categoryId));
   }
 
   async getAllMaterials(): Promise<Material[]> {
