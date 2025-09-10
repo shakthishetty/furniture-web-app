@@ -21,6 +21,8 @@ import Configurator from "@/pages/configurator";
 import Search from "@/pages/search";
 import Wishlist from "@/pages/wishlist";
 import Favourites from "@/pages/favourites";
+import Checkout from "@/pages/checkout";
+import Orders from "@/pages/orders";
 
 function Router() {
   return (
@@ -42,6 +44,8 @@ function Router() {
       <Route path="/search" component={Search} />
       <Route path="/wishlist" component={Wishlist} />
       <Route path="/favourites" component={Favourites} />
+      <Route path="/checkout" component={Checkout} />
+      <Route path="/orders" component={Orders} />
       <Route component={NotFound} />
     </Switch>
   );
