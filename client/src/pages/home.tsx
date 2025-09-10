@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
+import { useCart } from "@/hooks/useCart";
 import heroImage from "../assets/hero-bedroom.jpg";
 import bedroomImage from "../assets/bedroom-category.jpg";
 import livingRoomImage from "../assets/living-room-category.jpg";
@@ -14,6 +15,8 @@ import modernLivingRoomImage from "../assets/modern-living-room.jpg";
 import centeredLivingRoomImage from "../assets/centered-living-room.jpg";
 
 export default function Home() {
+  const { getCartCount } = useCart();
+  
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
@@ -71,9 +74,16 @@ export default function Home() {
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10" data-testid="button-cart">
-                <ShoppingBag className="h-5 w-5" />
-              </Button>
+              <Link href="/cart">
+                <Button variant="ghost" size="sm" className="p-2 text-white/90 hover:text-white hover:bg-white/10 relative" data-testid="button-cart">
+                  <ShoppingBag className="h-5 w-5" />
+                  {getCartCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-white text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                      {getCartCount()}
+                    </span>
+                  )}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

@@ -6,12 +6,30 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { User, Search, Heart, ShoppingBag, Filter, Grid, List } from "lucide-react";
+import { User, Search, Heart, ShoppingBag, Filter, Grid, List, Plus } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Catalog() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<string>("name");
+  const { addToCart, getCartCount } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = (product: any) => {
+    addToCart({
+      productId: product.id,
+      name: product.name,
+      price: parseFloat(product.basePrice),
+      imageUrl: product.imageUrl,
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
 
   // Fetch products from API
   const { data: productsData, isLoading } = useQuery({
@@ -99,9 +117,16 @@ export default function Catalog() {
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-cart">
-                <ShoppingBag className="h-5 w-5" />
-              </Button>
+              <Link href="/cart">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100 relative" data-testid="button-cart">
+                  <ShoppingBag className="h-5 w-5" />
+                  {getCartCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#254127] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {getCartCount()}
+                    </span>
+                  )}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -214,21 +239,34 @@ export default function Catalog() {
                   <p className="text-gray-600 mb-4 text-sm line-clamp-2">
                     {product.description || "Premium teak furniture crafted with precision and care."}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-2xl font-bold text-[#254127]" data-testid={`product-price-${product.id}`}>
-                        ${parseFloat(product.basePrice).toLocaleString()}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-1">starting</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-2xl font-bold text-[#254127]" data-testid={`product-price-${product.id}`}>
+                          ${parseFloat(product.basePrice).toLocaleString()}
+                        </span>
+                        <span className="text-sm text-gray-500 ml-1">starting</span>
+                      </div>
                     </div>
-                    <Link href={`/configurator/${product.id}`}>
+                    <div className="flex gap-2">
                       <Button 
-                        className="bg-[#254127] hover:bg-[#1a2f1b]"
-                        data-testid={`configure-button-${product.id}`}
+                        onClick={() => handleAddToCart(product)}
+                        variant="outline"
+                        className="flex-1 border-[#254127] text-[#254127] hover:bg-[#254127] hover:text-white"
+                        data-testid={`add-to-cart-${product.id}`}
                       >
-                        {product.isCustomizable ? 'Customize' : 'View Details'}
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add to Cart
                       </Button>
-                    </Link>
+                      <Link href={`/configurator/${product.id}`}>
+                        <Button 
+                          className="bg-[#254127] hover:bg-[#1a2f1b]"
+                          data-testid={`configure-button-${product.id}`}
+                        >
+                          {product.isCustomizable ? 'Customize' : 'View'}
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -277,11 +315,22 @@ export default function Catalog() {
                           ${parseFloat(product.basePrice).toLocaleString()}
                         </div>
                         <div className="text-sm text-gray-500 mb-4">starting</div>
-                        <Link href={`/configurator/${product.id}`}>
-                          <Button className="bg-[#254127] hover:bg-[#1a2f1b]">
-                            {product.isCustomizable ? 'Customize' : 'View Details'}
+                        <div className="space-y-2">
+                          <Button 
+                            onClick={() => handleAddToCart(product)}
+                            variant="outline"
+                            className="w-full border-[#254127] text-[#254127] hover:bg-[#254127] hover:text-white"
+                            data-testid={`add-to-cart-list-${product.id}`}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add to Cart
                           </Button>
-                        </Link>
+                          <Link href={`/configurator/${product.id}`}>
+                            <Button className="w-full bg-[#254127] hover:bg-[#1a2f1b]">
+                              {product.isCustomizable ? 'Customize' : 'View Details'}
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
