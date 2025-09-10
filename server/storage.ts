@@ -3,8 +3,18 @@ import {
   type InsertUser, 
   type Session,
   type RegisterRequest,
+  type Product,
+  type Material,
+  type ConfigurationOption,
+  type SavedConfiguration,
+  type CreateConfigurationRequest,
+  type UpdateConfigurationRequest,
   users, 
-  sessions 
+  sessions,
+  products,
+  materials,
+  configurationOptions,
+  savedConfigurations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt } from "drizzle-orm";
@@ -35,6 +45,27 @@ export interface IStorage {
   getSession(refreshToken: string): Promise<Session | undefined>;
   deleteSession(refreshToken: string): Promise<void>;
   deleteAllUserSessions(userId: string): Promise<void>;
+  
+  // Product Configurator operations
+  // Products
+  getAllProducts(): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  getProductsByCategory(category: string): Promise<Product[]>;
+  
+  // Materials
+  getAllMaterials(): Promise<Material[]>;
+  getMaterialsByType(type: string): Promise<Material[]>;
+  
+  // Configuration Options
+  getConfigurationOptions(productId: string): Promise<ConfigurationOption[]>;
+  
+  // Saved Configurations
+  saveConfiguration(userId: string | null, config: CreateConfigurationRequest): Promise<SavedConfiguration>;
+  getUserConfigurations(userId: string): Promise<SavedConfiguration[]>;
+  getConfiguration(id: string): Promise<SavedConfiguration | undefined>;
+  updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined>;
+  deleteConfiguration(id: string): Promise<void>;
+  getPublicConfigurations(): Promise<SavedConfiguration[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -184,6 +215,85 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAllUserSessions(userId: string): Promise<void> {
     await db.delete(sessions).where(eq(sessions.userId, userId));
+  }
+
+  // Product Configurator implementations
+  async getAllProducts(): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.status, 'active'));
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    return await db.select().from(products)
+      .where(and(eq(products.category, category), eq(products.status, 'active')));
+  }
+
+  async getAllMaterials(): Promise<Material[]> {
+    return await db.select().from(materials).where(eq(materials.isAvailable, true));
+  }
+
+  async getMaterialsByType(type: string): Promise<Material[]> {
+    return await db.select().from(materials)
+      .where(and(eq(materials.type, type), eq(materials.isAvailable, true)));
+  }
+
+  async getConfigurationOptions(productId: string): Promise<ConfigurationOption[]> {
+    return await db.select().from(configurationOptions)
+      .where(eq(configurationOptions.productId, productId))
+      .orderBy(configurationOptions.sortOrder);
+  }
+
+  async saveConfiguration(userId: string | null, config: CreateConfigurationRequest): Promise<SavedConfiguration> {
+    const [savedConfig] = await db
+      .insert(savedConfigurations)
+      .values({
+        userId,
+        productId: config.productId,
+        name: config.name,
+        configuration: JSON.stringify(config.configuration),
+        totalPrice: '0', // Will be calculated by pricing service
+      })
+      .returning();
+    
+    return savedConfig;
+  }
+
+  async getUserConfigurations(userId: string): Promise<SavedConfiguration[]> {
+    return await db.select().from(savedConfigurations)
+      .where(eq(savedConfigurations.userId, userId));
+  }
+
+  async getConfiguration(id: string): Promise<SavedConfiguration | undefined> {
+    const [config] = await db.select().from(savedConfigurations)
+      .where(eq(savedConfigurations.id, id));
+    return config;
+  }
+
+  async updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined> {
+    const [config] = await db
+      .update(savedConfigurations)
+      .set({
+        name: updates.name,
+        configuration: JSON.stringify(updates.configuration),
+        updatedAt: new Date(),
+      })
+      .where(eq(savedConfigurations.id, id))
+      .returning();
+    
+    return config;
+  }
+
+  async deleteConfiguration(id: string): Promise<void> {
+    await db.delete(savedConfigurations).where(eq(savedConfigurations.id, id));
+  }
+
+  async getPublicConfigurations(): Promise<SavedConfiguration[]> {
+    return await db.select().from(savedConfigurations)
+      .where(eq(savedConfigurations.isPublic, true));
   }
 }
 
