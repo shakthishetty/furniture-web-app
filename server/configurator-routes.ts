@@ -269,7 +269,8 @@ async function calculateDynamicPricing(product: any, configuration: any) {
           });
         }
       }
-    }\n    
+    }
+    
     // Calculate material costs
     if (configuration.material) {
       const materials = await storage.getAllMaterials();
@@ -277,4 +278,74 @@ async function calculateDynamicPricing(product: any, configuration: any) {
       
       if (selectedMaterial) {
         const multiplier = parseFloat(selectedMaterial.priceMultiplier);
-        const materialCost = basePrice * multiplier - basePrice;\n        totalPrice += materialCost;\n        breakdown.materialCosts.push({\n          name: selectedMaterial.name,\n          multiplier: multiplier,\n          cost: materialCost,\n        });\n      }\n    }\n    \n    // Apply dimension-based pricing (if custom dimensions are larger/smaller than default)\n    if (configuration.dimensions) {\n      const dimensionAdjustment = calculateDimensionPricing(product, configuration.dimensions);\n      totalPrice += dimensionAdjustment;\n      \n      if (dimensionAdjustment !== 0) {\n        breakdown.adjustments.push({\n          name: 'Custom Dimensions',\n          amount: dimensionAdjustment,\n          type: 'fixed',\n        });\n      }\n    }\n    \n    breakdown.totalPrice = Math.round(totalPrice * 100) / 100; // Round to 2 decimal places\n    \n    return {\n      totalPrice: breakdown.totalPrice.toString(),\n      breakdown,\n      currency: 'USD',\n    };\n  } catch (error) {\n    console.error('Error in price calculation:', error);\n    return {\n      totalPrice: basePrice.toString(),\n      breakdown: { ...breakdown, totalPrice: basePrice },\n      currency: 'USD',\n      error: 'Could not calculate full pricing',\n    };\n  }\n}\n\nfunction calculateDimensionPricing(product: any, customDimensions: any): number {\n  try {\n    // Parse default dimensions from product\n    const defaultDims = product.dimensions ? JSON.parse(product.dimensions) : null;\n    if (!defaultDims || !customDimensions) return 0;\n    \n    // Calculate volume difference (simplified pricing model)\n    const defaultVolume = (defaultDims.width || 1) * (defaultDims.height || 1) * (defaultDims.depth || 1);\n    const customVolume = (customDimensions.width || defaultDims.width || 1) * \n                        (customDimensions.height || defaultDims.height || 1) * \n                        (customDimensions.depth || defaultDims.depth || 1);\n    \n    const volumeRatio = customVolume / defaultVolume;\n    \n    // Apply pricing: 10% price increase per 10% volume increase\n    if (volumeRatio > 1.1) {\n      return parseFloat(product.basePrice) * (volumeRatio - 1) * 0.5; // 50% of base price per volume unit\n    } else if (volumeRatio < 0.9) {\n      return parseFloat(product.basePrice) * (volumeRatio - 1) * 0.3; // 30% discount for smaller sizes\n    }\n    \n    return 0;\n  } catch (error) {\n    console.error('Error calculating dimension pricing:', error);\n    return 0;\n  }\n}\n\nexport default router;
+        const materialCost = basePrice * multiplier - basePrice;
+        totalPrice += materialCost;
+        breakdown.materialCosts.push({
+          name: selectedMaterial.name,
+          multiplier: multiplier,
+          cost: materialCost,
+        });
+      }
+    }
+    
+    // Apply dimension-based pricing (if custom dimensions are larger/smaller than default)
+    if (configuration.dimensions) {
+      const dimensionAdjustment = calculateDimensionPricing(product, configuration.dimensions);
+      totalPrice += dimensionAdjustment;
+      
+      if (dimensionAdjustment !== 0) {
+        breakdown.adjustments.push({
+          name: 'Custom Dimensions',
+          amount: dimensionAdjustment,
+          type: 'fixed',
+        });
+      }
+    }
+    
+    breakdown.totalPrice = Math.round(totalPrice * 100) / 100; // Round to 2 decimal places
+    
+    return {
+      totalPrice: breakdown.totalPrice.toString(),
+      breakdown,
+      currency: 'USD',
+    };
+  } catch (error) {
+    console.error('Error in price calculation:', error);
+    return {
+      totalPrice: basePrice.toString(),
+      breakdown: { ...breakdown, totalPrice: basePrice },
+      currency: 'USD',
+      error: 'Could not calculate full pricing',
+    };
+  }
+}
+
+function calculateDimensionPricing(product: any, customDimensions: any): number {
+  try {
+    // Parse default dimensions from product
+    const defaultDims = product.dimensions ? JSON.parse(product.dimensions) : null;
+    if (!defaultDims || !customDimensions) return 0;
+    
+    // Calculate volume difference (simplified pricing model)
+    const defaultVolume = (defaultDims.width || 1) * (defaultDims.height || 1) * (defaultDims.depth || 1);
+    const customVolume = (customDimensions.width || defaultDims.width || 1) * 
+                        (customDimensions.height || defaultDims.height || 1) * 
+                        (customDimensions.depth || defaultDims.depth || 1);
+    
+    const volumeRatio = customVolume / defaultVolume;
+    
+    // Apply pricing: 10% price increase per 10% volume increase
+    if (volumeRatio > 1.1) {
+      return parseFloat(product.basePrice) * (volumeRatio - 1) * 0.5; // 50% of base price per volume unit
+    } else if (volumeRatio < 0.9) {
+      return parseFloat(product.basePrice) * (volumeRatio - 1) * 0.3; // 30% discount for smaller sizes
+    }
+    
+    return 0;
+  } catch (error) {
+    console.error('Error calculating dimension pricing:', error);
+    return 0;
+  }
+}
+
+export default router;
