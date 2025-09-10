@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import authRoutes from "./auth-routes";
 import googleAuthRoutes from "./google-auth";
 import configuratorRoutes from "./configurator-routes";
+import { registerOrderRoutes } from "./order-routes";
 import { initializeSampleData } from "./seed-data";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -16,6 +17,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Product Configurator routes
   app.use('/api/configurator', configuratorRoutes);
+
+  // Order Management routes
+  registerOrderRoutes(app);
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
