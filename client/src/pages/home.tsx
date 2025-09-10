@@ -16,7 +16,7 @@ export default function Home() {
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                 <div className="w-4 h-4 bg-primary rounded-full"></div>
               </div>
-              <span className="text-xl font-bold text-white">TEAK THEORY</span>
+              <span className="text-xl font-bold text-white font-serif">TEAK THEORY</span>
             </div>
 
             {/* Navigation Menu */}
@@ -76,15 +76,16 @@ export default function Home() {
       >
         {/* Content */}
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 leading-tight">
+          <h1 className="font-serif text-white mb-6" style={{ fontSize: '64px', lineHeight: '100%' }}>
             Designed to Be Passed Down,
             <br />
-            <span className="italic font-light text-4xl md:text-6xl">Not Thrown Away</span>
+            <span className="italic font-light" style={{ fontSize: '56px', lineHeight: '100%' }}>Not Thrown Away</span>
           </h1>
           
           <div className="mt-12">
             <Button 
-              className="bg-white text-black px-8 py-4 text-lg font-semibold rounded hover:bg-gray-100 transition-all duration-300"
+              className="bg-white text-black px-8 py-4 font-sans font-semibold rounded hover:bg-gray-100 transition-all duration-300"
+              style={{ fontSize: '16px', lineHeight: '150%' }}
               data-testid="button-explore-collection"
             >
               Explore Collection
@@ -108,11 +109,12 @@ export default function Home() {
           >
             <div className="absolute inset-0 bg-black/20"></div>
             <div className="relative z-10 text-center text-white px-6">
-              <h2 className="text-4xl md:text-5xl font-serif mb-4">Bedroom</h2>
-              <p className="text-lg mb-6 opacity-90">Crafted sanctuaries for your most peaceful hours.</p>
+              <h2 className="font-serif mb-4" style={{ fontSize: '48px', lineHeight: '100%' }}>Bedroom</h2>
+              <p className="font-sans mb-6 opacity-90" style={{ fontSize: '16px', lineHeight: '150%' }}>Crafted sanctuaries for your most peaceful hours.</p>
               <a 
                 href="#" 
-                className="inline-block text-white underline hover:no-underline transition-all"
+                className="inline-block text-white underline hover:no-underline transition-all font-sans"
+                style={{ fontSize: '16px', lineHeight: '150%' }}
                 data-testid="link-bedroom-collection"
               >
                 View Collection
@@ -132,11 +134,12 @@ export default function Home() {
           >
             <div className="absolute inset-0 bg-black/20"></div>
             <div className="relative z-10 text-center text-white px-6">
-              <h2 className="text-4xl md:text-5xl font-serif mb-4">Living Room</h2>
-              <p className="text-lg mb-6 opacity-90">Crafted sanctuaries for your most peaceful hours.</p>
+              <h2 className="font-serif mb-4" style={{ fontSize: '48px', lineHeight: '100%' }}>Living Room</h2>
+              <p className="font-sans mb-6 opacity-90" style={{ fontSize: '16px', lineHeight: '150%' }}>Crafted sanctuaries for your most peaceful hours.</p>
               <a 
                 href="#" 
-                className="inline-block text-white underline hover:no-underline transition-all"
+                className="inline-block text-white underline hover:no-underline transition-all font-sans"
+                style={{ fontSize: '16px', lineHeight: '150%' }}
                 data-testid="link-living-room-collection"
               >
                 View Collection
@@ -147,8 +150,8 @@ export default function Home() {
 
         {/* Modern Tab */}
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="bg-green-600 text-white px-8 py-3 rounded-t-lg">
-            <span className="text-sm font-medium">Modern</span>
+          <div className="text-white px-8 py-3 rounded-t-lg" style={{ backgroundColor: '#254127' }}>
+            <span className="font-sans font-medium" style={{ fontSize: '16px', lineHeight: '150%' }}>Modern</span>
           </div>
         </div>
       </section>
