@@ -94,6 +94,21 @@ export default function Navigation() {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
+            {/* Desktop Quick Links */}
+            <div className="hidden lg:flex items-center space-x-2">
+              <Link href="/orders">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                  data-testid="desktop-orders"
+                >
+                  <Package className="h-4 w-4" />
+                  <span className="ml-2 text-sm">Orders</span>
+                </Button>
+              </Link>
+            </div>
+            
             <Button 
               variant="ghost" 
               size="sm" 
@@ -103,35 +118,41 @@ export default function Navigation() {
               <User className="h-5 w-5" />
               <span className="hidden md:inline ml-2 text-sm">Login</span>
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2 text-muted-foreground hover:text-primary transition-colors"
-              data-testid="button-search"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2 text-muted-foreground hover:text-primary transition-colors"
-              data-testid="button-wishlist"
-            >
-              <Heart className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2 text-muted-foreground hover:text-primary transition-colors relative"
-              data-testid="button-cart"
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </Button>
+            <Link href="/search">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                data-testid="button-search"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/wishlist">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                data-testid="button-wishlist"
+              >
+                <Heart className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/cart">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-2 text-muted-foreground hover:text-primary transition-colors relative"
+                data-testid="button-cart"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
 
             {/* Burger Menu Button - Now visible on all screen sizes */}
             <Button 
