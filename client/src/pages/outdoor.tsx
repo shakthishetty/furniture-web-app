@@ -1,15 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
+import productChairGreen from "../assets/product-chair-green.jpg";
+import productChairRed from "../assets/product-chair-red.jpg";
+import productChairWood from "../assets/product-chair-wood.jpg";
 
 export default function Outdoor() {
+  const productImages = [productChairGreen, productChairRed, productChairWood];
+  
   const products = [
-    { id: 1, name: "Outdoor Dining Set", price: "$2,200", image: "/api/placeholder/300/300", category: "Dining" },
-    { id: 2, name: "Lounge Chair", price: "$850", image: "/api/placeholder/300/300", category: "Seating" },
-    { id: 3, name: "Garden Bench", price: "$650", image: "/api/placeholder/300/300", category: "Seating" },
-    { id: 4, name: "Outdoor Sofa", price: "$1,800", image: "/api/placeholder/300/300", category: "Seating" },
-    { id: 5, name: "Side Table", price: "$320", image: "/api/placeholder/300/300", category: "Tables" },
-    { id: 6, name: "Umbrella Stand", price: "$180", image: "/api/placeholder/300/300", category: "Accessories" }
+    { id: 1, name: "Outdoor Dining Set", price: "$2,200", image: productImages[1], category: "Dining" },
+    { id: 2, name: "Lounge Chair", price: "$850", image: productImages[0], category: "Seating" },
+    { id: 3, name: "Garden Bench", price: "$650", image: productImages[2], category: "Seating" },
+    { id: 4, name: "Outdoor Sofa", price: "$1,800", image: productImages[1], category: "Seating" },
+    { id: 5, name: "Side Table", price: "$320", image: productImages[0], category: "Tables" },
+    { id: 6, name: "Umbrella Stand", price: "$180", image: productImages[2], category: "Accessories" }
   ];
 
   return (
@@ -98,9 +103,11 @@ export default function Outdoor() {
             <Link key={product.id} href="/product">
               <div className="group cursor-pointer" data-testid={`product-${product.id}`}>
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">Product Image</span>
-                  </div>
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-start">

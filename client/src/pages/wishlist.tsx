@@ -1,12 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag, X } from "lucide-react";
 import { Link } from "wouter";
+import productChairGreen from "../assets/product-chair-green.jpg";
+import productChairRed from "../assets/product-chair-red.jpg";
+import productChairWood from "../assets/product-chair-wood.jpg";
 
 export default function Wishlist() {
+  const productImages = [productChairGreen, productChairRed, productChairWood];
+  
   const wishlistItems = [
-    { id: 1, name: "Modern Lounge Chair", price: "$1,200", image: "/api/placeholder/300/300", category: "Living Room" },
-    { id: 2, name: "Dining Table", price: "$2,800", image: "/api/placeholder/300/300", category: "Dining" },
-    { id: 3, name: "Teak Nightstand", price: "$650", image: "/api/placeholder/300/300", category: "Bedroom" }
+    { id: 1, name: "Modern Lounge Chair", price: "$1,200", image: productImages[0], category: "Living Room" },
+    { id: 2, name: "Dining Table", price: "$2,800", image: productImages[1], category: "Dining" },
+    { id: 3, name: "Teak Nightstand", price: "$650", image: productImages[2], category: "Bedroom" }
   ];
 
   return (
@@ -104,9 +109,11 @@ export default function Wishlist() {
                 <Link href="/product">
                   <div className="cursor-pointer">
                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <span className="text-gray-500 text-sm">Product Image</span>
-                      </div>
+                      <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
                     <div className="space-y-2">
                       <h3 className="font-medium text-lg group-hover:text-gray-600 transition-colors" data-testid={`product-name-${item.id}`}>

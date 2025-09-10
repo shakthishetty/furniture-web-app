@@ -1,13 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag, X } from "lucide-react";
 import { Link } from "wouter";
+import productChairGreen from "../assets/product-chair-green.jpg";
+import productChairRed from "../assets/product-chair-red.jpg";
+import productChairWood from "../assets/product-chair-wood.jpg";
 
 export default function Favourites() {
+  const productImages = [productChairGreen, productChairRed, productChairWood];
+  
   const favouriteItems = [
-    { id: 1, name: "Scandinavian Armchair", price: "$1,450", image: "/api/placeholder/300/300", category: "Living Room" },
-    { id: 2, name: "Teak Dining Set", price: "$3,200", image: "/api/placeholder/300/300", category: "Dining" },
-    { id: 3, name: "Platform Bed", price: "$2,100", image: "/api/placeholder/300/300", category: "Bedroom" },
-    { id: 4, name: "Executive Desk", price: "$1,800", image: "/api/placeholder/300/300", category: "Study" }
+    { id: 1, name: "Scandinavian Armchair", price: "$1,450", image: productImages[0], category: "Living Room" },
+    { id: 2, name: "Teak Dining Set", price: "$3,200", image: productImages[1], category: "Dining" },
+    { id: 3, name: "Platform Bed", price: "$2,100", image: productImages[2], category: "Bedroom" },
+    { id: 4, name: "Executive Desk", price: "$1,800", image: productImages[0], category: "Study" }
   ];
 
   return (
@@ -107,9 +112,11 @@ export default function Favourites() {
                 <Link href="/product">
                   <div className="cursor-pointer">
                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <span className="text-gray-500 text-sm">Product Image</span>
-                      </div>
+                      <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
                     <div className="space-y-2">
                       <h3 className="font-medium text-lg group-hover:text-gray-600 transition-colors" data-testid={`product-name-${item.id}`}>

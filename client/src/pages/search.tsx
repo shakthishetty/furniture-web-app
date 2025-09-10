@@ -3,15 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User, Search as SearchIcon, Heart, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
+import productChairGreen from "../assets/product-chair-green.jpg";
+import productChairRed from "../assets/product-chair-red.jpg";
+import productChairWood from "../assets/product-chair-wood.jpg";
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
+  const productImages = [productChairGreen, productChairRed, productChairWood];
   
   const searchResults = [
-    { id: 1, name: "Modern Dining Chair", price: "$450", image: "/api/placeholder/300/300", category: "Dining" },
-    { id: 2, name: "Teak Coffee Table", price: "$850", image: "/api/placeholder/300/300", category: "Living Room" },
-    { id: 3, name: "Platform Bed", price: "$1,800", image: "/api/placeholder/300/300", category: "Bedroom" },
-    { id: 4, name: "Office Desk", price: "$1,200", image: "/api/placeholder/300/300", category: "Study" }
+    { id: 1, name: "Modern Dining Chair", price: "$450", image: productImages[0], category: "Dining" },
+    { id: 2, name: "Teak Coffee Table", price: "$850", image: productImages[1], category: "Living Room" },
+    { id: 3, name: "Platform Bed", price: "$1,800", image: productImages[2], category: "Bedroom" },
+    { id: 4, name: "Office Desk", price: "$1,200", image: productImages[0], category: "Study" }
   ];
 
   return (
@@ -119,9 +123,11 @@ export default function Search() {
               <Link key={product.id} href="/product">
                 <div className="group cursor-pointer" data-testid={`search-result-${product.id}`}>
                   <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                      <span className="text-gray-500 text-sm">Product Image</span>
-                    </div>
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">

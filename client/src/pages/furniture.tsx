@@ -1,18 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
+import productChairGreen from "../assets/product-chair-green.jpg";
+import productChairRed from "../assets/product-chair-red.jpg";
+import productChairWood from "../assets/product-chair-wood.jpg";
 
 export default function Furniture() {
+  const productImages = [productChairGreen, productChairRed, productChairWood];
+  
   const products = [
-    { id: 1, name: "Modern Dining Chair", price: "$450", image: "/api/placeholder/300/300", category: "Dining" },
-    { id: 2, name: "Lounge Chair", price: "$1,200", image: "/api/placeholder/300/300", category: "Living Room" },
-    { id: 3, name: "Coffee Table", price: "$850", image: "/api/placeholder/300/300", category: "Living Room" },
-    { id: 4, name: "Platform Bed", price: "$1,800", image: "/api/placeholder/300/300", category: "Bedroom" },
-    { id: 5, name: "Desk", price: "$1,200", image: "/api/placeholder/300/300", category: "Study" },
-    { id: 6, name: "Outdoor Bench", price: "$650", image: "/api/placeholder/300/300", category: "Outdoor" },
-    { id: 7, name: "Sideboard", price: "$1,600", image: "/api/placeholder/300/300", category: "Dining" },
-    { id: 8, name: "Wardrobe", price: "$2,400", image: "/api/placeholder/300/300", category: "Bedroom" },
-    { id: 9, name: "Bar Stool", price: "$320", image: "/api/placeholder/300/300", category: "Dining" }
+    { id: 1, name: "Modern Dining Chair", price: "$450", image: productImages[0], category: "Dining" },
+    { id: 2, name: "Lounge Chair", price: "$1,200", image: productImages[1], category: "Living Room" },
+    { id: 3, name: "Coffee Table", price: "$850", image: productImages[2], category: "Living Room" },
+    { id: 4, name: "Platform Bed", price: "$1,800", image: productImages[0], category: "Bedroom" },
+    { id: 5, name: "Desk", price: "$1,200", image: productImages[1], category: "Study" },
+    { id: 6, name: "Outdoor Bench", price: "$650", image: productImages[2], category: "Outdoor" },
+    { id: 7, name: "Sideboard", price: "$1,600", image: productImages[0], category: "Dining" },
+    { id: 8, name: "Wardrobe", price: "$2,400", image: productImages[1], category: "Bedroom" },
+    { id: 9, name: "Bar Stool", price: "$320", image: productImages[2], category: "Dining" }
   ];
 
   return (
@@ -101,9 +106,11 @@ export default function Furniture() {
             <Link key={product.id} href="/product">
               <div className="group cursor-pointer" data-testid={`product-${product.id}`}>
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">Product Image</span>
-                  </div>
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-start">
