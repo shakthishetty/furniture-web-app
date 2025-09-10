@@ -6,6 +6,7 @@ import livingRoomImage from "../assets/living-room-category.jpg";
 import greenChairImage from "../assets/green-chair.jpg";
 import redChairImage from "../assets/red-chair.jpg";
 import woodenChairImage from "../assets/wooden-chair.jpg";
+import livingRoomSceneImage from "../assets/living-room-scene.jpg";
 
 export default function Home() {
   return (
