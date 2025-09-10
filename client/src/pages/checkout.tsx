@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -513,25 +514,19 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
 export default function Checkout() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const { items, clearCart } = useCart();
 
-  // Example items - in a real app, these would come from props or context
-  const checkoutItems: CheckoutItem[] = [
-    {
-      productId: "1",
-      productName: "Custom Teak Dining Table",
-      quantity: 1,
-      unitPrice: 1299.99,
-      totalPrice: 1299.99,
-      configurationId: "config-1",
-    },
-    {
-      productId: "2", 
-      productName: "Ergonomic Office Chair",
-      quantity: 2,
-      unitPrice: 599.99,
-      totalPrice: 1199.98,
-    },
-  ];
+  // Convert cart items to checkout items format
+  const checkoutItems: CheckoutItem[] = items.map(item => ({
+    productId: item.productId,
+    configurationId: item.configurationId,
+    customConfiguration: item.customConfiguration,
+    productName: item.name,
+    quantity: item.quantity,
+    unitPrice: item.price,
+    totalPrice: item.price * item.quantity,
+    imageUrl: item.imageUrl,
+  }));
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -539,14 +534,24 @@ export default function Checkout() {
     }
   }, [isAuthenticated, setLocation]);
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    // Redirect to cart if no items
+    if (items.length === 0) {
+      setLocation("/cart");
+    }
+  }, [items.length, setLocation]);
+
+  if (!isAuthenticated || items.length === 0) {
     return null;
   }
 
   return (
     <CheckoutForm
       items={checkoutItems}
-      onSuccess={() => setLocation("/orders")}
+      onSuccess={() => {
+        clearCart();
+        setLocation("/orders");
+      }}
     />
   );
 }
