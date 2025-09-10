@@ -133,11 +133,11 @@ export default function Navigation() {
               )}
             </Button>
 
-            {/* Mobile Menu Button */}
+            {/* Burger Menu Button - Now visible on all screen sizes */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="md:hidden p-2 text-muted-foreground hover:text-primary"
+              className="p-2 text-muted-foreground hover:text-primary"
               data-testid="button-mobile-menu"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
@@ -146,9 +146,9 @@ export default function Navigation() {
           </div>
         </div>
         
-        {/* Mobile Menu Overlay */}
+        {/* Menu Overlay - Now visible on all screen sizes */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-[73px] bg-background z-40 overflow-y-auto">
+          <div className="fixed inset-0 top-[73px] bg-background z-40 overflow-y-auto border-t border-border">
             <div className="px-6 py-6 space-y-6">
               
               {/* Quick Actions */}
