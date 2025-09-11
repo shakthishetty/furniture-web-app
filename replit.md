@@ -6,6 +6,13 @@ Teak Theory is a premium furniture e-commerce website built with React and Expre
 
 Preferred communication style: Simple, everyday language.
 
+**UI Design Requirements**: All pages (existing and new) must follow the elegant green color scheme established on the homepage (#254127). Use design tokens consistently:
+- Primary green: `text-primary`, `border-primary`, `hover:bg-primary/10`
+- Text hierarchy: `text-foreground` (main text), `text-muted-foreground` (secondary text)
+- Navigation: `text-muted-foreground` with `hover:text-primary` for inactive, `text-primary border-primary` for active
+- Never use hardcoded black/gray colors (text-black, text-gray-*, border-black) - always use design tokens
+- Maintain consistent styling across all user actions, typography, product cards, and page elements
+
 # Manufacturing Tracking System (December 2025)
 
 ## Three-Portal Architecture
