@@ -41,7 +41,7 @@ import {
   wishlist
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt, sql, or, ilike, gte, lte } from "drizzle-orm";
+import { eq, and, gt, sql, or, ilike, gte, lte, desc } from "drizzle-orm";
 import { hashPassword, generateRandomToken } from "./utils/auth";
 
 export interface IStorage {
@@ -863,12 +863,9 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
-  async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: Order[]; total: number }> {
+  async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }> {
     const { page, limit, status, startDate, endDate } = options;
     const offset = (page - 1) * limit;
-
-    const base = db.select().from(orders);
-    const baseCount = db.select({ count: sql<number>`count(*)` }).from(orders);
 
     const conditions = [
       status ? eq(orders.status, status) : undefined,
@@ -877,17 +874,106 @@ export class DatabaseStorage implements IStorage {
     ].filter(Boolean) as any[];
 
     const whereClause = conditions.length ? and(...conditions) : undefined;
-    const listQuery = whereClause ? base.where(whereClause) : base;
-    const countQuery = whereClause ? baseCount.where(whereClause) : baseCount;
 
-    const [ordersResult, totalResult] = await Promise.all([
-      listQuery.orderBy(orders.createdAt).limit(limit).offset(offset),
-      countQuery
-    ]);
+    // Get total count
+    const baseCount = db.select({ count: sql<number>`count(*)` }).from(orders);
+    const countQuery = whereClause ? baseCount.where(whereClause) : baseCount;
+    const [totalResult] = await countQuery;
+
+    // Get orders with user and address info
+    const baseQuery = db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        userId: orders.userId,
+        status: orders.status,
+        paymentStatus: orders.paymentStatus,
+        paymentMethod: orders.paymentMethod,
+        subtotal: orders.subtotal,
+        discountAmount: orders.discountAmount,
+        taxAmount: orders.taxAmount,
+        shippingAmount: orders.shippingAmount,
+        totalAmount: orders.totalAmount,
+        trackingNumber: orders.trackingNumber,
+        shippingCarrier: orders.shippingCarrier,
+        createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt,
+        userEmail: users.email,
+        userName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+        shippingStreet: addresses.street,
+        shippingApartment: addresses.apartment,
+        shippingCity: addresses.city,
+        shippingState: addresses.state,
+        shippingPostalCode: addresses.postalCode,
+        shippingCountry: addresses.country,
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.userId, users.id))
+      .leftJoin(addresses, eq(orders.shippingAddressId, addresses.id));
+
+    const ordersQuery = whereClause 
+      ? baseQuery.where(whereClause) 
+      : baseQuery;
+
+    const ordersResult = await ordersQuery
+      .orderBy(desc(orders.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Get order items for each order
+    const orderIds = ordersResult.map(order => order.id);
+    const items = await db
+      .select({
+        id: orderItems.id,
+        orderId: orderItems.orderId,
+        productId: orderItems.productId,
+        productName: orderItems.productName,
+        quantity: orderItems.quantity,
+        price: orderItems.unitPrice,
+        total: orderItems.totalPrice,
+      })
+      .from(orderItems)
+      .where(sql`${orderItems.orderId} = ANY(${orderIds})`);
+
+    // Group items by order ID
+    const itemsByOrderId = items.reduce((acc, item) => {
+      if (!acc[item.orderId]) acc[item.orderId] = [];
+      acc[item.orderId].push({
+        id: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: parseFloat(item.price),
+        total: parseFloat(item.total),
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // Transform orders to match frontend interface
+    const transformedOrders = ordersResult.map(order => ({
+      id: order.id,
+      userId: order.userId,
+      userEmail: order.userEmail || 'N/A',
+      userName: order.userName || 'N/A',
+      status: order.status,
+      total: parseFloat(order.totalAmount),
+      items: itemsByOrderId[order.id] || [],
+      shippingAddress: {
+        street: order.shippingStreet || 'N/A',
+        city: order.shippingCity || 'N/A',
+        state: order.shippingState || 'N/A',
+        zipCode: order.shippingPostalCode || 'N/A',
+        country: order.shippingCountry || 'N/A',
+      },
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+      trackingNumber: order.trackingNumber,
+    }));
 
     return {
-      orders: ordersResult,
-      total: totalResult[0]?.count || 0
+      orders: transformedOrders,
+      total: totalResult?.count || 0
     };
   }
 
