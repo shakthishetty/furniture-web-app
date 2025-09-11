@@ -45,14 +45,14 @@ function AdminRouter() {
   return (
     <AdminLayout>
       <Switch>
-        <Route path="/admin" component={AdminDashboard} />
-        <Route path="/admin/users" component={AdminUsers} />
-        <Route path="/admin/products" component={AdminProducts} />
-        <Route path="/admin/orders" component={AdminOrders} />
-        <Route path="/admin/manufacturing" component={AdminManufacturing} />
-        <Route path="/admin/discounts" component={AdminDiscounts} />
-        <Route path="/admin/analytics" component={AdminAnalytics} />
-        <Route path="/admin/settings" component={AdminSettings} />
+        <Route path="/" component={AdminDashboard} />
+        <Route path="/users" component={AdminUsers} />
+        <Route path="/products" component={AdminProducts} />
+        <Route path="/orders" component={AdminOrders} />
+        <Route path="/manufacturing" component={AdminManufacturing} />
+        <Route path="/discounts" component={AdminDiscounts} />
+        <Route path="/analytics" component={AdminAnalytics} />
+        <Route path="/settings" component={AdminSettings} />
         <Route component={() => <div>Admin Page Not Found</div>} />
       </Switch>
     </AdminLayout>
