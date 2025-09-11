@@ -20,10 +20,13 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // If user is null due to 401/unauthorized, consider it as "not authenticated" but not an error
+  const isUnauthorized = error?.message?.includes("401") || error?.message?.includes("No token provided");
+  
   return {
     user,
     isLoading,
-    isAuthenticated: !!user && !error,
-    error,
+    isAuthenticated: !!user,
+    error: isUnauthorized ? null : error, // Don't treat 401 as an error
   };
 }
