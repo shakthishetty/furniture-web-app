@@ -88,6 +88,7 @@ export default function AdminProducts() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<ProductFormData>({
     name: '',
@@ -97,6 +98,15 @@ export default function AdminProducts() {
     status: 'draft',
     inStock: true,
     stock: 0
+  });
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    description: '',
+    slug: '',
+    parentId: '',
+    imageUrl: '',
+    sortOrder: 0,
+    isActive: true
   });
   const { toast } = useToast();
   const limit = 20;
@@ -177,6 +187,46 @@ export default function AdminProducts() {
       toast({
         title: "Error",
         description: error.message || "Failed to create product",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create category mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      slug: string;
+      parentId?: string;
+      imageUrl?: string;
+      sortOrder: number;
+      isActive: boolean;
+    }) => {
+      const response = await apiRequest("POST", "/api/admin/categories", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/categories"] });
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+      });
+      setIsCategoryDialogOpen(false);
+      setNewCategory({
+        name: '',
+        description: '',
+        slug: '',
+        parentId: '',
+        imageUrl: '',
+        sortOrder: 0,
+        isActive: true
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create category",
         variant: "destructive",
       });
     },
@@ -335,6 +385,14 @@ export default function AdminProducts() {
               {productsData?.total || 0}
             </span>
           </div>
+          <Button 
+            variant="outline"
+            onClick={() => setIsCategoryDialogOpen(true)}
+            data-testid="button-create-category"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Category
+          </Button>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
             data-testid="button-create-product"
@@ -1099,9 +1157,128 @@ export default function AdminProducts() {
             <Button 
               onClick={handleCreateProduct}
               disabled={createProductMutation.isPending || !newProduct.name || !newProduct.categoryId || !newProduct.price}
-              data-testid="button-create-product"
+              data-testid="button-create-product-submit"
             >
               {createProductMutation.isPending ? "Creating..." : "Create Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Category Dialog */}
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-create-category">
+          <DialogHeader>
+            <DialogTitle>Create New Category</DialogTitle>
+            <DialogDescription>
+              Add a new category for organizing products
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category-name">Category Name *</Label>
+                <Input
+                  id="category-name"
+                  value={newCategory.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    setNewCategory({ ...newCategory, name, slug });
+                  }}
+                  data-testid="input-category-name"
+                  placeholder="Enter category name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="category-slug">Slug *</Label>
+                <Input
+                  id="category-slug"
+                  value={newCategory.slug}
+                  onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
+                  data-testid="input-category-slug"
+                  placeholder="category-slug"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="category-description">Description</Label>
+              <Textarea
+                id="category-description"
+                value={newCategory.description}
+                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                data-testid="input-category-description"
+                placeholder="Enter category description"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category-parent">Parent Category</Label>
+                <Select value={newCategory.parentId} onValueChange={(value) => setNewCategory({ ...newCategory, parentId: value })}>
+                  <SelectTrigger data-testid="select-parent-category">
+                    <SelectValue placeholder="Select parent category (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {categoriesData?.categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="category-sort">Sort Order</Label>
+                <Input
+                  id="category-sort"
+                  type="number"
+                  min="0"
+                  value={newCategory.sortOrder}
+                  onChange={(e) => setNewCategory({ ...newCategory, sortOrder: parseInt(e.target.value) || 0 })}
+                  data-testid="input-category-sort"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="category-image">Image URL</Label>
+              <Input
+                id="category-image"
+                value={newCategory.imageUrl}
+                onChange={(e) => setNewCategory({ ...newCategory, imageUrl: e.target.value })}
+                data-testid="input-category-image"
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)} data-testid="button-cancel-category">
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                // Normalize optional fields
+                const categoryData = {
+                  ...newCategory,
+                  description: newCategory.description || undefined,
+                  parentId: newCategory.parentId || undefined,
+                  imageUrl: newCategory.imageUrl || undefined,
+                };
+                createCategoryMutation.mutate(categoryData);
+              }}
+              disabled={createCategoryMutation.isPending || !newCategory.name || !newCategory.slug}
+              data-testid="button-create-category-submit"
+            >
+              {createCategoryMutation.isPending ? "Creating..." : "Create Category"}
             </Button>
           </DialogFooter>
         </DialogContent>
