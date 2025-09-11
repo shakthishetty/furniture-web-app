@@ -135,9 +135,28 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
     }
   };
 
-  const handleDownloadInvoice = () => {
-    // Download the actual invoice using the implemented endpoint
-    window.open(`/api/orders/${order.id}/invoice`, '_blank');
+  const handleDownloadInvoice = async () => {
+    try {
+      // Use authenticated fetch instead of window.open to send Authorization header
+      const response = await apiRequest("GET", `/api/orders/${order.id}/invoice`);
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${order.orderNumber}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Could not download invoice. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const canCancelOrder = order.status === "pending" || order.status === "paid" || order.status === "processing";

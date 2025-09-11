@@ -8,7 +8,7 @@ import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { loginSchema, type LoginRequest } from "@shared/schema";
@@ -18,6 +18,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<LoginRequest>({
     resolver: zodResolver(loginSchema),
@@ -32,10 +33,13 @@ export default function Login() {
       const response = await apiRequest('POST', '/api/auth/login', data);
       return await response.json();
     },
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Immediately set user data in cache to prevent login loops
+      queryClient.setQueryData(["/api/auth/me"], response.user);
       
       toast({
         title: 'Login successful',
