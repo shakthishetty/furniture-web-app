@@ -6,17 +6,17 @@
 
 :root {
   --background: #FFFFFF;
-  --foreground: #000000;
+  --foreground: #0a0a0a;
   --card: #FFFFFF;
-  --card-foreground: #000000;
+  --card-foreground: #0a0a0a;
   --popover: #FFFFFF;
-  --popover-foreground: #000000;
+  --popover-foreground: #0a0a0a;
   --primary: #254127;
   --primary-foreground: #FFFFFF;
   --secondary: #F5F5F5;
-  --secondary-foreground: #000000;
+  --secondary-foreground: #0a0a0a;
   --muted: #F5F5F5;
-  --muted-foreground: #666666;
+  --muted-foreground: #4A5D4C;
   --accent: #254127;
   --accent-foreground: #FFFFFF;
   --destructive: hsl(0, 84%, 60%);
@@ -25,7 +25,7 @@
   --input: #E5E5E5;
   --ring: #254127;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #000000;
+  --sidebar-foreground: #0a0a0a;
   --sidebar-primary: #254127;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #254127;

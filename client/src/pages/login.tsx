@@ -65,7 +65,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-sm border-b relative z-10">
+      <nav className="bg-background/95 backdrop-blur-sm border-b relative z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -77,52 +77,52 @@ export default function Login() {
                   <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
                   <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
                 </svg>
-                <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
+                <span className="text-xl font-bold text-foreground font-serif">TEAK THEORY</span>
               </div>
             </Link>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/new" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-new">
+              <Link href="/new" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-new">
                 New
               </Link>
-              <Link href="/furniture" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-furniture">
+              <Link href="/furniture" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-furniture">
                 Furniture
               </Link>
-              <Link href="/living-room" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-living-room">
+              <Link href="/living-room" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-living-room">
                 Living Room
               </Link>
-              <Link href="/dining" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-dining">
+              <Link href="/dining" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-dining">
                 Dining
               </Link>
-              <Link href="/bedroom" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-bedroom">
+              <Link href="/bedroom" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-bedroom">
                 Bedroom
               </Link>
-              <Link href="/study" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-study">
+              <Link href="/study" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-study">
                 Study
               </Link>
-              <Link href="/outdoor" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-outdoor">
+              <Link href="/outdoor" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-outdoor">
                 Outdoor
               </Link>
             </div>
 
             {/* User Actions */}
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="p-2 text-black bg-gray-100" data-testid="button-login">
+              <Button variant="ghost" size="sm" className="p-2 text-primary bg-primary/10" data-testid="button-login">
                 <User className="h-5 w-5" />
                 <span className="hidden md:inline ml-2 text-sm">Login</span>
               </Button>
               <Link href="/search">
-                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-search">
+                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-search">
                   <Search className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/wishlist">
-                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-wishlist">
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-cart">
+              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-cart">
                 <ShoppingBag className="h-5 w-5" />
               </Button>
             </div>
@@ -150,8 +150,8 @@ export default function Login() {
         <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold font-serif text-gray-900" data-testid="login-title">Welcome Back</h1>
-              <p className="text-gray-600 mt-2">Sign in to your account to continue</p>
+              <h1 className="text-3xl font-bold font-serif text-foreground" data-testid="login-title">Welcome Back</h1>
+              <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
             </div>
           
             {/* Login Form */}
@@ -162,7 +162,7 @@ export default function Login() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700">Email Address</FormLabel>
+                      <FormLabel className="text-foreground">Email Address</FormLabel>
                       <FormControl>
                         <Input 
                           placeholder="Enter your email" 
@@ -182,7 +182,7 @@ export default function Login() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700">Password</FormLabel>
+                      <FormLabel className="text-foreground">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input 
