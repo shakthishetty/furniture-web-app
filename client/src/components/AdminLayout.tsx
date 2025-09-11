@@ -32,42 +32,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const adminMenuItems = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/admin",
     icon: LayoutDashboard,
   },
   {
     title: "Users",
-    url: "/users",
+    url: "/admin/users",
     icon: Users,
   },
   {
     title: "Products",
-    url: "/products",
+    url: "/admin/products",
     icon: Package,
   },
   {
     title: "Orders",
-    url: "/orders",
+    url: "/admin/orders",
     icon: ShoppingCart,
   },
   {
     title: "Manufacturing",
-    url: "/manufacturing",
+    url: "/admin/manufacturing",
     icon: Wrench,
   },
   {
     title: "Discounts",
-    url: "/discounts",
+    url: "/admin/discounts",
     icon: Tag,
   },
   {
     title: "Analytics",
-    url: "/analytics",
+    url: "/admin/analytics",
     icon: BarChart3,
   },
   {
     title: "Settings",
-    url: "/settings",
+    url: "/admin/settings",
     icon: Settings,
   },
 ];
