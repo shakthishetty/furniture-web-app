@@ -410,3 +410,123 @@ export const adminUpdateUserSchema = z.object({
 export type CreateShipmentRequest = z.infer<typeof createShipmentSchema>;
 export type UpdateShipmentRequest = z.infer<typeof updateShipmentSchema>;
 export type AdminUpdateUserRequest = z.infer<typeof adminUpdateUserSchema>;
+
+// Manufacturing Tracking Schema
+export const manufacturingProcesses = pgTable("manufacturing_processes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  status: varchar("status").notNull().default("pending"), // pending, in_progress, paused, completed, canceled
+  currentStageId: varchar("current_stage_id"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  estimatedCompletionDate: timestamp("estimated_completion_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const manufacturingStages = pgTable("manufacturing_stages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  processId: varchar("process_id").notNull(),
+  name: varchar("name").notNull(), // Wood Cutting, Assembly, Finishing, Quality Check, Packaging
+  status: varchar("status").notNull().default("not_started"), // not_started, in_progress, blocked, completed
+  position: integer("position").notNull(), // Order of stages
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  estimatedDuration: integer("estimated_duration_hours"),
+  notes: text("notes"),
+  assignedToUserId: varchar("assigned_to_user_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const stageUpdates = pgTable("stage_updates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  stageId: varchar("stage_id").notNull(),
+  authorUserId: varchar("author_user_id").notNull(),
+  authorRole: varchar("author_role").notNull(), // admin, customer
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").default(false), // Internal notes not visible to customers
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const stageUpdatePhotos = pgTable("stage_update_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  updateId: varchar("update_id").notNull(),
+  url: varchar("url").notNull(),
+  filename: varchar("filename"),
+  width: integer("width"),
+  height: integer("height"),
+  blurhash: varchar("blurhash"), // For progressive image loading
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const stageUpdateReplies = pgTable("stage_update_replies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  updateId: varchar("update_id").notNull(),
+  authorUserId: varchar("author_user_id").notNull(),
+  authorRole: varchar("author_role").notNull(), // admin, customer
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Manufacturing Types
+export type ManufacturingProcess = typeof manufacturingProcesses.$inferSelect;
+export type ManufacturingStage = typeof manufacturingStages.$inferSelect;
+export type StageUpdate = typeof stageUpdates.$inferSelect;
+export type StageUpdatePhoto = typeof stageUpdatePhotos.$inferSelect;
+export type StageUpdateReply = typeof stageUpdateReplies.$inferSelect;
+
+// Manufacturing Schemas  
+export const createManufacturingProcessSchema = createInsertSchema(manufacturingProcesses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateManufacturingProcessSchema = createManufacturingProcessSchema.partial();
+
+export const createManufacturingStageSchema = createInsertSchema(manufacturingStages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateManufacturingStageSchema = createManufacturingStageSchema.partial();
+
+export const createStageUpdateSchema = createInsertSchema(stageUpdates).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  photos: z.array(z.string().url()).optional(), // Photo URLs array
+});
+
+export const createStageUpdateReplySchema = createInsertSchema(stageUpdateReplies).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const manufacturingStatusUpdateSchema = z.object({
+  status: z.enum(["pending", "in_progress", "paused", "completed", "canceled"]),
+  currentStageId: z.string().optional(),
+  notes: z.string().optional(),
+  estimatedCompletionDate: z.string().datetime().optional(),
+});
+
+export const stageStatusUpdateSchema = z.object({
+  status: z.enum(["not_started", "in_progress", "blocked", "completed"]),
+  startedAt: z.string().datetime().optional(),
+  completedAt: z.string().datetime().optional(),
+  notes: z.string().optional(),
+  assignedToUserId: z.string().optional(),
+});
+
+// Manufacturing Request Types
+export type CreateManufacturingProcessRequest = z.infer<typeof createManufacturingProcessSchema>;
+export type UpdateManufacturingProcessRequest = z.infer<typeof updateManufacturingProcessSchema>;
+export type CreateManufacturingStageRequest = z.infer<typeof createManufacturingStageSchema>;
+export type UpdateManufacturingStageRequest = z.infer<typeof updateManufacturingStageSchema>;
+export type CreateStageUpdateRequest = z.infer<typeof createStageUpdateSchema>;
+export type CreateStageUpdateReplyRequest = z.infer<typeof createStageUpdateReplySchema>;
+export type ManufacturingStatusUpdateRequest = z.infer<typeof manufacturingStatusUpdateSchema>;
+export type StageStatusUpdateRequest = z.infer<typeof stageStatusUpdateSchema>;

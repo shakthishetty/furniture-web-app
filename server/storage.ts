@@ -25,6 +25,19 @@ import {
   type CreateWishlistItemRequest,
   type Refund,
   type OrderStatusHistory,
+  type ManufacturingProcess,
+  type ManufacturingStage,
+  type StageUpdate,
+  type StageUpdatePhoto,
+  type StageUpdateReply,
+  type CreateManufacturingProcessRequest,
+  type UpdateManufacturingProcessRequest,
+  type CreateManufacturingStageRequest,
+  type UpdateManufacturingStageRequest,
+  type CreateStageUpdateRequest,
+  type CreateStageUpdateReplyRequest,
+  type ManufacturingStatusUpdateRequest,
+  type StageStatusUpdateRequest,
   users, 
   sessions,
   products,
@@ -38,7 +51,12 @@ import {
   orderItems,
   orderStatusHistory,
   refunds,
-  wishlist
+  wishlist,
+  manufacturingProcesses,
+  manufacturingStages,
+  stageUpdates,
+  stageUpdatePhotos,
+  stageUpdateReplies
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc } from "drizzle-orm";
@@ -146,9 +164,40 @@ export interface IStorage {
   getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }>;
   getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
-  getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: Order[]; total: number }>;
+  getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }>;
   getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }>;
   getOrdersByDay(days: number): Promise<{ date: string; orders: number; revenue: number }[]>;
+
+  // Manufacturing Tracking operations
+  createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess>;
+  getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }>;
+  getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined>;
+  getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined>;
+  updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined>;
+  deleteManufacturingProcess(id: string): Promise<boolean>;
+
+  // Manufacturing Stages operations
+  createManufacturingStage(stageData: CreateManufacturingStageRequest): Promise<ManufacturingStage>;
+  getManufacturingStages(processId: string): Promise<ManufacturingStage[]>;
+  getManufacturingStage(id: string): Promise<ManufacturingStage | undefined>;
+  updateManufacturingStage(id: string, updates: StageStatusUpdateRequest): Promise<ManufacturingStage | undefined>;
+  deleteManufacturingStage(id: string): Promise<boolean>;
+
+  // Stage Updates operations
+  createStageUpdate(updateData: CreateStageUpdateRequest): Promise<StageUpdate>;
+  getStageUpdates(stageId: string, includeInternal?: boolean): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[]>;
+  getStageUpdate(id: string): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] }) | undefined>;
+
+  // Stage Update Replies operations
+  createStageUpdateReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply>;
+  getStageUpdateReplies(updateId: string): Promise<StageUpdateReply[]>;
+
+  // Manufacturing Process with full details
+  getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 
+    stages: (ManufacturingStage & { 
+      updates: (StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[] 
+    })[] 
+  }) | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1017,6 +1066,275 @@ export class DatabaseStorage implements IStorage {
       orders: row.orders,
       revenue: Number(row.revenue || 0)
     }));
+  }
+
+  // Manufacturing Tracking implementations
+  async createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess> {
+    const [process] = await db
+      .insert(manufacturingProcesses)
+      .values({
+        ...processData,
+        updatedAt: new Date(),
+      })
+      .returning();
+    
+    return process;
+  }
+
+  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }> {
+    const { page, limit, status, orderId } = options;
+    const offset = (page - 1) * limit;
+
+    const conditions = [
+      status ? eq(manufacturingProcesses.status, status) : undefined,
+      orderId ? eq(manufacturingProcesses.orderId, orderId) : undefined,
+    ].filter(Boolean) as any[];
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    
+    const baseQuery = db.select().from(manufacturingProcesses);
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(manufacturingProcesses);
+
+    const listQuery = whereClause ? baseQuery.where(whereClause) : baseQuery;
+    const totalQuery = whereClause ? countQuery.where(whereClause) : countQuery;
+
+    const [processesResult, totalResult] = await Promise.all([
+      listQuery.orderBy(desc(manufacturingProcesses.createdAt)).limit(limit).offset(offset),
+      totalQuery
+    ]);
+
+    return {
+      processes: processesResult,
+      total: totalResult[0]?.count || 0
+    };
+  }
+
+  async getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined> {
+    const [process] = await db
+      .select()
+      .from(manufacturingProcesses)
+      .where(eq(manufacturingProcesses.id, id));
+    
+    return process;
+  }
+
+  async getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined> {
+    const [process] = await db
+      .select()
+      .from(manufacturingProcesses)
+      .where(eq(manufacturingProcesses.orderId, orderId));
+    
+    return process;
+  }
+
+  async updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined> {
+    const [process] = await db
+      .update(manufacturingProcesses)
+      .set({ 
+        ...updates, 
+        estimatedCompletionDate: updates.estimatedCompletionDate ? new Date(updates.estimatedCompletionDate) : undefined,
+        updatedAt: new Date() 
+      })
+      .where(eq(manufacturingProcesses.id, id))
+      .returning();
+    
+    return process;
+  }
+
+  async deleteManufacturingProcess(id: string): Promise<boolean> {
+    const result = await db
+      .delete(manufacturingProcesses)
+      .where(eq(manufacturingProcesses.id, id));
+    
+    return result.rowCount > 0;
+  }
+
+  async createManufacturingStage(stageData: CreateManufacturingStageRequest): Promise<ManufacturingStage> {
+    const [stage] = await db
+      .insert(manufacturingStages)
+      .values({
+        ...stageData,
+        updatedAt: new Date(),
+      })
+      .returning();
+    
+    return stage;
+  }
+
+  async getManufacturingStages(processId: string): Promise<ManufacturingStage[]> {
+    const stages = await db
+      .select()
+      .from(manufacturingStages)
+      .where(eq(manufacturingStages.processId, processId))
+      .orderBy(manufacturingStages.position);
+    
+    return stages;
+  }
+
+  async getManufacturingStage(id: string): Promise<ManufacturingStage | undefined> {
+    const [stage] = await db
+      .select()
+      .from(manufacturingStages)
+      .where(eq(manufacturingStages.id, id));
+    
+    return stage;
+  }
+
+  async updateManufacturingStage(id: string, updates: StageStatusUpdateRequest): Promise<ManufacturingStage | undefined> {
+    const updateData = {
+      ...updates,
+      startedAt: updates.startedAt ? new Date(updates.startedAt) : undefined,
+      completedAt: updates.completedAt ? new Date(updates.completedAt) : undefined,
+      updatedAt: new Date()
+    };
+
+    // Remove undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key as keyof typeof updateData] === undefined) {
+        delete updateData[key as keyof typeof updateData];
+      }
+    });
+
+    const [stage] = await db
+      .update(manufacturingStages)
+      .set(updateData)
+      .where(eq(manufacturingStages.id, id))
+      .returning();
+    
+    return stage;
+  }
+
+  async deleteManufacturingStage(id: string): Promise<boolean> {
+    const result = await db
+      .delete(manufacturingStages)
+      .where(eq(manufacturingStages.id, id));
+    
+    return result.rowCount > 0;
+  }
+
+  async createStageUpdate(updateData: CreateStageUpdateRequest): Promise<StageUpdate> {
+    const { photos, ...updateFields } = updateData;
+    
+    const [update] = await db
+      .insert(stageUpdates)
+      .values(updateFields)
+      .returning();
+
+    // If photos are provided, insert them
+    if (photos && photos.length > 0) {
+      await db.insert(stageUpdatePhotos).values(
+        photos.map(photoUrl => ({
+          updateId: update.id,
+          url: photoUrl,
+        }))
+      );
+    }
+    
+    return update;
+  }
+
+  async getStageUpdates(stageId: string, includeInternal = false): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[]> {
+    const conditions = [
+      eq(stageUpdates.stageId, stageId),
+      !includeInternal ? eq(stageUpdates.isInternal, false) : undefined,
+    ].filter(Boolean) as any[];
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    
+    const updates = await db
+      .select()
+      .from(stageUpdates)
+      .where(whereClause)
+      .orderBy(desc(stageUpdates.createdAt));
+
+    // Get photos and replies for all updates
+    const updateIds = updates.map(u => u.id);
+    if (updateIds.length === 0) return [];
+
+    const [photos, replies] = await Promise.all([
+      db.select().from(stageUpdatePhotos).where(sql`${stageUpdatePhotos.updateId} = ANY(${updateIds})`),
+      db.select().from(stageUpdateReplies).where(sql`${stageUpdateReplies.updateId} = ANY(${updateIds})`)
+    ]);
+
+    // Group by update ID
+    const photosByUpdate = photos.reduce((acc, photo) => {
+      if (!acc[photo.updateId]) acc[photo.updateId] = [];
+      acc[photo.updateId].push(photo);
+      return acc;
+    }, {} as Record<string, StageUpdatePhoto[]>);
+
+    const repliesByUpdate = replies.reduce((acc, reply) => {
+      if (!acc[reply.updateId]) acc[reply.updateId] = [];
+      acc[reply.updateId].push(reply);
+      return acc;
+    }, {} as Record<string, StageUpdateReply[]>);
+
+    return updates.map(update => ({
+      ...update,
+      photos: photosByUpdate[update.id] || [],
+      replies: repliesByUpdate[update.id] || [],
+    }));
+  }
+
+  async getStageUpdate(id: string): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] }) | undefined> {
+    const [update] = await db
+      .select()
+      .from(stageUpdates)
+      .where(eq(stageUpdates.id, id));
+
+    if (!update) return undefined;
+
+    const [photos, replies] = await Promise.all([
+      db.select().from(stageUpdatePhotos).where(eq(stageUpdatePhotos.updateId, id)),
+      db.select().from(stageUpdateReplies).where(eq(stageUpdateReplies.updateId, id))
+    ]);
+
+    return {
+      ...update,
+      photos,
+      replies,
+    };
+  }
+
+  async createStageUpdateReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply> {
+    const [reply] = await db
+      .insert(stageUpdateReplies)
+      .values(replyData)
+      .returning();
+    
+    return reply;
+  }
+
+  async getStageUpdateReplies(updateId: string): Promise<StageUpdateReply[]> {
+    const replies = await db
+      .select()
+      .from(stageUpdateReplies)
+      .where(eq(stageUpdateReplies.updateId, updateId))
+      .orderBy(stageUpdateReplies.createdAt);
+    
+    return replies;
+  }
+
+  async getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 
+    stages: (ManufacturingStage & { 
+      updates: (StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[] 
+    })[] 
+  }) | undefined> {
+    const process = await this.getManufacturingProcess(id);
+    if (!process) return undefined;
+
+    const stages = await this.getManufacturingStages(id);
+    const stagesWithUpdates = await Promise.all(
+      stages.map(async (stage) => {
+        const updates = await this.getStageUpdates(stage.id, true); // Include internal updates for full details
+        return { ...stage, updates };
+      })
+    );
+
+    return {
+      ...process,
+      stages: stagesWithUpdates,
+    };
   }
 }
 
