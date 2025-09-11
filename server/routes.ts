@@ -8,7 +8,7 @@ import { registerOrderRoutes } from "./order-routes";
 import adminRoutes from "./admin-routes";
 import { initializeSampleData } from "./seed-data";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { verifyAuth } from "./utils/auth";
+import { verifyAuth, requireAdmin } from "./utils/auth";
 import { createStageUpdateReplySchema, type CreateStageUpdateReplyRequest } from "@shared/schema";
 import { z } from "zod";
 
@@ -200,6 +200,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the reply
       const reply = await storage.createStageUpdateReply(validatedData);
       
+      // Broadcast customer reply to SSE connections
+      if (global.broadcastNewReply) {
+        global.broadcastNewReply(process.id, reply);
+      }
+      
       console.log(`Customer ${req.user?.userId} posted reply ${reply.id} to update ${req.params.updateId}`);
       res.status(201).json(reply);
     } catch (error) {
@@ -280,6 +285,241 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch orders" });
     }
   });
+
+  // ====================================
+  // Server-Sent Events for Real-Time Updates
+  // ====================================
+
+  // SSE endpoint for admin manufacturing updates
+  app.get('/api/admin/manufacturing/events/:processId', requireAdmin, async (req, res) => {
+    try {
+      // Verify the process exists
+      const process = await storage.getManufacturingProcess(req.params.processId);
+      if (!process) {
+        return res.status(404).json({ error: "Manufacturing process not found" });
+      }
+
+      // Set SSE headers
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      });
+
+      // Send initial connection event
+      res.write(`data: ${JSON.stringify({ type: 'connected', processId: req.params.processId })}\n\n`);
+
+      // Store connection for broadcasting updates
+      if (!global.sseConnections) {
+        global.sseConnections = new Map();
+      }
+      
+      const connectionId = `admin_${Date.now()}_${Math.random()}`;
+      global.sseConnections.set(connectionId, {
+        response: res,
+        processId: req.params.processId,
+        role: 'admin',
+        userId: req.user?.userId
+      });
+
+      console.log(`Admin SSE connection established: ${connectionId} for process ${req.params.processId}`);
+
+      // Handle client disconnect
+      req.on('close', () => {
+        console.log(`Admin SSE connection closed: ${connectionId}`);
+        global.sseConnections?.delete(connectionId);
+        res.end();
+      });
+
+      // Keep connection alive with periodic heartbeat
+      const heartbeat = setInterval(() => {
+        if (res.writableEnded) {
+          clearInterval(heartbeat);
+          global.sseConnections?.delete(connectionId);
+          return;
+        }
+        res.write(`data: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}\n\n`);
+      }, 30000); // Every 30 seconds
+
+      req.on('close', () => {
+        clearInterval(heartbeat);
+      });
+
+    } catch (error) {
+      console.error("Error establishing admin SSE connection:", error);
+      res.status(500).json({ error: "Failed to establish connection" });
+    }
+  });
+
+  // SSE endpoint for customer manufacturing updates
+  app.get('/api/orders/:orderId/tracking/events', verifyAuth, async (req, res) => {
+    try {
+      // Verify the order belongs to the customer
+      const order = await storage.getOrder(req.params.orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      if (order.userId !== req.user?.userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Get manufacturing process for this order
+      const process = await storage.getManufacturingProcessByOrderId(req.params.orderId);
+      if (!process) {
+        return res.status(404).json({ error: "No manufacturing tracking found for this order" });
+      }
+
+      // Set SSE headers
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      });
+
+      // Send initial connection event
+      res.write(`data: ${JSON.stringify({ type: 'connected', orderId: req.params.orderId, processId: process.id })}\n\n`);
+
+      // Store connection for broadcasting updates
+      if (!global.sseConnections) {
+        global.sseConnections = new Map();
+      }
+      
+      const connectionId = `customer_${Date.now()}_${Math.random()}`;
+      global.sseConnections.set(connectionId, {
+        response: res,
+        processId: process.id,
+        orderId: req.params.orderId,
+        role: 'customer',
+        userId: req.user?.userId
+      });
+
+      console.log(`Customer SSE connection established: ${connectionId} for order ${req.params.orderId}`);
+
+      // Handle client disconnect
+      req.on('close', () => {
+        console.log(`Customer SSE connection closed: ${connectionId}`);
+        global.sseConnections?.delete(connectionId);
+        res.end();
+      });
+
+      // Keep connection alive with periodic heartbeat
+      const heartbeat = setInterval(() => {
+        if (res.writableEnded) {
+          clearInterval(heartbeat);
+          global.sseConnections?.delete(connectionId);
+          return;
+        }
+        res.write(`data: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}\n\n`);
+      }, 30000); // Every 30 seconds
+
+      req.on('close', () => {
+        clearInterval(heartbeat);
+      });
+
+    } catch (error) {
+      console.error("Error establishing customer SSE connection:", error);
+      res.status(500).json({ error: "Failed to establish connection" });
+    }
+  });
+
+  // ====================================
+  // SSE Broadcast Utility Functions
+  // ====================================
+
+  // Function to broadcast manufacturing updates to connected clients
+  global.broadcastManufacturingUpdate = (processId: string, updateData: any) => {
+    if (!global.sseConnections) return;
+
+    const connectionsToRemove: string[] = [];
+    
+    global.sseConnections.forEach((connection, connectionId) => {
+      // Only broadcast to connections watching this process
+      if (connection.processId !== processId) return;
+
+      try {
+        // Filter update data based on client role
+        let filteredData = { ...updateData };
+        
+        if (connection.role === 'customer') {
+          // Filter out internal updates and admin replies for customers
+          if (updateData.type === 'stage_update' && updateData.update?.isInternal) {
+            return; // Don't send internal updates to customers
+          }
+          
+          if (updateData.type === 'new_reply' && updateData.reply?.authorRole === 'admin') {
+            return; // Don't send admin replies to customers
+          }
+          
+          // Filter replies in update data
+          if (filteredData.update?.replies) {
+            filteredData.update.replies = filteredData.update.replies.filter(
+              (reply: any) => reply.authorRole === 'customer'
+            );
+          }
+        }
+
+        // Send the update
+        connection.response.write(
+          `data: ${JSON.stringify({ 
+            ...filteredData, 
+            timestamp: new Date().toISOString(),
+            processId 
+          })}\n\n`
+        );
+
+        console.log(`SSE update sent to ${connection.role} connection ${connectionId}: ${updateData.type}`);
+        
+      } catch (error) {
+        console.error(`Error sending SSE update to ${connectionId}:`, error);
+        connectionsToRemove.push(connectionId);
+      }
+    });
+
+    // Clean up failed connections
+    connectionsToRemove.forEach(connectionId => {
+      global.sseConnections?.delete(connectionId);
+      console.log(`Removed failed SSE connection: ${connectionId}`);
+    });
+  };
+
+  // Function to broadcast process status changes
+  global.broadcastProcessStatusChange = (processId: string, status: string, orderId?: string) => {
+    global.broadcastManufacturingUpdate(processId, {
+      type: 'process_status_change',
+      processId,
+      orderId,
+      status
+    });
+  };
+
+  // Function to broadcast new stage updates
+  global.broadcastStageUpdate = (processId: string, update: any) => {
+    global.broadcastManufacturingUpdate(processId, {
+      type: 'stage_update',
+      update
+    });
+  };
+
+  // Function to broadcast new replies
+  global.broadcastNewReply = (processId: string, reply: any) => {
+    global.broadcastManufacturingUpdate(processId, {
+      type: 'new_reply',
+      reply
+    });
+  };
+
+  // Function to broadcast photo uploads
+  global.broadcastPhotoUpload = (processId: string, photo: any) => {
+    global.broadcastManufacturingUpdate(processId, {
+      type: 'photo_upload',
+      photo
+    });
+  };
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {

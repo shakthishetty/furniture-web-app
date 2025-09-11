@@ -507,6 +507,11 @@ router.patch("/manufacturing/processes/:id", requireAdmin, async (req, res) => {
       return res.status(404).json({ error: "Manufacturing process not found" });
     }
     
+    // Broadcast process status change to SSE connections
+    if (global.broadcastProcessStatusChange) {
+      global.broadcastProcessStatusChange(process.id, process.status, process.orderId);
+    }
+    
     console.log(`Admin ${req.user?.userId} updated manufacturing process ${process.id} to status: ${process.status}`);
     res.json(process);
   } catch (error) {
@@ -585,6 +590,14 @@ router.patch("/manufacturing/stages/:id", requireAdmin, async (req, res) => {
       return res.status(404).json({ error: "Manufacturing stage not found" });
     }
     
+    // Broadcast stage status change to SSE connections
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(stage.processId, {
+        type: 'stage_status_change',
+        stage
+      });
+    }
+    
     console.log(`Admin ${req.user?.userId} updated manufacturing stage ${stage.id} to status: ${stage.status}`);
     res.json(stage);
   } catch (error) {
@@ -634,6 +647,12 @@ router.post("/manufacturing/stages/:stageId/updates", requireAdmin, async (req, 
     
     const update = await storage.createStageUpdate(validatedData);
     
+    // Broadcast stage update to SSE connections
+    const stage = await storage.getManufacturingStage(req.params.stageId);
+    if (stage && global.broadcastStageUpdate) {
+      global.broadcastStageUpdate(stage.processId, update);
+    }
+    
     console.log(`Admin ${req.user?.userId} created stage update ${update.id} for stage ${req.params.stageId}`);
     res.status(201).json(update);
   } catch (error) {
@@ -679,6 +698,15 @@ router.post("/manufacturing/updates/:updateId/replies", requireAdmin, async (req
     });
     
     const reply = await storage.createStageUpdateReply(validatedData);
+    
+    // Broadcast new reply to SSE connections
+    const update = await storage.getStageUpdate(req.params.updateId);
+    if (update) {
+      const stage = await storage.getManufacturingStage(update.stageId);
+      if (stage && global.broadcastNewReply) {
+        global.broadcastNewReply(stage.processId, reply);
+      }
+    }
     
     console.log(`Admin ${req.user?.userId} created reply ${reply.id} for update ${req.params.updateId}`);
     res.status(201).json(reply);
