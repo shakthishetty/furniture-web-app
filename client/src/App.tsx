@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import Navigation from "@/components/navigation";
 import AdminLayout from "@/components/AdminLayout";
+import ManufacturerLayout from "@/components/ManufacturerLayout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Product from "@/pages/product";
@@ -35,6 +36,9 @@ import AdminDiscounts from "@/pages/admin/discounts";
 import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import AdminManufacturing from "@/pages/admin/manufacturing";
+import ManufacturerDashboard from "@/pages/manufacturer/dashboard";
+import ManufacturerProcesses from "@/pages/manufacturer/processes";
+import ManufacturerProcessDetail from "@/pages/manufacturer/process-detail";
 
 function AdminRouter() {
   return (
@@ -54,10 +58,24 @@ function AdminRouter() {
   );
 }
 
+function ManufacturerRouter() {
+  return (
+    <ManufacturerLayout>
+      <Switch>
+        <Route path="/manufacturer" component={ManufacturerDashboard} />
+        <Route path="/manufacturer/processes" component={ManufacturerProcesses} />
+        <Route path="/manufacturer/processes/:id" component={ManufacturerProcessDetail} />
+        <Route component={() => <div>Manufacturer Page Not Found</div>} />
+      </Switch>
+    </ManufacturerLayout>
+  );
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/admin" nest component={AdminRouter} />
+      <Route path="/manufacturer" nest component={ManufacturerRouter} />
       <Route path="/" component={Home} />
       <Route path="/product" component={Product} />
       <Route path="/new" component={New} />
@@ -86,13 +104,14 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAdminRoute = location.startsWith("/admin");
+  const isManufacturerRoute = location.startsWith("/manufacturer");
 
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         <TooltipProvider>
           <Toaster />
-          {!isAdminRoute && <Navigation />}
+          {!isAdminRoute && !isManufacturerRoute && <Navigation />}
           <Router />
         </TooltipProvider>
       </CartProvider>
