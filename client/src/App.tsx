@@ -34,6 +34,7 @@ import AdminOrders from "@/pages/admin/orders";
 import AdminDiscounts from "@/pages/admin/discounts";
 import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
+import AdminManufacturing from "@/pages/admin/manufacturing";
 
 function AdminRouter() {
   return (
@@ -43,6 +44,7 @@ function AdminRouter() {
         <Route path="/admin/users" component={AdminUsers} />
         <Route path="/admin/products" component={AdminProducts} />
         <Route path="/admin/orders" component={AdminOrders} />
+        <Route path="/admin/manufacturing" component={AdminManufacturing} />
         <Route path="/admin/discounts" component={AdminDiscounts} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
         <Route path="/admin/settings" component={AdminSettings} />

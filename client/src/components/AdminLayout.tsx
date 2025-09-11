@@ -22,7 +22,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Store
+  Store,
+  Wrench
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -48,6 +49,11 @@ const adminMenuItems = [
     title: "Orders",
     url: "/admin/orders",
     icon: ShoppingCart,
+  },
+  {
+    title: "Manufacturing",
+    url: "/admin/manufacturing",
+    icon: Wrench,
   },
   {
     title: "Discounts",
