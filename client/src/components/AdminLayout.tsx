@@ -201,14 +201,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              asChild
+              onClick={() => window.location.href = '/'}
               data-testid="button-customer-portal"
               className="shrink-0"
             >
-              <Link href="/">
-                <Store className="h-4 w-4 mr-2" />
-                Customer Portal
-              </Link>
+              <Store className="h-4 w-4 mr-2" />
+              Customer Portal
             </Button>
           </header>
           <div className="flex-1 overflow-auto p-4 lg:p-6" data-testid="admin-content">
