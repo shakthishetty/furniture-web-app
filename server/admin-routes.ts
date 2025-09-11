@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
 
@@ -273,7 +273,12 @@ router.patch("/discounts/:id", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Invalid update data", details: validation.error.flatten() });
     }
 
-    const updatedDiscount = await storage.updateDiscountCode(req.params.id, validation.data);
+    const { expiresAt, ...restData } = validation.data;
+    const updateData = {
+      ...restData,
+      ...(expiresAt ? { expiresAt: new Date(expiresAt) } : {})
+    };
+    const updatedDiscount = await storage.updateDiscountCode(req.params.id, updateData);
     if (!updatedDiscount) {
       return res.status(404).json({ error: "Discount code not found" });
     }
@@ -340,7 +345,7 @@ router.post("/categories", requireAdmin, async (req, res) => {
     res.status(201).json(category);
   } catch (error) {
     console.error("Error creating category:", error);
-    if (error.message?.includes("unique constraint")) {
+    if (error instanceof Error && error.message?.includes("unique constraint")) {
       return res.status(409).json({ error: "Category name or slug already exists" });
     }
     res.status(500).json({ error: "Failed to create category" });
@@ -363,7 +368,7 @@ router.patch("/categories/:id", requireAdmin, async (req, res) => {
     res.json(updatedCategory);
   } catch (error) {
     console.error("Error updating category:", error);
-    if (error.message?.includes("unique constraint")) {
+    if (error instanceof Error && error.message?.includes("unique constraint")) {
       return res.status(409).json({ error: "Category name or slug already exists" });
     }
     res.status(500).json({ error: "Failed to update category" });
@@ -398,11 +403,11 @@ router.delete("/categories/:id", requireAdmin, async (req, res) => {
 router.post("/objects/upload-url", requireAdmin, async (req, res) => {
   try {
     const objectStorageService = new ObjectStorageService();
-    const uploadParams = await objectStorageService.getUploadUrl();
+    const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
     
     res.json({
       method: "PUT",
-      url: uploadParams.url
+      url: uploadUrl
     });
   } catch (error) {
     console.error("Error getting upload URL:", error);
@@ -418,20 +423,287 @@ router.post("/objects/finalize", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Path is required" });
     }
 
+    // Validate path prefix for security
+    if (!path.startsWith('uploads/') && !path.startsWith('manufacturing/')) {
+      return res.status(400).json({ error: "Invalid path prefix" });
+    }
+
     const objectStorageService = new ObjectStorageService();
     
     // Set object ACL based on visibility
     if (visibility === 'public') {
-      await objectStorageService.trySetObjectEntityAclPolicy(path, 'public');
+      const aclPolicy = {
+        owner: req.user?.userId || 'admin',
+        visibility: 'public' as const,
+      };
+      await objectStorageService.trySetObjectEntityAclPolicy(path, aclPolicy);
     }
     
     // Return normalized path
-    const normalizedPath = `/objects/${path}`;
+    const normalizedPath = objectStorageService.normalizeObjectEntityPath(path);
     
     res.json({ path: normalizedPath });
   } catch (error) {
     console.error("Error finalizing upload:", error);
     res.status(500).json({ error: "Failed to finalize upload" });
+  }
+});
+
+// ====================================
+// Manufacturing Tracking Admin Routes
+// ====================================
+
+// Manufacturing Processes Routes
+router.get("/manufacturing/processes", requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string;
+    const orderId = req.query.orderId as string;
+
+    const result = await storage.getManufacturingProcesses({ page, limit, status, orderId });
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching manufacturing processes:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturing processes" });
+  }
+});
+
+router.get("/manufacturing/processes/:id", requireAdmin, async (req, res) => {
+  try {
+    const process = await storage.getManufacturingProcessWithDetails(req.params.id);
+    if (!process) {
+      return res.status(404).json({ error: "Manufacturing process not found" });
+    }
+    res.json(process);
+  } catch (error) {
+    console.error("Error fetching manufacturing process:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturing process" });
+  }
+});
+
+router.post("/manufacturing/processes", requireAdmin, async (req, res) => {
+  try {
+    const validatedData = createManufacturingProcessSchema.parse(req.body);
+    const process = await storage.createManufacturingProcess(validatedData);
+    
+    console.log(`Admin ${req.user?.userId} created manufacturing process ${process.id} for order ${process.orderId}`);
+    res.status(201).json(process);
+  } catch (error) {
+    console.error("Error creating manufacturing process:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create manufacturing process" });
+  }
+});
+
+router.patch("/manufacturing/processes/:id", requireAdmin, async (req, res) => {
+  try {
+    const validatedData = manufacturingStatusUpdateSchema.parse(req.body);
+    const process = await storage.updateManufacturingProcess(req.params.id, validatedData);
+    
+    if (!process) {
+      return res.status(404).json({ error: "Manufacturing process not found" });
+    }
+    
+    console.log(`Admin ${req.user?.userId} updated manufacturing process ${process.id} to status: ${process.status}`);
+    res.json(process);
+  } catch (error) {
+    console.error("Error updating manufacturing process:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to update manufacturing process" });
+  }
+});
+
+router.delete("/manufacturing/processes/:id", requireAdmin, async (req, res) => {
+  try {
+    const deleted = await storage.deleteManufacturingProcess(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Manufacturing process not found" });
+    }
+    
+    console.log(`Admin ${req.user?.userId} deleted manufacturing process ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting manufacturing process:", error);
+    res.status(500).json({ error: "Failed to delete manufacturing process" });
+  }
+});
+
+// Manufacturing Stages Routes
+router.get("/manufacturing/processes/:processId/stages", requireAdmin, async (req, res) => {
+  try {
+    const stages = await storage.getManufacturingStages(req.params.processId);
+    res.json(stages);
+  } catch (error) {
+    console.error("Error fetching manufacturing stages:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturing stages" });
+  }
+});
+
+router.post("/manufacturing/processes/:processId/stages", requireAdmin, async (req, res) => {
+  try {
+    const validatedData = createManufacturingStageSchema.parse({
+      ...req.body,
+      processId: req.params.processId
+    });
+    const stage = await storage.createManufacturingStage(validatedData);
+    
+    console.log(`Admin ${req.user?.userId} created manufacturing stage ${stage.id} for process ${req.params.processId}`);
+    res.status(201).json(stage);
+  } catch (error) {
+    console.error("Error creating manufacturing stage:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create manufacturing stage" });
+  }
+});
+
+router.get("/manufacturing/stages/:id", requireAdmin, async (req, res) => {
+  try {
+    const stage = await storage.getManufacturingStage(req.params.id);
+    if (!stage) {
+      return res.status(404).json({ error: "Manufacturing stage not found" });
+    }
+    res.json(stage);
+  } catch (error) {
+    console.error("Error fetching manufacturing stage:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturing stage" });
+  }
+});
+
+router.patch("/manufacturing/stages/:id", requireAdmin, async (req, res) => {
+  try {
+    const validatedData = stageStatusUpdateSchema.parse(req.body);
+    const stage = await storage.updateManufacturingStage(req.params.id, validatedData);
+    
+    if (!stage) {
+      return res.status(404).json({ error: "Manufacturing stage not found" });
+    }
+    
+    console.log(`Admin ${req.user?.userId} updated manufacturing stage ${stage.id} to status: ${stage.status}`);
+    res.json(stage);
+  } catch (error) {
+    console.error("Error updating manufacturing stage:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to update manufacturing stage" });
+  }
+});
+
+router.delete("/manufacturing/stages/:id", requireAdmin, async (req, res) => {
+  try {
+    const deleted = await storage.deleteManufacturingStage(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Manufacturing stage not found" });
+    }
+    
+    console.log(`Admin ${req.user?.userId} deleted manufacturing stage ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting manufacturing stage:", error);
+    res.status(500).json({ error: "Failed to delete manufacturing stage" });
+  }
+});
+
+// Stage Updates Routes
+router.get("/manufacturing/stages/:stageId/updates", requireAdmin, async (req, res) => {
+  try {
+    const includeInternal = req.query.includeInternal === 'true';
+    const updates = await storage.getStageUpdates(req.params.stageId, includeInternal);
+    res.json(updates);
+  } catch (error) {
+    console.error("Error fetching stage updates:", error);
+    res.status(500).json({ error: "Failed to fetch stage updates" });
+  }
+});
+
+router.post("/manufacturing/stages/:stageId/updates", requireAdmin, async (req, res) => {
+  try {
+    const validatedData = createStageUpdateSchema.parse({
+      ...req.body,
+      stageId: req.params.stageId,
+      authorUserId: req.user?.userId,
+      authorRole: "admin"
+    });
+    
+    const update = await storage.createStageUpdate(validatedData);
+    
+    console.log(`Admin ${req.user?.userId} created stage update ${update.id} for stage ${req.params.stageId}`);
+    res.status(201).json(update);
+  } catch (error) {
+    console.error("Error creating stage update:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create stage update" });
+  }
+});
+
+router.get("/manufacturing/updates/:updateId", requireAdmin, async (req, res) => {
+  try {
+    const update = await storage.getStageUpdate(req.params.updateId);
+    if (!update) {
+      return res.status(404).json({ error: "Stage update not found" });
+    }
+    res.json(update);
+  } catch (error) {
+    console.error("Error fetching stage update:", error);
+    res.status(500).json({ error: "Failed to fetch stage update" });
+  }
+});
+
+// Stage Update Replies Routes
+router.get("/manufacturing/updates/:updateId/replies", requireAdmin, async (req, res) => {
+  try {
+    const replies = await storage.getStageUpdateReplies(req.params.updateId);
+    res.json(replies);
+  } catch (error) {
+    console.error("Error fetching stage update replies:", error);
+    res.status(500).json({ error: "Failed to fetch stage update replies" });
+  }
+});
+
+router.post("/manufacturing/updates/:updateId/replies", requireAdmin, async (req, res) => {
+  try {
+    const validatedData = createStageUpdateReplySchema.parse({
+      ...req.body,
+      updateId: req.params.updateId,
+      authorUserId: req.user?.userId,
+      authorRole: "admin"
+    });
+    
+    const reply = await storage.createStageUpdateReply(validatedData);
+    
+    console.log(`Admin ${req.user?.userId} created reply ${reply.id} for update ${req.params.updateId}`);
+    res.status(201).json(reply);
+  } catch (error) {
+    console.error("Error creating stage update reply:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid request data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create stage update reply" });
+  }
+});
+
+// Manufacturing by Order ID (for easy order integration)
+router.get("/manufacturing/by-order/:orderId", requireAdmin, async (req, res) => {
+  try {
+    const process = await storage.getManufacturingProcessByOrderId(req.params.orderId);
+    if (!process) {
+      return res.status(404).json({ error: "No manufacturing process found for this order" });
+    }
+    
+    const fullProcess = await storage.getManufacturingProcessWithDetails(process.id);
+    res.json(fullProcess);
+  } catch (error) {
+    console.error("Error fetching manufacturing process by order:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturing process" });
   }
 });
 
