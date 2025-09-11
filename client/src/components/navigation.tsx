@@ -32,64 +32,66 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2" data-testid="logo">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <TreePine className="text-primary-foreground text-sm" />
+          <Link href="/">
+            <div className="flex items-center space-x-2 cursor-pointer" data-testid="logo">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <TreePine className="text-primary-foreground text-sm" />
+              </div>
+              <span className="text-xl font-bold text-foreground">TEAK THEORY</span>
             </div>
-            <span className="text-xl font-bold text-foreground">TEAK THEORY</span>
-          </div>
+          </Link>
 
           {/* Navigation Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <a 
-              href="#" 
+            <Link 
+              href="/new" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-new"
             >
               New
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link 
+              href="/furniture" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-furniture"
             >
               Furniture
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link 
+              href="/living-room" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-living-room"
             >
               Living Room
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link 
+              href="/dining" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-dining"
             >
               Dining
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link 
+              href="/bedroom" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-bedroom"
             >
               Bedroom
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link 
+              href="/study" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-study"
             >
               Study
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link 
+              href="/outdoor" 
               className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
               data-testid="nav-outdoor"
             >
               Outdoor
-            </a>
+            </Link>
           </div>
 
           {/* User Actions */}
