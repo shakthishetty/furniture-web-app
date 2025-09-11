@@ -529,6 +529,10 @@ export const stageStatusUpdateSchema = z.object({
   assignedToUserId: z.string().optional(),
 });
 
+export const manufacturerAssignmentSchema = z.object({
+  manufacturerId: z.string().nullable(),
+});
+
 // Manufacturing Request Types
 export type CreateManufacturingProcessRequest = z.infer<typeof createManufacturingProcessSchema>;
 export type UpdateManufacturingProcessRequest = z.infer<typeof updateManufacturingProcessSchema>;
@@ -538,3 +542,4 @@ export type CreateStageUpdateRequest = z.infer<typeof createStageUpdateSchema>;
 export type CreateStageUpdateReplyRequest = z.infer<typeof createStageUpdateReplySchema>;
 export type ManufacturingStatusUpdateRequest = z.infer<typeof manufacturingStatusUpdateSchema>;
 export type StageStatusUpdateRequest = z.infer<typeof stageStatusUpdateSchema>;
+export type ManufacturerAssignmentRequest = z.infer<typeof manufacturerAssignmentSchema>;

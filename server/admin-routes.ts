@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
 
@@ -117,6 +117,26 @@ router.patch("/users/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Failed to update user" });
+  }
+});
+
+// Get manufacturers for assignment dropdown
+router.get("/users/manufacturers", requireAdmin, async (req, res) => {
+  try {
+    const manufacturers = await storage.getManufacturers();
+    const manufacturersResponse = manufacturers.map(user => ({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      status: user.status
+    }));
+    
+    res.json(manufacturersResponse);
+  } catch (error) {
+    console.error("Error fetching manufacturers:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturers" });
   }
 });
 
@@ -460,8 +480,9 @@ router.get("/manufacturing/processes", requireAdmin, async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const status = req.query.status as string;
     const orderId = req.query.orderId as string;
+    const manufacturerId = req.query.manufacturerId as string;
 
-    const result = await storage.getManufacturingProcesses({ page, limit, status, orderId });
+    const result = await storage.getManufacturingProcesses({ page, limit, status, orderId, manufacturerId });
     res.json(result);
   } catch (error) {
     console.error("Error fetching manufacturing processes:", error);
@@ -495,6 +516,59 @@ router.post("/manufacturing/processes", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Invalid request data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create manufacturing process" });
+  }
+});
+
+// Assign manufacturer to process
+router.put("/manufacturing/processes/:id/assign", requireAdmin, async (req, res) => {
+  try {
+    const validation = manufacturerAssignmentSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Invalid assignment data",
+        details: validation.error.errors,
+      });
+    }
+
+    const { manufacturerId } = validation.data;
+
+    // Validate manufacturer exists and has correct role if not null
+    if (manufacturerId) {
+      const manufacturer = await storage.getUserById(manufacturerId);
+      if (!manufacturer) {
+        return res.status(404).json({ error: "Manufacturer not found" });
+      }
+      if (manufacturer.role !== 'manufacturer') {
+        return res.status(400).json({ error: "User is not a manufacturer" });
+      }
+      if (manufacturer.status !== 'active') {
+        return res.status(400).json({ error: "Manufacturer is not active" });
+      }
+    }
+
+    const updatedProcess = await storage.assignManufacturerToProcess(req.params.id, manufacturerId);
+    if (!updatedProcess) {
+      return res.status(404).json({ error: "Manufacturing process not found" });
+    }
+
+    // Broadcast assignment change to SSE connections
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(updatedProcess.id, {
+        type: 'process_status_change',
+        processId: updatedProcess.id,
+        orderId: updatedProcess.orderId,
+        status: `assigned_to_${manufacturerId || 'unassigned'}`
+      });
+    }
+
+    console.log(`Admin ${req.user?.userId} assigned process ${req.params.id} to manufacturer ${manufacturerId}`);
+    
+    // Return process with manufacturer details
+    const processWithDetails = await storage.getManufacturingProcessWithManufacturer(req.params.id);
+    res.json(processWithDetails);
+  } catch (error) {
+    console.error("Error assigning manufacturer to process:", error);
+    res.status(500).json({ error: "Failed to assign manufacturer to process" });
   }
 });
 
@@ -593,8 +667,8 @@ router.patch("/manufacturing/stages/:id", requireAdmin, async (req, res) => {
     // Broadcast stage status change to SSE connections
     if (global.broadcastManufacturingUpdate) {
       global.broadcastManufacturingUpdate(stage.processId, {
-        type: 'stage_status_change',
-        stage
+        type: 'stage_update',
+        update: stage
       });
     }
     

@@ -162,6 +162,7 @@ export interface IStorage {
   // Admin operations
   getUserById(id: string): Promise<User | undefined>; // Alias for getUser
   getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }>;
+  getManufacturers(): Promise<User[]>; // Get all users with manufacturer role
   getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
   getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }>;
@@ -170,10 +171,12 @@ export interface IStorage {
 
   // Manufacturing Tracking operations
   createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess>;
-  getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }>;
+  getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: (ManufacturingProcess & { assignedManufacturer?: User | null })[]; total: number }>;
   getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined>;
+  getManufacturingProcessWithManufacturer(id: string): Promise<(ManufacturingProcess & { assignedManufacturer?: User | null }) | undefined>;
   getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined>;
   updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined>;
+  assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined>;
   deleteManufacturingProcess(id: string): Promise<boolean>;
 
   // Manufacturing Stages operations
@@ -194,6 +197,7 @@ export interface IStorage {
 
   // Manufacturing Process with full details
   getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 
+    assignedManufacturer?: User | null;
     stages: (ManufacturingStage & { 
       updates: (StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[] 
     })[] 
@@ -876,6 +880,15 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async getManufacturers(): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(
+        eq(users.role, 'manufacturer'),
+        eq(users.status, 'active')
+      ))
+      .orderBy(users.firstName, users.lastName);
+  }
+
   async getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }> {
     const { page, limit, category, status } = options;
     const offset = (page - 1) * limit;
@@ -1085,7 +1098,7 @@ export class DatabaseStorage implements IStorage {
     return process;
   }
 
-  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }> {
+  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: (ManufacturingProcess & { assignedManufacturer?: User | null })[]; total: number }> {
     const { page, limit, status, orderId, manufacturerId } = options;
     const offset = (page - 1) * limit;
 
@@ -1097,7 +1110,30 @@ export class DatabaseStorage implements IStorage {
 
     const whereClause = conditions.length ? and(...conditions) : undefined;
     
-    const baseQuery = db.select().from(manufacturingProcesses);
+    // Join with users table to get manufacturer details
+    const baseQuery = db
+      .select({
+        id: manufacturingProcesses.id,
+        orderId: manufacturingProcesses.orderId,
+        status: manufacturingProcesses.status,
+        currentStageId: manufacturingProcesses.currentStageId,
+        assignedManufacturerId: manufacturingProcesses.assignedManufacturerId,
+        startedAt: manufacturingProcesses.startedAt,
+        completedAt: manufacturingProcesses.completedAt,
+        estimatedCompletionDate: manufacturingProcesses.estimatedCompletionDate,
+        notes: manufacturingProcesses.notes,
+        createdAt: manufacturingProcesses.createdAt,
+        updatedAt: manufacturingProcesses.updatedAt,
+        manufacturerId: users.id,
+        manufacturerEmail: users.email,
+        manufacturerFirstName: users.firstName,
+        manufacturerLastName: users.lastName,
+        manufacturerRole: users.role,
+        manufacturerStatus: users.status
+      })
+      .from(manufacturingProcesses)
+      .leftJoin(users, eq(manufacturingProcesses.assignedManufacturerId, users.id));
+
     const countQuery = db.select({ count: sql<number>`count(*)` }).from(manufacturingProcesses);
 
     const listQuery = whereClause ? baseQuery.where(whereClause) : baseQuery;
@@ -1109,7 +1145,38 @@ export class DatabaseStorage implements IStorage {
     ]);
 
     return {
-      processes: processesResult,
+      processes: processesResult.map(row => ({
+        id: row.id,
+        orderId: row.orderId,
+        status: row.status,
+        currentStageId: row.currentStageId,
+        assignedManufacturerId: row.assignedManufacturerId,
+        startedAt: row.startedAt,
+        completedAt: row.completedAt,
+        estimatedCompletionDate: row.estimatedCompletionDate,
+        notes: row.notes,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        assignedManufacturer: row.manufacturerId ? {
+          id: row.manufacturerId,
+          email: row.manufacturerEmail || '',
+          firstName: row.manufacturerFirstName,
+          lastName: row.manufacturerLastName,
+          role: row.manufacturerRole,
+          status: row.manufacturerStatus,
+          username: null,
+          password: null,
+          googleId: null,
+          profileImage: null,
+          isAdmin: false,
+          emailVerified: true,
+          emailVerificationToken: null,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          createdAt: null,
+          updatedAt: null
+        } : null
+      })),
       total: totalResult[0]?.count || 0
     };
   }
@@ -1121,6 +1188,67 @@ export class DatabaseStorage implements IStorage {
       .where(eq(manufacturingProcesses.id, id));
     
     return process;
+  }
+
+  async getManufacturingProcessWithManufacturer(id: string): Promise<(ManufacturingProcess & { assignedManufacturer?: User | null }) | undefined> {
+    const [result] = await db
+      .select({
+        id: manufacturingProcesses.id,
+        orderId: manufacturingProcesses.orderId,
+        status: manufacturingProcesses.status,
+        currentStageId: manufacturingProcesses.currentStageId,
+        assignedManufacturerId: manufacturingProcesses.assignedManufacturerId,
+        startedAt: manufacturingProcesses.startedAt,
+        completedAt: manufacturingProcesses.completedAt,
+        estimatedCompletionDate: manufacturingProcesses.estimatedCompletionDate,
+        notes: manufacturingProcesses.notes,
+        createdAt: manufacturingProcesses.createdAt,
+        updatedAt: manufacturingProcesses.updatedAt,
+        manufacturerId: users.id,
+        manufacturerEmail: users.email,
+        manufacturerFirstName: users.firstName,
+        manufacturerLastName: users.lastName,
+        manufacturerRole: users.role,
+        manufacturerStatus: users.status
+      })
+      .from(manufacturingProcesses)
+      .leftJoin(users, eq(manufacturingProcesses.assignedManufacturerId, users.id))
+      .where(eq(manufacturingProcesses.id, id));
+    
+    if (!result) return undefined;
+
+    return {
+      id: result.id,
+      orderId: result.orderId,
+      status: result.status,
+      currentStageId: result.currentStageId,
+      assignedManufacturerId: result.assignedManufacturerId,
+      startedAt: result.startedAt,
+      completedAt: result.completedAt,
+      estimatedCompletionDate: result.estimatedCompletionDate,
+      notes: result.notes,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      assignedManufacturer: result.manufacturerId ? {
+        id: result.manufacturerId,
+        email: result.manufacturerEmail || '',
+        firstName: result.manufacturerFirstName,
+        lastName: result.manufacturerLastName,
+        role: result.manufacturerRole,
+        status: result.manufacturerStatus,
+        username: null,
+        password: null,
+        googleId: null,
+        profileImage: null,
+        isAdmin: false,
+        emailVerified: true,
+        emailVerificationToken: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        createdAt: null,
+        updatedAt: null
+      } : null
+    };
   }
 
   async getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined> {
@@ -1141,6 +1269,19 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date() 
       })
       .where(eq(manufacturingProcesses.id, id))
+      .returning();
+    
+    return process;
+  }
+
+  async assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined> {
+    const [process] = await db
+      .update(manufacturingProcesses)
+      .set({ 
+        assignedManufacturerId: manufacturerId,
+        updatedAt: new Date() 
+      })
+      .where(eq(manufacturingProcesses.id, processId))
       .returning();
     
     return process;
@@ -1321,12 +1462,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 
+    assignedManufacturer?: User | null;
     stages: (ManufacturingStage & { 
       updates: (StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[] 
     })[] 
   }) | undefined> {
-    const process = await this.getManufacturingProcess(id);
-    if (!process) return undefined;
+    const processWithManufacturer = await this.getManufacturingProcessWithManufacturer(id);
+    if (!processWithManufacturer) return undefined;
 
     const stages = await this.getManufacturingStages(id);
     const stagesWithUpdates = await Promise.all(
@@ -1337,7 +1479,7 @@ export class DatabaseStorage implements IStorage {
     );
 
     return {
-      ...process,
+      ...processWithManufacturer,
       stages: stagesWithUpdates,
     };
   }
