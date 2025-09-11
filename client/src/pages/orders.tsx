@@ -353,7 +353,7 @@ export default function Orders() {
 
   // Fetch user orders with tracking status
   const { data: orders = [], isLoading } = useQuery<OrderWithTracking[]>({
-    queryKey: ["/api/orders/with-tracking"],
+    queryKey: ["/api/orders"],
     enabled: isAuthenticated,
   });
 
