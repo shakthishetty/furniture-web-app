@@ -21,7 +21,8 @@ import {
   Tag, 
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -197,6 +198,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex-1">
               <h1 className="font-semibold text-lg">Admin Panel</h1>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              data-testid="button-customer-portal"
+              className="shrink-0"
+            >
+              <Link href="/">
+                <Store className="h-4 w-4 mr-2" />
+                Customer Portal
+              </Link>
+            </Button>
           </header>
           <div className="flex-1 overflow-auto p-4 lg:p-6" data-testid="admin-content">
             {children}
