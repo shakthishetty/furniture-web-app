@@ -348,7 +348,7 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
 }
 
 export default function Orders() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   // Fetch user orders with tracking status
@@ -358,10 +358,35 @@ export default function Orders() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Wait for auth to finish loading before redirecting
+    if (!authLoading && !isAuthenticated) {
       setLocation("/login");
     }
-  }, [isAuthenticated, setLocation]);
+  }, [authLoading, isAuthenticated, setLocation]);
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return null;
