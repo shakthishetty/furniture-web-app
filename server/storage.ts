@@ -59,7 +59,7 @@ import {
   stageUpdateReplies
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt, sql, or, ilike, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
 import { hashPassword, generateRandomToken } from "./utils/auth";
 
 export interface IStorage {
@@ -971,18 +971,21 @@ export class DatabaseStorage implements IStorage {
 
     // Get order items for each order
     const orderIds = ordersResult.map(order => order.id);
-    const items = await db
-      .select({
-        id: orderItems.id,
-        orderId: orderItems.orderId,
-        productId: orderItems.productId,
-        productName: orderItems.productName,
-        quantity: orderItems.quantity,
-        price: orderItems.unitPrice,
-        total: orderItems.totalPrice,
-      })
-      .from(orderItems)
-      .where(sql`${orderItems.orderId} = ANY(${orderIds})`);
+    let items: any[] = [];
+    if (orderIds.length > 0) {
+      items = await db
+        .select({
+          id: orderItems.id,
+          orderId: orderItems.orderId,
+          productId: orderItems.productId,
+          productName: orderItems.productName,
+          quantity: orderItems.quantity,
+          price: orderItems.unitPrice,
+          total: orderItems.totalPrice,
+        })
+        .from(orderItems)
+        .where(inArray(orderItems.orderId, orderIds));
+    }
 
     // Group items by order ID
     const itemsByOrderId = items.reduce((acc, item) => {
@@ -1252,8 +1255,8 @@ export class DatabaseStorage implements IStorage {
     if (updateIds.length === 0) return [];
 
     const [photos, replies] = await Promise.all([
-      db.select().from(stageUpdatePhotos).where(sql`${stageUpdatePhotos.updateId} = ANY(${updateIds})`),
-      db.select().from(stageUpdateReplies).where(sql`${stageUpdateReplies.updateId} = ANY(${updateIds})`)
+      db.select().from(stageUpdatePhotos).where(inArray(stageUpdatePhotos.updateId, updateIds)),
+      db.select().from(stageUpdateReplies).where(inArray(stageUpdateReplies.updateId, updateIds))
     ]);
 
     // Group by update ID
