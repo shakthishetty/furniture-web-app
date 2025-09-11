@@ -1,7 +1,10 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, decimal, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Define user role enum
+export const userRoleEnum = pgEnum("user_role", ["customer", "manufacturer", "admin"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -12,7 +15,8 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   googleId: varchar("google_id").unique(),
   profileImage: varchar("profile_image"),
-  isAdmin: boolean("is_admin").default(false),
+  isAdmin: boolean("is_admin").default(false), // kept for backward compatibility
+  role: userRoleEnum("role").default("customer"), // new role field for three-portal system
   status: varchar("status").default("active"), // active, inactive, suspended
   emailVerified: boolean("email_verified").default(false),
   emailVerificationToken: varchar("email_verification_token"),
@@ -36,6 +40,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   firstName: true,
   lastName: true,
+  role: true,
 });
 
 export const loginSchema = z.object({
@@ -48,6 +53,7 @@ export const registerSchema = z.object({
   password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  role: z.enum(["customer", "manufacturer", "admin"]).default("customer"),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -401,6 +407,7 @@ export const updateShipmentSchema = createShipmentSchema.partial();
 
 export const adminUpdateUserSchema = z.object({
   isAdmin: z.boolean().optional(),
+  role: z.enum(["customer", "manufacturer", "admin"]).optional(),
   status: z.enum(["active", "inactive", "suspended"]).optional(),
   email: z.string().email().optional(),
   firstName: z.string().optional(),
@@ -417,6 +424,7 @@ export const manufacturingProcesses = pgTable("manufacturing_processes", {
   orderId: varchar("order_id").notNull(),
   status: varchar("status").notNull().default("pending"), // pending, in_progress, paused, completed, canceled
   currentStageId: varchar("current_stage_id"),
+  assignedManufacturerId: varchar("assigned_manufacturer_id"), // optional reference to manufacturer user
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   estimatedCompletionDate: timestamp("estimated_completion_date"),
