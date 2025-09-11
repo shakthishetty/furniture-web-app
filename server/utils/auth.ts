@@ -9,7 +9,8 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secre
 export interface JWTPayload {
   userId: string;
   email: string;
-  isAdmin?: boolean;
+  isAdmin?: boolean; // backward compatibility
+  role: 'customer' | 'manufacturer' | 'admin';
 }
 
 export const hashPassword = async (password: string): Promise<string> => {
@@ -73,7 +74,8 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     req.user = {
       userId: 'dev-admin-user',
       email: 'admin@dev.com',
-      isAdmin: true
+      isAdmin: true,
+      role: 'admin'
     };
     return next();
   }
@@ -90,12 +92,87 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  if (!payload.isAdmin) {
+  // Check both new role system and legacy isAdmin for backward compatibility
+  if (payload.role !== 'admin' && !payload.isAdmin) {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
   req.user = payload;
   next();
+};
+
+// Manufacturer-specific middleware
+export const requireManufacturer = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.substring(7);
+  const payload = verifyAccessToken(token);
+  
+  if (!payload) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  if (payload.role !== 'manufacturer') {
+    return res.status(403).json({ error: 'Manufacturer access required' });
+  }
+
+  req.user = payload;
+  next();
+};
+
+// Customer-specific middleware
+export const requireCustomer = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  const token = authHeader.substring(7);
+  const payload = verifyAccessToken(token);
+  
+  if (!payload) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  if (payload.role !== 'customer') {
+    return res.status(403).json({ error: 'Customer access required' });
+  }
+
+  req.user = payload;
+  next();
+};
+
+// Flexible role-based middleware factory
+export const requireRole = (...allowedRoles: Array<'customer' | 'manufacturer' | 'admin'>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.substring(7);
+    const payload = verifyAccessToken(token);
+    
+    if (!payload) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // For admin role, check both new role system and legacy isAdmin
+    const hasAdminAccess = allowedRoles.includes('admin') && (payload.role === 'admin' || payload.isAdmin);
+    const hasRoleAccess = allowedRoles.includes(payload.role);
+    
+    if (!hasAdminAccess && !hasRoleAccess) {
+      return res.status(403).json({ 
+        error: `Access denied. Required roles: ${allowedRoles.join(', ')}` 
+      });
+    }
+
+    req.user = payload;
+    next();
+  };
 };
 
 // Verify auth without strict requirement (for checking current user)

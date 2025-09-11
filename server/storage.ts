@@ -369,9 +369,6 @@ export class DatabaseStorage implements IStorage {
     const { page = 1, limit = 50, parentId, isActive } = options || {};
     const offset = (page - 1) * limit;
 
-    let query = db.select().from(categories);
-    let countQuery = db.select({ count: sql<number>`count(*)` }).from(categories);
-
     const conditions = [];
     if (parentId !== undefined) {
       conditions.push(eq(categories.parentId, parentId));
@@ -380,11 +377,15 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(categories.isActive, isActive));
     }
 
-    if (conditions.length > 0) {
-      const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
-      query = query.where(whereClause);
-      countQuery = countQuery.where(whereClause);
-    }
+    const whereClause = conditions.length > 0 
+      ? (conditions.length === 1 ? conditions[0] : and(...conditions))
+      : undefined;
+
+    const baseQuery = db.select().from(categories);
+    const baseCountQuery = db.select({ count: sql<number>`count(*)` }).from(categories);
+
+    const query = whereClause ? baseQuery.where(whereClause) : baseQuery;
+    const countQuery = whereClause ? baseCountQuery.where(whereClause) : baseCountQuery;
 
     const [categoryResults, countResults] = await Promise.all([
       query.orderBy(categories.sortOrder, categories.name).limit(limit).offset(offset),
@@ -449,7 +450,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCategory(categoryId: string): Promise<boolean> {
     const result = await db.delete(categories).where(eq(categories.id, categoryId));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getProductsByCategoryId(categoryId: string): Promise<Product[]> {
@@ -1018,8 +1019,8 @@ export class DatabaseStorage implements IStorage {
         country: order.shippingCountry || 'N/A',
       },
       paymentMethod: order.paymentMethod,
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
+      createdAt: order.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: order.updatedAt?.toISOString() || new Date().toISOString(),
       trackingNumber: order.trackingNumber,
     }));
 
@@ -1149,7 +1150,7 @@ export class DatabaseStorage implements IStorage {
       .delete(manufacturingProcesses)
       .where(eq(manufacturingProcesses.id, id));
     
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createManufacturingStage(stageData: CreateManufacturingStageRequest): Promise<ManufacturingStage> {
@@ -1212,7 +1213,7 @@ export class DatabaseStorage implements IStorage {
       .delete(manufacturingStages)
       .where(eq(manufacturingStages.id, id));
     
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createStageUpdate(updateData: CreateStageUpdateRequest): Promise<StageUpdate> {

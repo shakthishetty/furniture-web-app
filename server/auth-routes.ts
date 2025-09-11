@@ -41,8 +41,18 @@ router.post('/register', async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
+    const accessToken = generateAccessToken({ 
+      userId: user.id, 
+      email: user.email, 
+      isAdmin: user.isAdmin || false,
+      role: user.role || 'customer'
+    });
+    const refreshToken = generateRefreshToken({ 
+      userId: user.id, 
+      email: user.email, 
+      isAdmin: user.isAdmin || false,
+      role: user.role || 'customer'
+    });
     
     // Store refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -87,8 +97,18 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
+    const accessToken = generateAccessToken({ 
+      userId: user.id, 
+      email: user.email, 
+      isAdmin: user.isAdmin || false,
+      role: user.role || 'customer'
+    });
+    const refreshToken = generateRefreshToken({ 
+      userId: user.id, 
+      email: user.email, 
+      isAdmin: user.isAdmin || false,
+      role: user.role || 'customer'
+    });
     
     // Store refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -136,14 +156,19 @@ router.post('/refresh', async (req, res) => {
       return res.status(401).json({ error: 'Session expired or invalid' });
     }
 
-    // Get fresh user data to include current admin status
+    // Get fresh user data to include current admin status and role
     const user = await storage.getUser(payload.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Generate new access token with current admin status
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin || false });
+    // Generate new access token with current admin status and role
+    const accessToken = generateAccessToken({ 
+      userId: user.id, 
+      email: user.email, 
+      isAdmin: user.isAdmin || false,
+      role: user.role || 'customer'
+    });
 
     res.json({ accessToken });
   } catch (error) {
