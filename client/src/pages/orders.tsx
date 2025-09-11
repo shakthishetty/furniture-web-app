@@ -40,11 +40,17 @@ import {
   Calendar,
   DollarSign,
   MapPin,
+  Activity,
 } from "lucide-react";
 import type { Order, OrderItem } from "@shared/schema";
 
 interface OrderWithItems extends Order {
   items: OrderItem[];
+}
+
+interface OrderWithTracking extends Order {
+  hasTracking: boolean;
+  trackingStatus: string | null;
 }
 
 function getStatusColor(status: string) {
@@ -83,9 +89,10 @@ function getStatusIcon(status: string) {
   }
 }
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order }: { order: OrderWithTracking }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [showDetails, setShowDetails] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -183,9 +190,22 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           <div className="flex gap-2 pt-2">
+            {/* Manufacturing Tracking Button */}
+            {order.hasTracking && (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => setLocation(`/orders/${order.id}/tracking`)}
+                data-testid={`button-view-tracking-${order.id}`}
+              >
+                <Activity className="h-4 w-4 mr-1" />
+                View Progress
+              </Button>
+            )}
+            
             <Dialog open={showDetails} onOpenChange={setShowDetails}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" data-testid={`button-view-details-${order.id}`}>
                   <Eye className="h-4 w-4 mr-1" />
                   View Details
                 </Button>
@@ -276,7 +296,7 @@ function OrderCard({ order }: { order: Order }) {
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline" size="sm" onClick={handleDownloadInvoice}>
+            <Button variant="outline" size="sm" onClick={handleDownloadInvoice} data-testid={`button-download-invoice-${order.id}`}>
               <Download className="h-4 w-4 mr-1" />
               Invoice
             </Button>
@@ -331,9 +351,9 @@ export default function Orders() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Fetch user orders
-  const { data: orders = [], isLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
+  // Fetch user orders with tracking status
+  const { data: orders = [], isLoading } = useQuery<OrderWithTracking[]>({
+    queryKey: ["/api/orders/with-tracking"],
     enabled: isAuthenticated,
   });
 

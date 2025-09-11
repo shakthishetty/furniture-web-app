@@ -28,6 +28,7 @@ import Favourites from "@/pages/favourites";
 import Checkout from "@/pages/checkout";
 import Orders from "@/pages/orders";
 import Cart from "@/pages/cart";
+import OrderTracking from "@/pages/order-tracking";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminProducts from "@/pages/admin/products";
@@ -95,6 +96,7 @@ function Router() {
       <Route path="/favourites" component={Favourites} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/orders" component={Orders} />
+      <Route path="/orders/:orderId/tracking" component={OrderTracking} />
       <Route path="/cart" component={Cart} />
       <Route component={NotFound} />
     </Switch>
