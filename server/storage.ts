@@ -170,7 +170,7 @@ export interface IStorage {
 
   // Manufacturing Tracking operations
   createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess>;
-  getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }>;
+  getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }>;
   getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined>;
   getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined>;
   updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined>;
@@ -1085,13 +1085,14 @@ export class DatabaseStorage implements IStorage {
     return process;
   }
 
-  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }> {
-    const { page, limit, status, orderId } = options;
+  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: ManufacturingProcess[]; total: number }> {
+    const { page, limit, status, orderId, manufacturerId } = options;
     const offset = (page - 1) * limit;
 
     const conditions = [
       status ? eq(manufacturingProcesses.status, status) : undefined,
       orderId ? eq(manufacturingProcesses.orderId, orderId) : undefined,
+      manufacturerId ? eq(manufacturingProcesses.assignedManufacturerId, manufacturerId) : undefined,
     ].filter(Boolean) as any[];
 
     const whereClause = conditions.length ? and(...conditions) : undefined;

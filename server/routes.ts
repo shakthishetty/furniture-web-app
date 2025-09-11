@@ -6,6 +6,7 @@ import googleAuthRoutes from "./google-auth";
 import configuratorRoutes from "./configurator-routes";
 import { registerOrderRoutes } from "./order-routes";
 import adminRoutes from "./admin-routes";
+import manufacturerRoutes from "./manufacturer-routes";
 import { initializeSampleData } from "./seed-data";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { verifyAuth, requireAdmin } from "./utils/auth";
@@ -28,6 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin routes
   app.use('/api/admin', adminRoutes);
+  
+  // Manufacturer routes
+  app.use('/api/manufacturer', manufacturerRoutes);
 
   // Object Storage routes for file uploads
   const objectStorageService = new ObjectStorageService();
@@ -489,36 +493,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Function to broadcast process status changes
   global.broadcastProcessStatusChange = (processId: string, status: string, orderId?: string) => {
-    global.broadcastManufacturingUpdate(processId, {
-      type: 'process_status_change',
-      processId,
-      orderId,
-      status
-    });
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'process_status_change',
+        processId,
+        orderId,
+        status
+      });
+    }
   };
 
   // Function to broadcast new stage updates
   global.broadcastStageUpdate = (processId: string, update: any) => {
-    global.broadcastManufacturingUpdate(processId, {
-      type: 'stage_update',
-      update
-    });
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'stage_update',
+        update
+      });
+    }
   };
 
   // Function to broadcast new replies
   global.broadcastNewReply = (processId: string, reply: any) => {
-    global.broadcastManufacturingUpdate(processId, {
-      type: 'new_reply',
-      reply
-    });
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'new_reply',
+        reply
+      });
+    }
   };
 
   // Function to broadcast photo uploads
   global.broadcastPhotoUpload = (processId: string, photo: any) => {
-    global.broadcastManufacturingUpdate(processId, {
-      type: 'photo_upload',
-      photo
-    });
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'photo_upload',
+        photo
+      });
+    }
   };
 
   // Health check endpoint
