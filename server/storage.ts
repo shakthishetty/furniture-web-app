@@ -876,7 +876,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       users: usersResult,
-      total: totalResult[0]?.count || 0
+      total: Number(totalResult[0]?.count || 0)
     };
   }
 
@@ -912,7 +912,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       products: productsResult,
-      total: totalResult[0]?.count || 0
+      total: Number(totalResult[0]?.count || 0)
     };
   }
 
@@ -1039,7 +1039,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       orders: transformedOrders,
-      total: totalResult?.count || 0
+      total: Number(totalResult?.count || 0)
     };
   }
 
@@ -1051,8 +1051,8 @@ export class DatabaseStorage implements IStorage {
     ]);
 
     const revenue = Number(revenueResult[0]?.total || 0);
-    const orderCount = ordersResult[0]?.count || 0;
-    const userCount = usersResult[0]?.count || 0;
+    const orderCount = Number(ordersResult[0]?.count || 0);
+    const userCount = Number(usersResult[0]?.count || 0);
     const avgOrderValue = orderCount > 0 ? revenue / orderCount : 0;
 
     return {
@@ -1080,7 +1080,7 @@ export class DatabaseStorage implements IStorage {
 
     return result.map(row => ({
       date: row.date,
-      orders: row.orders,
+      orders: Number(row.orders),
       revenue: Number(row.revenue || 0)
     }));
   }
