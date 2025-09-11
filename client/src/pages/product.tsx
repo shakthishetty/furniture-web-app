@@ -36,47 +36,47 @@ export default function Product() {
                 <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
                 <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
               </svg>
-              <span className="text-xl font-bold text-foreground font-serif">TEAK THEORY</span>
+              <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
             </div>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-new">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-new">
                 New
               </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-furniture">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-furniture">
                 Furniture
               </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-living-room">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-living-room">
                 Living Room
               </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-dining">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-dining">
                 Dining
               </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-bedroom">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-bedroom">
                 Bedroom
               </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-study">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-study">
                 Study
               </a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-outdoor">
+              <a href="#" className="text-sm font-medium text-black hover:text-gray-600" data-testid="nav-outdoor">
                 Outdoor
               </a>
             </div>
 
             {/* User Actions */}
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-login">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-login">
                 <User className="h-5 w-5" />
                 <span className="hidden md:inline ml-2 text-sm">Login</span>
               </Button>
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-search">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-search">
                 <Search className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-wishlist">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
                 <Heart className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-cart">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-cart">
                 <ShoppingBag className="h-5 w-5" />
               </Button>
             </div>
@@ -89,7 +89,7 @@ export default function Product() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Image */}
           <div className="relative">
-            <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+            <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
               <img 
                 src={productChairImage} 
                 alt="Modern Teak Chair" 
@@ -99,7 +99,7 @@ export default function Product() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-primary/10"
+                className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
                 data-testid="button-favorite"
               >
                 <Heart className="h-5 w-5" />
@@ -114,10 +114,10 @@ export default function Product() {
                 Product Name
               </h1>
               <div className="flex items-center gap-4 mb-4">
-                <span className="text-2xl font-bold text-foreground" data-testid="current-price">
+                <span className="text-2xl font-bold text-black" data-testid="current-price">
                   $5,500
                 </span>
-                <span className="text-lg text-muted-foreground line-through" data-testid="original-price">
+                <span className="text-lg text-gray-500 line-through" data-testid="original-price">
                   $6,000
                 </span>
                 <span className="px-2 py-1 bg-red-100 text-red-600 text-sm font-medium rounded" data-testid="discount-badge">
@@ -127,7 +127,7 @@ export default function Product() {
               <p className="text-sm text-green-600 mb-4" data-testid="tax-info">
                 Price inclusive of all taxes
               </p>
-              <p className="text-muted-foreground text-sm leading-relaxed" data-testid="product-description">
+              <p className="text-gray-600 text-sm leading-relaxed" data-testid="product-description">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros 
                 elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo 
                 diam libero vitae erat.
@@ -136,7 +136,7 @@ export default function Product() {
 
             {/* Fabric Selection */}
             <div>
-              <h3 className="text-sm font-medium text-foreground mb-3" data-testid="fabric-label">
+              <h3 className="text-sm font-medium text-gray-900 mb-3" data-testid="fabric-label">
                 FABRIC - {selectedFabric}
               </h3>
               <div className="flex gap-3">
@@ -145,13 +145,13 @@ export default function Product() {
                     key={fabric.name}
                     onClick={() => setSelectedFabric(fabric.name)}
                     className={`w-12 h-12 rounded-lg border-2 ${
-                      fabric.selected ? 'border-primary' : 'border-border'
+                      fabric.selected ? 'border-black' : 'border-gray-300'
                     } relative`}
                     style={{ backgroundColor: fabric.color }}
                     data-testid={`fabric-${fabric.name.toLowerCase().replace(' ', '-')}`}
                   >
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
-                      <span className="text-xs text-muted-foreground">{fabric.name}</span>
+                      <span className="text-xs text-gray-600">{fabric.name}</span>
                     </div>
                   </button>
                 ))}
@@ -160,7 +160,7 @@ export default function Product() {
 
             {/* Wood Selection */}
             <div className="pt-6">
-              <h3 className="text-sm font-medium text-foreground mb-3" data-testid="wood-label">
+              <h3 className="text-sm font-medium text-gray-900 mb-3" data-testid="wood-label">
                 WOOD ACCENTS - {selectedWood}
               </h3>
               <div className="flex gap-3">
@@ -169,13 +169,13 @@ export default function Product() {
                     key={wood.name}
                     onClick={() => setSelectedWood(wood.name)}
                     className={`w-12 h-12 rounded-lg border-2 ${
-                      wood.selected ? 'border-primary' : 'border-border'
+                      wood.selected ? 'border-black' : 'border-gray-300'
                     } relative`}
                     style={{ backgroundColor: wood.color }}
                     data-testid={`wood-${wood.name.toLowerCase().replace(' ', '-')}`}
                   >
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
-                      <span className="text-xs text-muted-foreground">{wood.name}</span>
+                      <span className="text-xs text-gray-600">{wood.name}</span>
                     </div>
                   </button>
                 ))}
@@ -185,7 +185,7 @@ export default function Product() {
             {/* Quantity and Add to Cart */}
             <div className="pt-6 space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3" data-testid="quantity-label">
+                <h3 className="text-sm font-medium text-gray-900 mb-3" data-testid="quantity-label">
                   Quantity
                 </h3>
                 <div className="flex items-center gap-4">
@@ -214,18 +214,19 @@ export default function Product() {
               </div>
 
               <Button 
-                className="w-full py-3 text-white font-medium bg-primary hover:bg-primary/90"
+                className="w-full py-3 text-white font-medium"
+                style={{ backgroundColor: '#254127' }}
                 data-testid="add-to-cart-button"
               >
                 Add To Cart - $5,500
               </Button>
 
-              <p className="text-sm text-muted-foreground text-center" data-testid="shipping-info">
+              <p className="text-sm text-gray-600 text-center" data-testid="shipping-info">
                 Free shipping over $50
               </p>
 
               <div className="border-t pt-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <line x1="16" y1="2" x2="16" y2="6"/>

@@ -68,31 +68,31 @@ export default function Register() {
                   <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
                   <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
                 </svg>
-                <span className="text-xl font-bold text-foreground font-serif">TEAK THEORY</span>
+                <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
               </div>
             </Link>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/new" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-new">
+              <Link href="/new" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-new">
                 New
               </Link>
-              <Link href="/furniture" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-furniture">
+              <Link href="/furniture" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-furniture">
                 Furniture
               </Link>
-              <Link href="/living-room" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-living-room">
+              <Link href="/living-room" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-living-room">
                 Living Room
               </Link>
-              <Link href="/dining" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-dining">
+              <Link href="/dining" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-dining">
                 Dining
               </Link>
-              <Link href="/bedroom" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-bedroom">
+              <Link href="/bedroom" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-bedroom">
                 Bedroom
               </Link>
-              <Link href="/study" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-study">
+              <Link href="/study" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-study">
                 Study
               </Link>
-              <Link href="/outdoor" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-outdoor">
+              <Link href="/outdoor" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-outdoor">
                 Outdoor
               </Link>
             </div>
@@ -100,22 +100,22 @@ export default function Register() {
             {/* User Actions */}
             <div className="flex items-center space-x-4">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="p-2 text-primary bg-primary/10" data-testid="button-login">
+                <Button variant="ghost" size="sm" className="p-2 text-black bg-gray-100" data-testid="button-login">
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline ml-2 text-sm">Login</span>
                 </Button>
               </Link>
               <Link href="/search">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-search">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-search">
                   <Search className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/wishlist">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-cart">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-cart">
                 <ShoppingBag className="h-5 w-5" />
               </Button>
             </div>
@@ -184,7 +184,8 @@ export default function Register() {
 
             <Button 
               type="submit"
-              className="w-full py-3 text-white font-medium bg-primary hover:bg-primary/90"
+              className="w-full py-3 text-white font-medium"
+              style={{ backgroundColor: '#254127' }}
               data-testid="register-submit-button"
               disabled={registerMutation.isPending}
             >
@@ -193,16 +194,16 @@ export default function Register() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-600">
               Already have an account? 
-              <Link href="/login" className="ml-1 text-foreground font-medium hover:underline">
+              <Link href="/login" className="ml-1 text-black font-medium hover:underline">
                 Sign in
               </Link>
             </p>
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               By creating an account, you agree to our Terms of Service and Privacy Policy
             </p>
           </div>

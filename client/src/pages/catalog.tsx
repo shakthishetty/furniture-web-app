@@ -70,31 +70,31 @@ export default function Catalog() {
                   <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
                   <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
                 </svg>
-                <span className="text-xl font-bold text-foreground font-serif">TEAK THEORY</span>
+                <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
               </div>
             </Link>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/new" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-new">
+              <Link href="/new" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-new">
                 New
               </Link>
-              <Link href="/catalog" className="text-sm font-medium text-primary border-b-2 border-primary" data-testid="nav-catalog">
+              <Link href="/catalog" className="text-sm font-medium text-black border-b-2 border-black" data-testid="nav-catalog">
                 Catalog
               </Link>
-              <Link href="/living-room" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-living-room">
+              <Link href="/living-room" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-living-room">
                 Living Room
               </Link>
-              <Link href="/dining" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-dining">
+              <Link href="/dining" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-dining">
                 Dining
               </Link>
-              <Link href="/bedroom" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-bedroom">
+              <Link href="/bedroom" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-bedroom">
                 Bedroom
               </Link>
-              <Link href="/study" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-study">
+              <Link href="/study" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-study">
                 Study
               </Link>
-              <Link href="/outdoor" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-outdoor">
+              <Link href="/outdoor" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-outdoor">
                 Outdoor
               </Link>
             </div>
@@ -102,23 +102,23 @@ export default function Catalog() {
             {/* User Actions */}
             <div className="flex items-center space-x-4">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-login">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:bg-gray-100" data-testid="button-login">
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline ml-2 text-sm">Login</span>
                 </Button>
               </Link>
               <Link href="/search">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-search">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-search">
                   <Search className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/wishlist">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/cart">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10 relative" data-testid="button-cart">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100 relative" data-testid="button-cart">
                   <ShoppingBag className="h-5 w-5" />
                   {getCartCount() > 0 && (
                     <span className="absolute -top-1 -right-1 bg-[#254127] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -134,12 +134,10 @@ export default function Catalog() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Hero Header */}
-        <div className="text-center mb-16 py-12">
-          <h1 className="font-serif text-foreground mb-6" style={{ fontSize: '48px', lineHeight: '100%' }}>
-            Product Catalog
-          </h1>
-          <p className="font-sans text-muted-foreground text-lg max-w-2xl mx-auto" style={{ lineHeight: '150%' }}>
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold text-center mb-4">Product Catalog</h1>
+          <p className="text-lg text-gray-600 text-center max-w-2xl mx-auto">
             Discover our complete collection of customizable teak furniture. Each piece can be tailored to your exact specifications.
           </p>
         </div>

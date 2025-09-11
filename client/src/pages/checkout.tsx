@@ -195,9 +195,9 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-foreground mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
         
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left Column - Forms */}
@@ -213,7 +213,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
               <CardContent>
                 {addresses.length === 0 ? (
                   <div className="text-center py-6">
-                    <p className="text-muted-foreground mb-4">No addresses found</p>
+                    <p className="text-gray-500 mb-4">No addresses found</p>
                     <Dialog open={showAddressForm} onOpenChange={setShowAddressForm}>
                       <DialogTrigger asChild>
                         <Button>
@@ -236,21 +236,21 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                         <div key={address.id} className="flex items-start space-x-3">
                           <RadioGroupItem value={address.id} id={address.id} className="mt-1" />
                           <Label htmlFor={address.id} className="flex-1 cursor-pointer">
-                            <div className="p-3 border rounded-lg hover:bg-primary/10">
+                            <div className="p-3 border rounded-lg hover:bg-gray-50">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-medium">{address.label}</span>
                                 {address.isDefault && (
                                   <Badge variant="secondary">Default</Badge>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-sm text-gray-600">
                                 {address.firstName} {address.lastName}
                               </p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-sm text-gray-600">
                                 {address.street}
                                 {address.apartment && `, ${address.apartment}`}
                               </p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-sm text-gray-600">
                                 {address.city}, {address.state} {address.postalCode}
                               </p>
                             </div>
@@ -288,12 +288,12 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
               </CardHeader>
               <CardContent>
                 {appliedDiscount ? (
-                  <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div>
-                      <p className="font-medium text-primary">
+                      <p className="font-medium text-green-900">
                         {appliedDiscount.discount.code}
                       </p>
-                      <p className="text-sm text-primary">
+                      <p className="text-sm text-green-700">
                         You saved ${appliedDiscount.discountAmount.toFixed(2)}
                       </p>
                     </div>
@@ -301,7 +301,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                       variant="ghost"
                       size="sm"
                       onClick={handleRemoveDiscount}
-                      className="text-primary hover:text-primary/80"
+                      className="text-green-700 hover:text-green-900"
                     >
                       Remove
                     </Button>
@@ -404,8 +404,8 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                     )}
 
                     <div className="border-t pt-4">
-                      <h4 className="font-medium mb-2 text-primary">Demo Payment</h4>
-                      <p className="text-sm text-primary/80">
+                      <h4 className="font-medium mb-2 text-green-700">Demo Payment</h4>
+                      <p className="text-sm text-green-600">
                         ✅ This is a demo - all payments will succeed automatically!
                       </p>
                     </div>
@@ -447,7 +447,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                     )}
                     <div className="flex-1">
                       <h4 className="font-medium">{item.productName}</h4>
-                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                       <p className="font-medium">${item.totalPrice.toFixed(2)}</p>
                     </div>
                   </div>
@@ -463,7 +463,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                   </div>
                   
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-primary">
+                    <div className="flex justify-between text-green-600">
                       <span>Discount</span>
                       <span>-${discountAmount.toFixed(2)}</span>
                     </div>
@@ -534,7 +534,7 @@ export default function Checkout() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-[#254127] border-t-transparent rounded-full"></div>
       </div>
     );
   }

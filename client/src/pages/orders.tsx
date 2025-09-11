@@ -63,11 +63,11 @@ function getStatusColor(status: string) {
     case "shipped":
       return "bg-purple-100 text-purple-800";
     case "delivered":
-      return "bg-primary/10 text-primary";
+      return "bg-green-100 text-green-800";
     case "canceled":
       return "bg-red-100 text-red-800";
     default:
-      return "bg-muted text-muted-foreground";
+      return "bg-gray-100 text-gray-800";
   }
 }
 
@@ -167,7 +167,7 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg">Order #{order.orderNumber}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-gray-600 mt-1">
               <Calendar className="h-4 w-4 inline mr-1" />
               {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
             </p>
@@ -251,8 +251,8 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
                             )}
                             <div className="flex-1">
                               <h5 className="font-medium">{item.productName}</h5>
-                              <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
-                              <p className="text-sm font-medium text-muted-foreground">
+                              <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                              <p className="text-sm font-medium">
                                 ${parseFloat(item.unitPrice).toFixed(2)} each
                               </p>
                             </div>
@@ -275,7 +275,7 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
                           <span>${parseFloat(order.subtotal || "0").toFixed(2)}</span>
                         </div>
                         {parseFloat(order.discountAmount || "0") > 0 && (
-                          <div className="flex justify-between text-primary">
+                          <div className="flex justify-between text-green-600">
                             <span>Discount:</span>
                             <span>-${parseFloat(order.discountAmount || "0").toFixed(2)}</span>
                           </div>
@@ -306,7 +306,7 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
                         <MapPin className="h-4 w-4 mr-1" />
                         Shipping Address
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-gray-600">
                         Address information would be displayed here
                       </p>
                     </div>
@@ -386,17 +386,17 @@ export default function Orders() {
   // Show loading while checking authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background py-8">
+      <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-3xl font-bold text-foreground mb-8">My Orders</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <Card key={i}>
                 <CardContent className="p-6">
                   <div className="animate-pulse space-y-4">
-                    <div className="h-4 bg-muted rounded w-1/4"></div>
-                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                    <div className="h-3 bg-muted rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -413,17 +413,17 @@ export default function Orders() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background py-8">
+      <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-3xl font-bold text-foreground mb-8">My Orders</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <Card key={i}>
                 <CardContent className="p-6">
                   <div className="animate-pulse space-y-4">
-                    <div className="h-4 bg-muted rounded w-1/4"></div>
-                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                    <div className="h-3 bg-muted rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -437,14 +437,14 @@ export default function Orders() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-foreground mb-8">My Orders</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
         
         {orders.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No orders yet</h3>
-              <p className="text-muted-foreground mb-6">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
+              <p className="text-gray-600 mb-6">
                 You haven't placed any orders yet. Start shopping to see your orders here.
               </p>
               <Button onClick={() => setLocation("/catalog")}>

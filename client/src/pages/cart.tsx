@@ -48,31 +48,31 @@ export default function Cart() {
                   <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
                   <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
                 </svg>
-                <span className="text-xl font-bold text-foreground font-serif">TEAK THEORY</span>
+                <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
               </div>
             </Link>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/new" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-new">
+              <Link href="/new" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-new">
                 New
               </Link>
-              <Link href="/catalog" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-catalog">
+              <Link href="/catalog" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-catalog">
                 Catalog
               </Link>
-              <Link href="/living-room" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-living-room">
+              <Link href="/living-room" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-living-room">
                 Living Room
               </Link>
-              <Link href="/dining" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-dining">
+              <Link href="/dining" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-dining">
                 Dining
               </Link>
-              <Link href="/bedroom" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-bedroom">
+              <Link href="/bedroom" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-bedroom">
                 Bedroom
               </Link>
-              <Link href="/study" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-study">
+              <Link href="/study" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-study">
                 Study
               </Link>
-              <Link href="/outdoor" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-outdoor">
+              <Link href="/outdoor" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-outdoor">
                 Outdoor
               </Link>
             </div>
@@ -80,25 +80,25 @@ export default function Cart() {
             {/* User Actions */}
             <div className="flex items-center space-x-4">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-login">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:bg-gray-100" data-testid="button-login">
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline ml-2 text-sm">Login</span>
                 </Button>
               </Link>
               <Link href="/search">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-search">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-search">
                   <Search className="h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/wishlist">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10 relative" data-testid="button-cart">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100 relative" data-testid="button-cart">
                 <ShoppingBag className="h-5 w-5" />
                 {getCartCount() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-[#254127] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {getCartCount()}
                   </span>
                 )}
@@ -120,8 +120,8 @@ export default function Cart() {
               </Button>
             </Link>
           </div>
-          <h1 className="text-4xl font-bold text-foreground">Shopping Cart</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-4xl font-bold text-gray-900">Shopping Cart</h1>
+          <p className="text-gray-600 mt-2">
             {getCartCount()} {getCartCount() === 1 ? 'item' : 'items'} in your cart
           </p>
         </div>
@@ -130,13 +130,13 @@ export default function Cart() {
           /* Empty Cart */
           <Card>
             <CardContent className="text-center py-16">
-              <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">Your cart is empty</h3>
-              <p className="text-muted-foreground mb-8">
+              <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h3>
+              <p className="text-gray-600 mb-8">
                 Looks like you haven't added any items to your cart yet.
               </p>
               <Link href="/catalog">
-                <Button className="bg-primary hover:bg-primary/90">
+                <Button className="bg-[#254127] hover:bg-[#1a2f1b]">
                   Browse Products
                 </Button>
               </Link>
@@ -152,7 +152,7 @@ export default function Cart() {
                   <CardContent className="p-6">
                     <div className="flex gap-4">
                       {/* Product Image */}
-                      <div className="w-24 h-24 bg-muted rounded-lg flex-shrink-0">
+                      <div className="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0">
                         {item.imageUrl ? (
                           <img 
                             src={item.imageUrl} 
@@ -160,7 +160,7 @@ export default function Cart() {
                             className="w-full h-full object-cover rounded-lg"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
                             <ShoppingBag className="h-8 w-8" />
                           </div>
                         )}
@@ -177,7 +177,7 @@ export default function Cart() {
                               </Badge>
                             )}
                             {item.customConfiguration && (
-              <p className="text-sm text-muted-foreground mt-1">
+                              <p className="text-sm text-gray-600 mt-1">
                                 Custom options applied
                               </p>
                             )}
@@ -231,7 +231,7 @@ export default function Cart() {
                             <div className="text-lg font-semibold">
                               ${(item.price * item.quantity).toLocaleString()}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-sm text-gray-600">
                               ${item.price.toLocaleString()} each
                             </div>
                           </div>
@@ -280,7 +280,7 @@ export default function Cart() {
 
                   <Button 
                     onClick={handleCheckout}
-                    className="w-full bg-primary hover:bg-primary/90 py-3"
+                    className="w-full bg-[#254127] hover:bg-[#1a2f1b] py-3"
                     size="lg"
                     disabled={items.length === 0}
                     data-testid="checkout-button"
@@ -290,7 +290,7 @@ export default function Cart() {
 
                   <div className="text-center">
                     <Link href="/catalog">
-                      <Button variant="ghost" className="text-primary">
+                      <Button variant="ghost" className="text-[#254127]">
                         Continue Shopping
                       </Button>
                     </Link>

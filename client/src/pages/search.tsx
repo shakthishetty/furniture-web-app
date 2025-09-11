@@ -33,31 +33,31 @@ export default function Search() {
                   <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
                   <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
                 </svg>
-                <span className="text-xl font-bold text-foreground font-serif">TEAK THEORY</span>
+                <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
               </div>
             </Link>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/new" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-new">
+              <Link href="/new" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-new">
                 New
               </Link>
-              <Link href="/furniture" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-furniture">
+              <Link href="/furniture" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-furniture">
                 Furniture
               </Link>
-              <Link href="/living-room" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-living-room">
+              <Link href="/living-room" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-living-room">
                 Living Room
               </Link>
-              <Link href="/dining" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-dining">
+              <Link href="/dining" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-dining">
                 Dining
               </Link>
-              <Link href="/bedroom" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-bedroom">
+              <Link href="/bedroom" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-bedroom">
                 Bedroom
               </Link>
-              <Link href="/study" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-study">
+              <Link href="/study" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-study">
                 Study
               </Link>
-              <Link href="/outdoor" className="text-sm font-medium text-muted-foreground hover:text-primary" data-testid="nav-outdoor">
+              <Link href="/outdoor" className="text-sm font-medium text-gray-600 hover:text-black" data-testid="nav-outdoor">
                 Outdoor
               </Link>
             </div>
@@ -65,20 +65,20 @@ export default function Search() {
             {/* User Actions */}
             <div className="flex items-center space-x-4">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-login">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-login">
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline ml-2 text-sm">Login</span>
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-primary bg-primary/10" data-testid="button-search">
+              <Button variant="ghost" size="sm" className="p-2 text-black bg-gray-100" data-testid="button-search">
                 <SearchIcon className="h-5 w-5" />
               </Button>
               <Link href="/wishlist">
-                <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
                   <Heart className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" className="p-2 text-primary hover:bg-primary/10" data-testid="button-cart">
+              <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-cart">
                 <ShoppingBag className="h-5 w-5" />
               </Button>
             </div>
@@ -103,7 +103,8 @@ export default function Search() {
               data-testid="search-input"
             />
             <Button 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-primary hover:bg-primary/90"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2"
+              style={{ backgroundColor: '#254127' }}
               data-testid="search-button"
             >
               <SearchIcon className="h-5 w-5 text-white" />
@@ -121,7 +122,7 @@ export default function Search() {
             {searchResults.map((product) => (
               <Link key={product.id} href="/product">
                 <div className="cursor-pointer" data-testid={`search-result-${product.id}`}>
-                  <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-4">
+                  <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4">
                     <img 
                       src={product.image} 
                       alt={product.name} 
@@ -129,18 +130,18 @@ export default function Search() {
                     />
                   </div>
                   <div className="text-center space-y-2">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Available in multiple finishes</p>
-                    <h3 className="font-normal text-sm tracking-wide text-foreground" data-testid={`product-name-${product.id}`}>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Available in multiple finishes</p>
+                    <h3 className="font-normal text-sm tracking-wide text-gray-800" data-testid={`product-name-${product.id}`}>
                       {product.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground" data-testid={`product-price-${product.id}`}>
+                    <p className="text-sm text-gray-600" data-testid={`product-price-${product.id}`}>
                       Starting at <span className="font-medium">{product.memberPrice} Member</span> / {product.regularPrice} Regular
                     </p>
                     <div className="flex justify-center space-x-2 mt-2">
                       {product.colors.map((color, index) => (
                         <div 
                           key={index}
-                          className="w-3 h-3 rounded-full border"
+                          className="w-3 h-3 rounded-full border border-gray-300"
                           style={{ backgroundColor: color }}
                         />
                       ))}
