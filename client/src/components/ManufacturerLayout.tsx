@@ -28,17 +28,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const manufacturerMenuItems = [
   {
     title: "Dashboard",
-    url: "/manufacturer",
+    url: "/",
     icon: LayoutDashboard,
   },
   {
     title: "My Processes",
-    url: "/manufacturer/processes",
+    url: "/processes",
     icon: Wrench,
   },
   {
     title: "Settings",
-    url: "/manufacturer/settings",
+    url: "/settings",
     icon: Settings,
   },
 ];

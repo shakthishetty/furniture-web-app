@@ -110,13 +110,22 @@ export default function Footer() {
             <p className="text-muted-foreground">
               © 2024 Teak Theory. All rights reserved.
             </p>
-            <Link 
-              href="/admin" 
-              className="text-muted-foreground hover:text-primary transition-colors font-medium"
-              data-testid="link-admin"
-            >
-              ADMIN
-            </Link>
+            <div className="flex gap-4">
+              <Link 
+                href="/admin" 
+                className="text-muted-foreground hover:text-primary transition-colors font-medium"
+                data-testid="link-admin"
+              >
+                ADMIN
+              </Link>
+              <Link 
+                href="/manufacturer" 
+                className="text-muted-foreground hover:text-primary transition-colors font-medium"
+                data-testid="link-manufacturer"
+              >
+                MANUFACTURER
+              </Link>
+            </div>
           </div>
         </div>
       </div>
