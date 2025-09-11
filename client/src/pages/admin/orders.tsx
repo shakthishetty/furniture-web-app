@@ -55,7 +55,7 @@ interface OrdersResponse {
 export default function AdminOrders() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [dateRange, setDateRange] = useState("");
+  const [dateRange, setDateRange] = useState("all_time");
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function AdminOrders() {
       });
       
       if (statusFilter !== "all") params.append("status", statusFilter);
-      if (dateRange) {
+      if (dateRange && dateRange !== "all_time") {
         const days = parseInt(dateRange);
         const endDate = new Date();
         const startDate = new Date();
@@ -213,7 +213,7 @@ export default function AdminOrders() {
                   <SelectValue placeholder="All time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All time</SelectItem>
+                  <SelectItem value="all_time">All time</SelectItem>
                   <SelectItem value="7">Last 7 days</SelectItem>
                   <SelectItem value="30">Last 30 days</SelectItem>
                   <SelectItem value="90">Last 90 days</SelectItem>
