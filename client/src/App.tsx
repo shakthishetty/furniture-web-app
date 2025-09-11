@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/useCart";
 import Navigation from "@/components/navigation";
+import Footer from "@/components/footer";
 import AdminLayout from "@/components/AdminLayout";
 import ManufacturerLayout from "@/components/ManufacturerLayout";
 import NotFound from "@/pages/not-found";
@@ -115,6 +116,7 @@ function App() {
           <Toaster />
           {!isAdminRoute && !isManufacturerRoute && <Navigation />}
           <Router />
+          {!isAdminRoute && !isManufacturerRoute && <Footer />}
         </TooltipProvider>
       </CartProvider>
     </QueryClientProvider>
