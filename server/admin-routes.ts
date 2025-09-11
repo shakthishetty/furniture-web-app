@@ -443,9 +443,9 @@ router.post("/objects/finalize", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Path is required" });
     }
 
-    // Validate path prefix for security
-    if (!path.startsWith('uploads/') && !path.startsWith('manufacturing/')) {
-      return res.status(400).json({ error: "Invalid path prefix" });
+    // Validate path format for security - allow object storage paths
+    if (!path || path.includes('..') || path.startsWith('/')) {
+      return res.status(400).json({ error: "Invalid path format" });
     }
 
     const objectStorageService = new ObjectStorageService();
