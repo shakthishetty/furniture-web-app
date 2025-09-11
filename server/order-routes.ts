@@ -338,7 +338,20 @@ export function registerOrderRoutes(app: Express): void {
       }
 
       const orders = await storage.getUserOrders(userId);
-      res.json(orders);
+      
+      // Add tracking information to each order
+      const ordersWithTracking = await Promise.all(
+        orders.map(async (order) => {
+          const manufacturingProcess = await storage.getManufacturingProcessByOrderId(order.id);
+          return {
+            ...order,
+            hasTracking: !!manufacturingProcess,
+            trackingStatus: manufacturingProcess?.status || null
+          };
+        })
+      );
+      
+      res.json(ordersWithTracking);
     } catch (error) {
       console.error("Error fetching orders:", error);
       res.status(500).json({ message: "Failed to fetch orders" });
