@@ -221,6 +221,17 @@ router.patch("/orders/:id/status", requireAdmin, async (req, res) => {
   }
 });
 
+// Admin Dashboard Stats (alias for analytics summary)
+router.get("/dashboard/stats", requireAdmin, async (req, res) => {
+  try {
+    const analytics = await storage.getAnalyticsSummary();
+    res.json(analytics);
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    res.status(500).json({ error: "Failed to fetch dashboard stats" });
+  }
+});
+
 // Admin Analytics Routes
 router.get("/analytics/summary", requireAdmin, async (req, res) => {
   try {
