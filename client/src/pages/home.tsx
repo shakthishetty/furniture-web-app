@@ -617,13 +617,6 @@ export default function Home() {
               >
                 ADMIN
               </Link>
-              <Link 
-                href="/manufacturer" 
-                className="text-white hover:underline font-medium"
-                data-testid="link-manufacturer"
-              >
-                MANUFACTURER
-              </Link>
               <span>Designed by Wisdom Tooth Technologies</span>
             </div>
           </div>
