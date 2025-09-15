@@ -470,6 +470,95 @@ router.post("/objects/finalize", requireAdmin, async (req, res) => {
 });
 
 // ====================================
+// Manufacturer Management Admin Routes
+// ====================================
+
+// Get pending manufacturer applications
+router.get("/manufacturers/pending", requireAdmin, async (req, res) => {
+  try {
+    const applications = await storage.getPendingManufacturerApplications();
+    res.json(applications);
+  } catch (error) {
+    console.error("Error fetching pending manufacturer applications:", error);
+    res.status(500).json({ error: "Failed to fetch pending applications" });
+  }
+});
+
+// Get approved manufacturers
+router.get("/manufacturers/approved", requireAdmin, async (req, res) => {
+  try {
+    const manufacturers = await storage.getApprovedManufacturers();
+    res.json(manufacturers);
+  } catch (error) {
+    console.error("Error fetching approved manufacturers:", error);
+    res.status(500).json({ error: "Failed to fetch approved manufacturers" });
+  }
+});
+
+// Get manufacturer profile details by ID
+router.get("/manufacturers/:id", requireAdmin, async (req, res) => {
+  try {
+    const profile = await storage.getManufacturerProfileById(req.params.id);
+    if (!profile) {
+      return res.status(404).json({ error: "Manufacturer profile not found" });
+    }
+    res.json(profile);
+  } catch (error) {
+    console.error("Error fetching manufacturer profile:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturer profile" });
+  }
+});
+
+// Approve manufacturer application
+router.patch("/manufacturers/:id/approve", requireAdmin, async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const adminUserId = req.user!.userId;
+    
+    const approvedProfile = await storage.approveManufacturer(req.params.id, adminUserId, notes);
+    if (!approvedProfile) {
+      return res.status(404).json({ error: "Manufacturer profile not found" });
+    }
+    
+    console.log(`Admin ${adminUserId} approved manufacturer profile ${req.params.id}`);
+    res.json({ 
+      message: "Manufacturer approved successfully",
+      profile: approvedProfile 
+    });
+  } catch (error) {
+    console.error("Error approving manufacturer:", error);
+    res.status(500).json({ error: "Failed to approve manufacturer" });
+  }
+});
+
+// Reject manufacturer application
+router.patch("/manufacturers/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    const { reason, notes } = req.body;
+    
+    if (!reason) {
+      return res.status(400).json({ error: "Rejection reason is required" });
+    }
+    
+    const adminUserId = req.user!.userId;
+    
+    const rejectedProfile = await storage.rejectManufacturer(req.params.id, adminUserId, reason, notes);
+    if (!rejectedProfile) {
+      return res.status(404).json({ error: "Manufacturer profile not found" });
+    }
+    
+    console.log(`Admin ${adminUserId} rejected manufacturer profile ${req.params.id}`);
+    res.json({ 
+      message: "Manufacturer application rejected",
+      profile: rejectedProfile 
+    });
+  } catch (error) {
+    console.error("Error rejecting manufacturer:", error);
+    res.status(500).json({ error: "Failed to reject manufacturer application" });
+  }
+});
+
+// ====================================
 // Manufacturing Tracking Admin Routes
 // ====================================
 
