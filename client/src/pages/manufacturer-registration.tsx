@@ -57,12 +57,7 @@ export default function ManufacturerRegistration() {
 
   const submitApplication = useMutation({
     mutationFn: async (data: ManufacturerApplicationRequest) => {
-      const response = await apiRequest("POST", "/api/auth/manufacturer-application", {
-        ...data,
-        specialties: specialties,
-        portfolioUrls: portfolioUrls.filter(url => url.trim()),
-        certifications: certifications.filter(cert => cert.trim()),
-      });
+      const response = await apiRequest("POST", "/api/auth/manufacturer-application", data);
       return response.json();
     },
     onSuccess: () => {
@@ -82,7 +77,23 @@ export default function ManufacturerRegistration() {
   });
 
   const onSubmit = (data: ManufacturerApplicationRequest) => {
-    submitApplication.mutate(data);
+    // Ensure specialties are validated
+    if (specialties.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one specialty.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Submit with merged data
+    submitApplication.mutate({
+      ...data,
+      specialties: specialties,
+      portfolioUrls: portfolioUrls.filter(url => url.trim()),
+      certifications: certifications.filter(cert => cert.trim()),
+    });
   };
 
   const handleSpecialtyChange = (specialty: string, checked: boolean) => {
