@@ -751,18 +751,53 @@ export default function AdminManufacturing() {
                             </div>
                           </td>
                           <td className="py-3">
-                            <div className="space-y-1">
-                              {getManufacturerDisplay(process)}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2 text-xs"
-                                onClick={() => handleAssignManufacturer(process.id, process.assignedManufacturer?.id)}
-                                data-testid={`assign-manufacturer-${process.id}`}
+                            <Select 
+                              value={process.assignedManufacturer?.id || ""} 
+                              onValueChange={(manufacturerId) => {
+                                assignManufacturerMutation.mutate({
+                                  processId: process.id,
+                                  manufacturerId: manufacturerId || null
+                                });
+                              }}
+                              disabled={assignManufacturerMutation.isPending}
+                            >
+                              <SelectTrigger 
+                                className="w-[200px] h-8 text-xs"
+                                data-testid={`manufacturer-dropdown-${process.id}`}
                               >
-                                {process.assignedManufacturer ? 'Reassign' : 'Assign'}
-                              </Button>
-                            </div>
+                                <SelectValue placeholder="Select manufacturer">
+                                  {process.assignedManufacturer ? (
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-3 w-3" />
+                                      <span>{process.assignedManufacturer.name}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                      <UserX className="h-3 w-3" />
+                                      <span>Unassigned</span>
+                                    </div>
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">
+                                  <div className="flex items-center gap-2">
+                                    <UserX className="h-3 w-3" />
+                                    <span>Unassigned</span>
+                                  </div>
+                                </SelectItem>
+                                <Separator />
+                                {manufacturers.map((manufacturer) => (
+                                  <SelectItem key={manufacturer.id} value={manufacturer.id}>
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-3 w-3" />
+                                      <span>{manufacturer.name}</span>
+                                      <span className="text-xs text-muted-foreground">({manufacturer.email})</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </td>
                           <td className="py-3">
                             <div className="space-y-1">
