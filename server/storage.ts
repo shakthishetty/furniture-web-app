@@ -42,6 +42,9 @@ import {
   type CreateManufacturerProfileRequest,
   type ApproveManufacturerRequest,
   type RejectManufacturerRequest,
+  type Manufacturer,
+  type CreateManufacturerRequest,
+  type UpdateManufacturerRequest,
   users, 
   sessions,
   products,
@@ -61,7 +64,8 @@ import {
   stageUpdates,
   stageUpdatePhotos,
   stageUpdateReplies,
-  manufacturerProfiles
+  manufacturerProfiles,
+  manufacturers
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
@@ -208,7 +212,7 @@ export interface IStorage {
     })[] 
   }) | undefined>;
 
-  // Manufacturer Profile operations
+  // Manufacturer Profile operations (application-based)
   createManufacturerProfile(userId: string, profileData: CreateManufacturerProfileRequest): Promise<ManufacturerProfile>;
   getManufacturerProfile(userId: string): Promise<ManufacturerProfile | undefined>;
   getManufacturerProfileById(id: string): Promise<ManufacturerProfile | undefined>;
@@ -217,6 +221,13 @@ export interface IStorage {
   rejectManufacturer(id: string, adminUserId: string, reason: string, notes?: string): Promise<ManufacturerProfile | undefined>;
   getPendingManufacturerApplications(): Promise<(ManufacturerProfile & { user: User })[]>;
   getApprovedManufacturers(): Promise<(ManufacturerProfile & { user: User })[]>;
+
+  // Simple Manufacturer operations (direct admin creation)
+  createDirectManufacturer(manufacturerData: CreateManufacturerRequest, adminUserId: string): Promise<Manufacturer>;
+  getDirectManufacturers(): Promise<Manufacturer[]>;
+  getDirectManufacturer(id: string): Promise<Manufacturer | undefined>;
+  updateDirectManufacturer(id: string, updates: UpdateManufacturerRequest): Promise<Manufacturer | undefined>;
+  deleteDirectManufacturer(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1653,6 +1664,64 @@ export class DatabaseStorage implements IStorage {
       ...item.profile,
       user: item.user,
     }));
+  }
+
+  // Simple Manufacturer operations (direct admin creation)
+  async createDirectManufacturer(manufacturerData: CreateManufacturerRequest, adminUserId: string): Promise<Manufacturer> {
+    const [manufacturer] = await db
+      .insert(manufacturers)
+      .values({
+        ...manufacturerData,
+        createdBy: adminUserId,
+      })
+      .returning();
+    
+    return manufacturer;
+  }
+
+  async getDirectManufacturers(): Promise<Manufacturer[]> {
+    const allManufacturers = await db
+      .select()
+      .from(manufacturers)
+      .where(eq(manufacturers.isActive, true))
+      .orderBy(desc(manufacturers.createdAt));
+    
+    return allManufacturers;
+  }
+
+  async getDirectManufacturer(id: string): Promise<Manufacturer | undefined> {
+    const [manufacturer] = await db
+      .select()
+      .from(manufacturers)
+      .where(eq(manufacturers.id, id));
+    
+    return manufacturer;
+  }
+
+  async updateDirectManufacturer(id: string, updates: UpdateManufacturerRequest): Promise<Manufacturer | undefined> {
+    const [updatedManufacturer] = await db
+      .update(manufacturers)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(manufacturers.id, id))
+      .returning();
+    
+    return updatedManufacturer;
+  }
+
+  async deleteDirectManufacturer(id: string): Promise<boolean> {
+    const [updatedManufacturer] = await db
+      .update(manufacturers)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(manufacturers.id, id))
+      .returning();
+    
+    return !!updatedManufacturer;
   }
 }
 

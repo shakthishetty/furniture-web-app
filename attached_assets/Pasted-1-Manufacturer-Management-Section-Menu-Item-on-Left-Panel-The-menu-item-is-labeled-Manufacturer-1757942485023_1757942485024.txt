@@ -1,0 +1,82 @@
+1️⃣ Manufacturer Management Section
+
+Menu Item on Left Panel:
+The menu item is labeled "Manufacturers" (with icon).
+When clicked, it opens the Manufacturer Management section.
+
+New Button:
+Add a button labeled "Add Manufacturer" at the top of the Manufacturer Management area.
+
+Manufacturer Form:
+On clicking the button, open a modal or page form to collect the following fields:
+
+Manufacturer Name (required)
+
+Address (required)
+
+Email (required, valid format)
+
+Phone Number (required)
+
+Description (optional)
+
+Photo Upload (required)
+
+Form Submission Behavior:
+
+Save the data to the database.
+
+New manufacturers should appear in the Pending Applications table by default.
+
+View Manufacturer Details:
+
+Clicking any manufacturer (pending or approved) should open a detailed view page showing:
+
+Name
+
+Address
+
+Email
+
+Phone Number
+
+Description
+
+Uploaded Photo
+
+Data must be retrieved from the database.
+
+Database Schema:
+Design the schema to store all necessary manufacturer details and image file path.
+
+2️⃣ Manufacturing Process Section
+
+Menu Item on Left Panel:
+The menu item is labeled "Manufacturing" (with icon).
+When clicked, it shows the Manufacturing Processes area.
+
+Assign Manufacturer to Orders:
+
+Next to each order in the table, add an "Assign Manufacturer" button or dropdown.
+
+Clicking it opens a modal to select from the list of Approved Manufacturers.
+
+After selecting a manufacturer and confirming:
+
+The selected manufacturer should be saved to that order in the database.
+
+The assigned manufacturer’s name should appear in the table in place of "Unassigned".
+
+The rest of the process flow (progress bar, start date, etc.) should remain unchanged and fully functional.
+
+⚡ Important Notes:
+
+Keep the UI design consistent with existing styles.
+
+Validate all form inputs before submission.
+
+Handle image uploads properly (store file path in the database).
+
+Implement full database connectivity for adding, retrieving, and updating manufacturers and manufacturing orders.
+
+Ensure smooth user experience with minimal visual changes — only add necessary buttons, modals, and forms.

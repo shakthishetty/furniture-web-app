@@ -1,0 +1,75 @@
+1️⃣ Manufacturer Management Section
+
+Menu Item on Left Panel:
+The menu item is labeled "Manufacturers" (with icon).
+Clicking it opens the Manufacturer Management section.
+
+New Button:
+Add a button labeled "Add Manufacturer" at the top of the Manufacturer Management area.
+
+Manufacturer Form Modal:
+On clicking "Add Manufacturer", open a modal form that collects:
+
+Manufacturer Name (required)
+
+Address (required)
+
+Email (required, valid format)
+
+Phone Number (required)
+
+Description (optional)
+
+Photo Upload (image file, required)
+
+Form Submission Behavior:
+
+Upon submitting the form:
+
+Save the manufacturer data into the database.
+
+Display the newly created manufacturer in a table of manufacturers within the Manufacturer Management section, showing key details (e.g., Name, Address).
+
+Manufacturer Details View:
+
+Clicking a manufacturer in the table should open a detailed view showing all stored fields, including the uploaded photo.
+
+2️⃣ Manufacturing Process Section
+
+Menu Item on Left Panel:
+The menu item is labeled "Manufacturing" (with icon).
+Clicking it shows the Manufacturing Processes area.
+
+Assign Manufacturer to Order:
+
+For each order row in the table:
+
+Add an "Assign Manufacturer" button or dropdown.
+
+Clicking it should open a modal that lists all existing manufacturers from the database.
+
+After selecting a manufacturer and confirming:
+
+Store the manufacturer assignment in the database for that specific order.
+
+Display the assigned manufacturer’s name in the table under the relevant column.
+
+⚡ Important Notes:
+
+No "Pending" or "Approved" manufacturer concepts — only a simple list of manufacturers stored and displayed.
+
+The manufacturer list should always reflect all created manufacturers from the database.
+
+Keep the UI styling consistent with the current design.
+
+Handle image uploads properly (store file path in the database and display in detail view).
+
+Ensure data validation on all inputs.
+
+Implement complete database integration for:
+
+Creating and storing manufacturers
+
+Listing manufacturers
+
+Assigning manufacturers to orders

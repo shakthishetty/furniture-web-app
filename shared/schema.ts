@@ -49,6 +49,21 @@ export const manufacturerProfiles = pgTable("manufacturer_profiles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Simple Manufacturers Table (for direct admin creation)
+export const manufacturers = pgTable("manufacturers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  address: text("address").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone").notNull(),
+  description: text("description"),
+  photoUrl: varchar("photo_url"), // URL to uploaded photo
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by"), // Admin user ID who created
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const sessions = pgTable("sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
@@ -629,3 +644,18 @@ export type CreateStageUpdateReplyRequest = z.infer<typeof createStageUpdateRepl
 export type ManufacturingStatusUpdateRequest = z.infer<typeof manufacturingStatusUpdateSchema>;
 export type StageStatusUpdateRequest = z.infer<typeof stageStatusUpdateSchema>;
 export type ManufacturerAssignmentRequest = z.infer<typeof manufacturerAssignmentSchema>;
+
+// Simple Manufacturer Schemas (for direct admin creation)
+export const createManufacturerSchema = createInsertSchema(manufacturers).omit({
+  id: true,
+  createdBy: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateManufacturerSchema = createManufacturerSchema.partial();
+
+// Simple Manufacturer Types
+export type Manufacturer = typeof manufacturers.$inferSelect;
+export type CreateManufacturerRequest = z.infer<typeof createManufacturerSchema>;
+export type UpdateManufacturerRequest = z.infer<typeof updateManufacturerSchema>;
