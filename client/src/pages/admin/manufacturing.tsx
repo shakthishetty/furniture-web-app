@@ -752,11 +752,11 @@ export default function AdminManufacturing() {
                           </td>
                           <td className="py-3">
                             <Select 
-                              value={process.assignedManufacturer?.id || ""} 
+                              value={process.assignedManufacturer?.id || "unassigned"} 
                               onValueChange={(manufacturerId) => {
                                 assignManufacturerMutation.mutate({
                                   processId: process.id,
-                                  manufacturerId: manufacturerId || null
+                                  manufacturerId: manufacturerId === "unassigned" ? null : manufacturerId
                                 });
                               }}
                               disabled={assignManufacturerMutation.isPending}
@@ -780,7 +780,7 @@ export default function AdminManufacturing() {
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">
+                                <SelectItem value="unassigned">
                                   <div className="flex items-center gap-2">
                                     <UserX className="h-3 w-3" />
                                     <span>Unassigned</span>
