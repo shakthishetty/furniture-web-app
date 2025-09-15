@@ -55,12 +55,13 @@ import type {
   ManufacturingProcess, 
   ManufacturingStage, 
   StageUpdate, 
-  User as UserType 
+  User as UserType,
+  Manufacturer
 } from "@shared/schema";
 
 interface ProcessesResponse {
   processes: (ManufacturingProcess & {
-    assignedManufacturer?: UserType | null;
+    assignedManufacturer?: Manufacturer | null;
     stages?: ManufacturingStage[];
     order?: {
       orderNumber: string;
@@ -75,17 +76,9 @@ interface ProcessesResponse {
   totalPages: number;
 }
 
-interface ManufacturerOption {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  status: string;
-}
 
 interface ProcessDetailsWithFullData extends ManufacturingProcess {
-  assignedManufacturer?: UserType | null;
+  assignedManufacturer?: Manufacturer | null;
   stages: (ManufacturingStage & {
     updates?: StageUpdate[];
   })[];
@@ -164,10 +157,10 @@ export default function AdminManufacturing() {
     },
   });
 
-  const { data: manufacturers = [] } = useQuery<ManufacturerOption[]>({
-    queryKey: ["/api/admin/users/manufacturers"],
+  const { data: manufacturers = [] } = useQuery<Manufacturer[]>({
+    queryKey: ["/api/admin/direct-manufacturers"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/users/manufacturers");
+      const response = await apiRequest("GET", "/api/admin/direct-manufacturers");
       return response.json();
     },
   });
@@ -465,7 +458,7 @@ export default function AdminManufacturing() {
       <div className="flex items-center gap-2">
         <UserCheck className="h-3 w-3 text-green-600" />
         <span className="text-xs font-medium">
-          {process.assignedManufacturer.firstName} {process.assignedManufacturer.lastName}
+          {process.assignedManufacturer.name}
         </span>
       </div>
     );
@@ -476,7 +469,7 @@ export default function AdminManufacturing() {
     return new Date(date).toLocaleDateString();
   };
 
-  const allProcessesSelected = processesData?.processes.length > 0 && 
+  const allProcessesSelected = processesData?.processes && processesData.processes.length > 0 && 
     processesData.processes.every(p => selectedProcesses.has(p.id));
   const someProcessesSelected = selectedProcesses.size > 0;
 
@@ -624,7 +617,7 @@ export default function AdminManufacturing() {
                 <Separator />
                 {manufacturers.map((manufacturer) => (
                   <SelectItem key={manufacturer.id} value={manufacturer.id}>
-                    {manufacturer.firstName} {manufacturer.lastName}
+                    {manufacturer.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -660,7 +653,7 @@ export default function AdminManufacturing() {
                   <Separator />
                   {manufacturers.map((manufacturer) => (
                     <SelectItem key={manufacturer.id} value={manufacturer.id}>
-                      {manufacturer.firstName} {manufacturer.lastName}
+                      {manufacturer.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -866,7 +859,7 @@ export default function AdminManufacturing() {
               {selectedProcess?.assignedManufacturer && (
                 <span className="flex items-center gap-1">
                   <UserCheck className="h-3 w-3" />
-                  Assigned to: {selectedProcess.assignedManufacturer.firstName} {selectedProcess.assignedManufacturer.lastName}
+                  Assigned to: {selectedProcess.assignedManufacturer.name}
                 </span>
               )}
             </DialogDescription>
@@ -970,7 +963,7 @@ export default function AdminManufacturing() {
                               <div className="flex items-center gap-2">
                                 <UserCheck className="h-3 w-3 text-green-600" />
                                 <span className="text-sm">
-                                  {selectedProcess.assignedManufacturer.firstName} {selectedProcess.assignedManufacturer.lastName}
+                                  {selectedProcess.assignedManufacturer.name}
                                 </span>
                                 <Button
                                   variant="ghost"
@@ -1113,7 +1106,7 @@ export default function AdminManufacturing() {
                     <SelectItem key={manufacturer.id} value={manufacturer.id}>
                       <div className="flex items-center gap-2">
                         <User className="h-3 w-3" />
-                        <span>{manufacturer.firstName} {manufacturer.lastName}</span>
+                        <span>{manufacturer.name}</span>
                         <span className="text-xs text-muted-foreground">({manufacturer.email})</span>
                       </div>
                     </SelectItem>
