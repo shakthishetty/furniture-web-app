@@ -111,6 +111,7 @@ export const manufacturerApplicationSchema = z.object({
   notes: z.string().optional(),
 });
 
+
 export const forgotPasswordSchema = z.object({
   email: z.string().email(),
 });

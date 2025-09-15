@@ -898,4 +898,67 @@ router.get("/manufacturing/by-order/:orderId", requireAdmin, async (req, res) =>
   }
 });
 
+// Direct Manufacturer Management Routes (Simple Manufacturer System)
+router.get("/direct-manufacturers", requireAdmin, async (req, res) => {
+  try {
+    const manufacturers = await storage.getDirectManufacturers();
+    res.json(manufacturers);
+  } catch (error) {
+    console.error("Error fetching direct manufacturers:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturers" });
+  }
+});
+
+router.post("/direct-manufacturers", requireAdmin, async (req, res) => {
+  try {
+    const manufacturer = await storage.createDirectManufacturer(req.body, req.user?.userId!);
+    console.log(`Admin ${req.user?.userId} created direct manufacturer ${manufacturer.id}`);
+    res.status(201).json(manufacturer);
+  } catch (error) {
+    console.error("Error creating direct manufacturer:", error);
+    res.status(500).json({ error: "Failed to create manufacturer" });
+  }
+});
+
+router.get("/direct-manufacturers/:id", requireAdmin, async (req, res) => {
+  try {
+    const manufacturer = await storage.getDirectManufacturer(req.params.id);
+    if (!manufacturer) {
+      return res.status(404).json({ error: "Manufacturer not found" });
+    }
+    res.json(manufacturer);
+  } catch (error) {
+    console.error("Error fetching direct manufacturer:", error);
+    res.status(500).json({ error: "Failed to fetch manufacturer" });
+  }
+});
+
+router.patch("/direct-manufacturers/:id", requireAdmin, async (req, res) => {
+  try {
+    const manufacturer = await storage.updateDirectManufacturer(req.params.id, req.body);
+    if (!manufacturer) {
+      return res.status(404).json({ error: "Manufacturer not found" });
+    }
+    console.log(`Admin ${req.user?.userId} updated direct manufacturer ${req.params.id}`);
+    res.json(manufacturer);
+  } catch (error) {
+    console.error("Error updating direct manufacturer:", error);
+    res.status(500).json({ error: "Failed to update manufacturer" });
+  }
+});
+
+router.delete("/direct-manufacturers/:id", requireAdmin, async (req, res) => {
+  try {
+    const deleted = await storage.deleteDirectManufacturer(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Manufacturer not found" });
+    }
+    console.log(`Admin ${req.user?.userId} deleted direct manufacturer ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting direct manufacturer:", error);
+    res.status(500).json({ error: "Failed to delete manufacturer" });
+  }
+});
+
 export default router;
