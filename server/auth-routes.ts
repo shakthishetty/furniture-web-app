@@ -13,10 +13,12 @@ import {
   loginSchema, 
   forgotPasswordSchema, 
   resetPasswordSchema,
+  manufacturerApplicationSchema,
   type RegisterRequest,
   type LoginRequest,
   type ForgotPasswordRequest,
-  type ResetPasswordRequest
+  type ResetPasswordRequest,
+  type ManufacturerApplicationRequest
 } from '@shared/schema';
 
 const router = Router();
@@ -277,6 +279,82 @@ router.get('/me', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Manufacturer Application endpoint
+router.post('/manufacturer-application', async (req, res) => {
+  try {
+    const validatedData = manufacturerApplicationSchema.parse(req.body) as ManufacturerApplicationRequest;
+    
+    // Check if user already exists
+    const existingUser = await storage.getUserByEmail(validatedData.email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists with this email' });
+    }
+
+    // Create user with manufacturer role and pending approval status
+    const userData = {
+      email: validatedData.email,
+      password: validatedData.password,
+      firstName: validatedData.firstName,
+      lastName: validatedData.lastName,
+      role: 'manufacturer' as const,
+      status: 'pending_approval' as const,
+    };
+
+    const user = await storage.createUser(userData);
+    
+    // Create manufacturer profile with application details
+    const profileData = {
+      companyName: validatedData.companyName,
+      companyAddress: validatedData.companyAddress,
+      phone: validatedData.phone,
+      experience: validatedData.experience,
+      specialties: JSON.stringify(validatedData.specialties),
+      portfolioUrls: validatedData.portfolioUrls ? JSON.stringify(validatedData.portfolioUrls) : null,
+      businessLicense: validatedData.businessLicense || null,
+      certifications: validatedData.certifications ? JSON.stringify(validatedData.certifications) : null,
+      notes: validatedData.notes || null,
+    };
+
+    const manufacturerProfile = await storage.createManufacturerProfile(user.id, profileData);
+    
+    // Send verification email
+    if (user.emailVerificationToken) {
+      await sendVerificationEmail(user.email, user.emailVerificationToken);
+    }
+
+    console.log(`Manufacturer application submitted for ${user.email}`);
+    
+    res.status(201).json({
+      message: 'Manufacturer application submitted successfully. You will receive an email once your application is reviewed.',
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        status: user.status,
+      },
+      profile: {
+        id: manufacturerProfile.id,
+        companyName: manufacturerProfile.companyName,
+        isApproved: manufacturerProfile.isApproved,
+      }
+    });
+  } catch (error: any) {
+    console.error('Manufacturer application error:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: error.errors.map((err: any) => ({
+          field: err.path.join('.'),
+          message: err.message
+        }))
+      });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 });

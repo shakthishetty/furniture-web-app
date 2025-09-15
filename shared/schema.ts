@@ -17,11 +17,34 @@ export const users = pgTable("users", {
   profileImage: varchar("profile_image"),
   isAdmin: boolean("is_admin").default(false), // kept for backward compatibility
   role: userRoleEnum("role").default("customer"), // new role field for three-portal system
-  status: varchar("status").default("active"), // active, inactive, suspended
+  status: varchar("status").default("active"), // active, inactive, suspended, pending_approval
   emailVerified: boolean("email_verified").default(false),
   emailVerificationToken: varchar("email_verification_token"),
   passwordResetToken: varchar("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Manufacturer Profiles Table
+export const manufacturerProfiles = pgTable("manufacturer_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(), // Foreign key to users table
+  companyName: varchar("company_name").notNull(),
+  companyAddress: text("company_address").notNull(),
+  phone: varchar("phone").notNull(),
+  experience: text("experience").notNull(),
+  specialties: text("specialties").notNull(), // JSON array of specialties
+  portfolioUrls: text("portfolio_urls"), // JSON array of portfolio URLs
+  businessLicense: varchar("business_license"),
+  certifications: text("certifications"), // JSON array of certifications
+  isApproved: boolean("is_approved").default(false),
+  approvedBy: varchar("approved_by"), // Admin user ID who approved
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by"), // Admin user ID who rejected
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  notes: text("notes"), // Admin notes
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -54,6 +77,23 @@ export const registerSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   role: z.enum(["customer", "manufacturer", "admin"]).default("customer"),
+});
+
+// Manufacturer Registration Schema
+export const manufacturerApplicationSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  companyName: z.string().min(1),
+  companyAddress: z.string().min(1),
+  phone: z.string().min(1),
+  experience: z.string().min(10), // Years of experience
+  specialties: z.array(z.string()).min(1), // Areas of expertise
+  portfolioUrls: z.array(z.string().url()).optional(),
+  businessLicense: z.string().optional(), // Business license number
+  certifications: z.array(z.string()).optional(),
+  notes: z.string().optional(),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -408,15 +448,61 @@ export const updateShipmentSchema = createShipmentSchema.partial();
 export const adminUpdateUserSchema = z.object({
   isAdmin: z.boolean().optional(),
   role: z.enum(["customer", "manufacturer", "admin"]).optional(),
-  status: z.enum(["active", "inactive", "suspended"]).optional(),
+  status: z.enum(["active", "inactive", "suspended", "pending_approval"]).optional(),
   email: z.string().email().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
 });
 
+// Manufacturer Profile Schema
+export const manufacturerProfileSchema = z.object({
+  companyName: z.string().min(1),
+  companyAddress: z.string().min(1),
+  phone: z.string().min(1),
+  experience: z.string().min(1),
+  specialties: z.array(z.string()),
+  portfolioUrls: z.array(z.string().url()).optional(),
+  businessLicense: z.string().optional(),
+  certifications: z.array(z.string()).optional(),
+  isApproved: z.boolean().default(false),
+  approvedBy: z.string().optional(),
+  approvedAt: z.string().datetime().optional(),
+  notes: z.string().optional(),
+});
+
 export type CreateShipmentRequest = z.infer<typeof createShipmentSchema>;
 export type UpdateShipmentRequest = z.infer<typeof updateShipmentSchema>;
 export type AdminUpdateUserRequest = z.infer<typeof adminUpdateUserSchema>;
+export type ManufacturerApplicationRequest = z.infer<typeof manufacturerApplicationSchema>;
+export type ManufacturerProfileRequest = z.infer<typeof manufacturerProfileSchema>;
+export type ManufacturerProfile = typeof manufacturerProfiles.$inferSelect;
+
+// Create and update schemas for manufacturer profiles
+export const createManufacturerProfileSchema = createInsertSchema(manufacturerProfiles).omit({
+  id: true,
+  userId: true,
+  isApproved: true,
+  approvedBy: true,
+  approvedAt: true,
+  rejectedBy: true,
+  rejectedAt: true,
+  rejectionReason: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const approveManufacturerSchema = z.object({
+  notes: z.string().optional(),
+});
+
+export const rejectManufacturerSchema = z.object({
+  reason: z.string().min(1),
+  notes: z.string().optional(),
+});
+
+export type CreateManufacturerProfileRequest = z.infer<typeof createManufacturerProfileSchema>;
+export type ApproveManufacturerRequest = z.infer<typeof approveManufacturerSchema>;
+export type RejectManufacturerRequest = z.infer<typeof rejectManufacturerSchema>;
 
 // Manufacturing Tracking Schema
 export const manufacturingProcesses = pgTable("manufacturing_processes", {

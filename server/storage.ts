@@ -38,6 +38,10 @@ import {
   type CreateStageUpdateReplyRequest,
   type ManufacturingStatusUpdateRequest,
   type StageStatusUpdateRequest,
+  type ManufacturerProfile,
+  type CreateManufacturerProfileRequest,
+  type ApproveManufacturerRequest,
+  type RejectManufacturerRequest,
   users, 
   sessions,
   products,
@@ -56,7 +60,8 @@ import {
   manufacturingStages,
   stageUpdates,
   stageUpdatePhotos,
-  stageUpdateReplies
+  stageUpdateReplies,
+  manufacturerProfiles
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
@@ -202,6 +207,16 @@ export interface IStorage {
       updates: (StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[] 
     })[] 
   }) | undefined>;
+
+  // Manufacturer Profile operations
+  createManufacturerProfile(userId: string, profileData: CreateManufacturerProfileRequest): Promise<ManufacturerProfile>;
+  getManufacturerProfile(userId: string): Promise<ManufacturerProfile | undefined>;
+  getManufacturerProfileById(id: string): Promise<ManufacturerProfile | undefined>;
+  updateManufacturerProfile(id: string, updates: Partial<ManufacturerProfile>): Promise<ManufacturerProfile | undefined>;
+  approveManufacturer(id: string, adminUserId: string, notes?: string): Promise<ManufacturerProfile | undefined>;
+  rejectManufacturer(id: string, adminUserId: string, reason: string, notes?: string): Promise<ManufacturerProfile | undefined>;
+  getPendingManufacturerApplications(): Promise<(ManufacturerProfile & { user: User })[]>;
+  getApprovedManufacturers(): Promise<(ManufacturerProfile & { user: User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1482,6 +1497,162 @@ export class DatabaseStorage implements IStorage {
       ...processWithManufacturer,
       stages: stagesWithUpdates,
     };
+  }
+
+  // Manufacturer Profile operations
+  async createManufacturerProfile(userId: string, profileData: CreateManufacturerProfileRequest): Promise<ManufacturerProfile> {
+    const [profile] = await db
+      .insert(manufacturerProfiles)
+      .values({
+        userId,
+        ...profileData,
+      })
+      .returning();
+    
+    return profile;
+  }
+
+  async getManufacturerProfile(userId: string): Promise<ManufacturerProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(manufacturerProfiles)
+      .where(eq(manufacturerProfiles.userId, userId));
+    
+    return profile;
+  }
+
+  async getManufacturerProfileById(id: string): Promise<ManufacturerProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(manufacturerProfiles)
+      .where(eq(manufacturerProfiles.id, id));
+    
+    return profile;
+  }
+
+  async updateManufacturerProfile(id: string, updates: Partial<ManufacturerProfile>): Promise<ManufacturerProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(manufacturerProfiles)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(manufacturerProfiles.id, id))
+      .returning();
+    
+    return updatedProfile;
+  }
+
+  async approveManufacturer(id: string, adminUserId: string, notes?: string): Promise<ManufacturerProfile | undefined> {
+    const now = new Date();
+    
+    // First update the manufacturer profile
+    const [profile] = await db
+      .update(manufacturerProfiles)
+      .set({
+        isApproved: true,
+        approvedBy: adminUserId,
+        approvedAt: now,
+        notes: notes || null,
+        rejectedBy: null,
+        rejectedAt: null,
+        rejectionReason: null,
+        updatedAt: now,
+      })
+      .where(eq(manufacturerProfiles.id, id))
+      .returning();
+
+    if (profile) {
+      // Update user status to active
+      await db
+        .update(users)
+        .set({
+          status: 'active',
+          updatedAt: now,
+        })
+        .where(eq(users.id, profile.userId));
+    }
+    
+    return profile;
+  }
+
+  async rejectManufacturer(id: string, adminUserId: string, reason: string, notes?: string): Promise<ManufacturerProfile | undefined> {
+    const now = new Date();
+    
+    // First update the manufacturer profile
+    const [profile] = await db
+      .update(manufacturerProfiles)
+      .set({
+        isApproved: false,
+        rejectedBy: adminUserId,
+        rejectedAt: now,
+        rejectionReason: reason,
+        notes: notes || null,
+        approvedBy: null,
+        approvedAt: null,
+        updatedAt: now,
+      })
+      .where(eq(manufacturerProfiles.id, id))
+      .returning();
+
+    if (profile) {
+      // Update user status to suspended
+      await db
+        .update(users)
+        .set({
+          status: 'suspended',
+          updatedAt: now,
+        })
+        .where(eq(users.id, profile.userId));
+    }
+    
+    return profile;
+  }
+
+  async getPendingManufacturerApplications(): Promise<(ManufacturerProfile & { user: User })[]> {
+    const applications = await db
+      .select({
+        profile: manufacturerProfiles,
+        user: users,
+      })
+      .from(manufacturerProfiles)
+      .innerJoin(users, eq(manufacturerProfiles.userId, users.id))
+      .where(
+        and(
+          eq(manufacturerProfiles.isApproved, false),
+          eq(users.status, 'pending_approval'),
+          eq(users.role, 'manufacturer')
+        )
+      )
+      .orderBy(desc(manufacturerProfiles.createdAt));
+
+    return applications.map(item => ({
+      ...item.profile,
+      user: item.user,
+    }));
+  }
+
+  async getApprovedManufacturers(): Promise<(ManufacturerProfile & { user: User })[]> {
+    const manufacturers = await db
+      .select({
+        profile: manufacturerProfiles,
+        user: users,
+      })
+      .from(manufacturerProfiles)
+      .innerJoin(users, eq(manufacturerProfiles.userId, users.id))
+      .where(
+        and(
+          eq(manufacturerProfiles.isApproved, true),
+          eq(users.status, 'active'),
+          eq(users.role, 'manufacturer')
+        )
+      )
+      .orderBy(desc(manufacturerProfiles.approvedAt));
+
+    return manufacturers.map(item => ({
+      ...item.profile,
+      user: item.user,
+    }));
   }
 }
 
