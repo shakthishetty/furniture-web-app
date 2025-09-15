@@ -37,6 +37,7 @@ import AdminDiscounts from "@/pages/admin/discounts";
 import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import AdminManufacturing from "@/pages/admin/manufacturing";
+import AdminManufacturers from "@/pages/admin/manufacturers";
 import ManufacturerDashboard from "@/pages/manufacturer/dashboard";
 import ManufacturerProcesses from "@/pages/manufacturer/processes";
 import ManufacturerProcessDetail from "@/pages/manufacturer/process-detail";
@@ -51,6 +52,7 @@ function AdminRouter() {
         <Route path="/products" component={AdminProducts} />
         <Route path="/orders" component={AdminOrders} />
         <Route path="/manufacturing" component={AdminManufacturing} />
+        <Route path="/manufacturers" component={AdminManufacturers} />
         <Route path="/discounts" component={AdminDiscounts} />
         <Route path="/analytics" component={AdminAnalytics} />
         <Route path="/settings" component={AdminSettings} />

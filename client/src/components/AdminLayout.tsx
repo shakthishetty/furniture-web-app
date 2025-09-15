@@ -23,7 +23,8 @@ import {
   Settings,
   LogOut,
   Store,
-  Wrench
+  Wrench,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -54,6 +55,11 @@ const adminMenuItems = [
     title: "Manufacturing",
     url: "/manufacturing",
     icon: Wrench,
+  },
+  {
+    title: "Manufacturers",
+    url: "/manufacturers",
+    icon: Building2,
   },
   {
     title: "Discounts",
