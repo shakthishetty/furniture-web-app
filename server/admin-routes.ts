@@ -609,7 +609,7 @@ router.post("/manufacturing/processes", requireAdmin, async (req, res) => {
 });
 
 // Assign manufacturer to process
-router.put("/manufacturing/processes/:id/assign", requireAdmin, async (req, res) => {
+router.post("/manufacturing/processes/:id/assign", requireAdmin, async (req, res) => {
   try {
     const validation = manufacturerAssignmentSchema.safeParse(req.body);
     if (!validation.success) {
@@ -621,16 +621,13 @@ router.put("/manufacturing/processes/:id/assign", requireAdmin, async (req, res)
 
     const { manufacturerId } = validation.data;
 
-    // Validate manufacturer exists and has correct role if not null
+    // Validate direct manufacturer exists and is active if not null
     if (manufacturerId) {
-      const manufacturer = await storage.getUserById(manufacturerId);
+      const manufacturer = await storage.getDirectManufacturer(manufacturerId);
       if (!manufacturer) {
         return res.status(404).json({ error: "Manufacturer not found" });
       }
-      if (manufacturer.role !== 'manufacturer') {
-        return res.status(400).json({ error: "User is not a manufacturer" });
-      }
-      if (manufacturer.status !== 'active') {
+      if (!manufacturer.isActive) {
         return res.status(400).json({ error: "Manufacturer is not active" });
       }
     }
