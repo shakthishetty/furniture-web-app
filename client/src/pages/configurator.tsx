@@ -113,7 +113,7 @@ export default function Configurator() {
     },
   });
 
-  // Initialize 3D scene
+  // Initialize 3D scene (run once when component mounts)
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -146,13 +146,6 @@ export default function Configurator() {
     directionalLight.position.set(10, 10, 5);
     directionalLight.castShadow = true;
     scene.add(directionalLight);
-
-    // Create furniture model based on product type
-    if (product) {
-      const furnitureGroup = createFurnitureModel(product.name, scene);
-      scene.add(furnitureGroup);
-      furnitureRef.current = furnitureGroup;
-    }
 
     // Add a ground plane
     const planeGeometry = new THREE.PlaneGeometry(20, 20);
@@ -192,7 +185,9 @@ export default function Configurator() {
     // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
     };
     animate();
 
@@ -203,6 +198,21 @@ export default function Configurator() {
         canvasRef.current.removeEventListener('mousemove', handleMouseMove);
       }
     };
+  }, []); // Remove product dependency
+
+  // Add furniture model when product data is available
+  useEffect(() => {
+    if (!sceneRef.current || !product) return;
+
+    // Remove existing furniture if any
+    if (furnitureRef.current) {
+      sceneRef.current.remove(furnitureRef.current);
+    }
+
+    // Create new furniture model
+    const furnitureGroup = createFurnitureModel(product.name, sceneRef.current);
+    sceneRef.current.add(furnitureGroup);
+    furnitureRef.current = furnitureGroup;
   }, [product]);
 
   // Update 3D model based on configuration
