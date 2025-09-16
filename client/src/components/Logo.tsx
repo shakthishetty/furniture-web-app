@@ -22,7 +22,7 @@ export default function Logo({
     (variant === 'auto' && !className.includes('text-white') && !className.includes('dark:'));
   
   // Apply appropriate filter for dark styling (inverts white logo to dark)
-  const filterClass = shouldUseDarkStyling ? 'brightness-0 invert' : '';
+  const filterClass = shouldUseDarkStyling ? 'filter brightness-0 invert' : '';
   
   return (
     <img
