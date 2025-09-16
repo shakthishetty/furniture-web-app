@@ -33,7 +33,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/">
-            <Logo data-testid="logo" />
+            <Logo variant="dark" data-testid="logo" />
           </Link>
 
           {/* Navigation Menu */}
