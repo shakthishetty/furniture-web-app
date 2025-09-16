@@ -37,15 +37,15 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-card border-t border-border py-16 px-6">
+    <footer className="bg-card border-t border-border py-16 px-6 overflow-hidden">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
           {/* Company Info */}
-          <div>
+          <div className="min-w-0">
             <div className="mb-6">
               <Logo />
             </div>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 break-words">
               Sustainable furniture designed to be passed down through generations.
             </p>
             <div className="flex space-x-4">
@@ -81,8 +81,8 @@ export default function Footer() {
 
           {/* Footer Sections */}
           {footerSections.map((section, index) => (
-            <div key={index}>
-              <h3 className="text-lg font-semibold text-foreground mb-4">
+            <div key={index} className="min-w-0">
+              <h3 className="text-lg font-semibold text-foreground mb-4 break-words">
                 {section.title}
               </h3>
               <ul className="space-y-2">
@@ -90,7 +90,7 @@ export default function Footer() {
                   <li key={linkIndex}>
                     <a 
                       href="#" 
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      className="text-muted-foreground hover:text-primary transition-colors block break-words"
                       data-testid={`footer-link-${link.toLowerCase().replace(/\s+/g, '-')}`}
                     >
                       {link}
@@ -103,21 +103,21 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-border mt-12 pt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-muted-foreground">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
+            <p className="text-muted-foreground break-words">
               © 2024 Teak Theory. All rights reserved.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <Link 
                 href="/admin" 
-                className="text-muted-foreground hover:text-primary transition-colors font-medium"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium whitespace-nowrap"
                 data-testid="link-admin"
               >
                 ADMIN
               </Link>
               <Link 
                 href="/manufacturer" 
-                className="text-muted-foreground hover:text-primary transition-colors font-medium"
+                className="text-muted-foreground hover:text-primary transition-colors font-medium whitespace-nowrap"
                 data-testid="link-manufacturer"
               >
                 MANUFACTURER
