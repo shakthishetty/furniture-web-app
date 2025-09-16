@@ -102,6 +102,7 @@ export interface IStorage {
   getAllProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductsByCategory(category: string): Promise<Product[]>;
+  deleteProduct(id: string): Promise<boolean>;
   
   // Categories
   getCategories(options?: { page?: number; limit?: number; parentId?: string; isActive?: boolean }): Promise<{ categories: Category[]; total: number; page: number; limit: number; totalPages: number }>;
@@ -964,6 +965,19 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return product;
+  }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(products)
+        .where(eq(products.id, id));
+      
+      return result.rowCount! > 0;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      return false;
+    }
   }
 
   async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }> {

@@ -397,6 +397,31 @@ router.patch("/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
+// Delete product route
+router.delete("/products/:id", requireAdmin, async (req, res) => {
+  try {
+    const productId = req.params.id;
+    
+    // Check if product exists first
+    const existingProduct = await storage.getProduct(productId);
+    if (!existingProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    
+    const success = await storage.deleteProduct(productId);
+    
+    if (success) {
+      console.log(`Admin ${req.user?.userId} deleted product ${productId}: ${existingProduct.name}`);
+      res.json({ success: true, message: "Product deleted successfully" });
+    } else {
+      res.status(500).json({ error: "Failed to delete product" });
+    }
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({ error: "Failed to delete product" });
+  }
+});
+
 // Admin Order Management Routes
 router.get("/orders", requireAdmin, async (req, res) => {
   try {

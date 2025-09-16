@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box } from "lucide-react";
+import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -89,6 +89,8 @@ export default function AdminProducts() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<ProductFormData>({
     name: '',
@@ -192,6 +194,29 @@ export default function AdminProducts() {
     },
   });
 
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/products/${productId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingProduct(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Create category mutation
   const createCategoryMutation = useMutation({
     mutationFn: async (data: {
@@ -240,6 +265,17 @@ export default function AdminProducts() {
   const handleViewProduct = (product: Product) => {
     setViewingProduct(product);
     setIsViewDialogOpen(true);
+  };
+
+  const handleDeleteProduct = (product: Product) => {
+    setDeletingProduct(product);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteProduct = () => {
+    if (deletingProduct) {
+      deleteProductMutation.mutate(deletingProduct.id);
+    }
   };
 
   const handleUpdateProduct = (data: Partial<Product>) => {
@@ -557,6 +593,16 @@ export default function AdminProducts() {
                     >
                       <Edit2 className="h-4 w-4 mr-1" />
                       Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteProduct(product)}
+                      data-testid={`button-delete-product-${product.id}`}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -1279,6 +1325,59 @@ export default function AdminProducts() {
               data-testid="button-create-category-submit"
             >
               {createCategoryMutation.isPending ? "Creating..." : "Create Category"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Product Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-delete-product">
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {deletingProduct && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 border rounded bg-muted/50">
+                <div className="flex items-center gap-3">
+                  {deletingProduct.imageUrl && (
+                    <img 
+                      src={deletingProduct.imageUrl} 
+                      alt={deletingProduct.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium">{deletingProduct.name}</p>
+                    <p className="text-sm text-muted-foreground">{formatPrice(deletingProduct.price)}</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This will permanently remove the product from your catalog. Any associated orders will still reference this product.
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              data-testid="button-cancel-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteProduct}
+              disabled={deleteProductMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteProductMutation.isPending ? "Deleting..." : "Delete Product"}
             </Button>
           </DialogFooter>
         </DialogContent>
