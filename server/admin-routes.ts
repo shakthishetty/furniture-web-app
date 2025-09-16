@@ -162,8 +162,27 @@ router.get("/products", requireAdmin, async (req, res) => {
     const category = req.query.category as string;
     const status = req.query.status as string;
 
-    const products = await storage.getProducts({ page, limit, category, status });
-    res.json(products);
+    const result = await storage.getProducts({ page, limit, category, status });
+    
+    // Transform products for frontend compatibility
+    const transformedProducts = result.products.map(product => ({
+      ...product,
+      // Convert basePrice string to price number for frontend
+      price: product.basePrice ? parseFloat(product.basePrice) : 0,
+      // Parse additionalImages JSON string to array
+      additionalImages: product.additionalImages ? 
+        (typeof product.additionalImages === 'string' ? 
+          JSON.parse(product.additionalImages) : 
+          product.additionalImages) : 
+        [],
+      // Keep basePrice for API compatibility
+      basePrice: product.basePrice
+    }));
+
+    res.json({
+      ...result,
+      products: transformedProducts
+    });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ error: "Failed to fetch products" });
@@ -172,10 +191,8 @@ router.get("/products", requireAdmin, async (req, res) => {
 
 router.post("/products", requireAdmin, async (req, res) => {
   try {
-    console.log("Create product request body:", JSON.stringify(req.body, null, 2));
     const validation = createProductSchema.safeParse(req.body);
     if (!validation.success) {
-      console.log("Validation errors:", JSON.stringify(validation.error.flatten(), null, 2));
       return res.status(400).json({ error: "Invalid product data", details: validation.error.flatten() });
     }
 
@@ -204,7 +221,21 @@ router.post("/products", requireAdmin, async (req, res) => {
 
     const newProduct = await storage.createProduct(productData);
     console.log(`Admin ${req.user?.userId} created product ${newProduct.id}:`, productData);
-    res.status(201).json(newProduct);
+    
+    // Transform created product for frontend compatibility
+    const transformedProduct = {
+      ...newProduct,
+      // Convert basePrice string to price number for frontend
+      price: newProduct.basePrice ? parseFloat(newProduct.basePrice) : 0,
+      // Parse additionalImages JSON string to array
+      additionalImages: newProduct.additionalImages ? 
+        (typeof newProduct.additionalImages === 'string' ? 
+          JSON.parse(newProduct.additionalImages) : 
+          newProduct.additionalImages) : 
+        []
+    };
+    
+    res.status(201).json(transformedProduct);
   } catch (error) {
     console.error("Error creating product:", error);
     if (error instanceof Error && error.message?.includes("unique constraint")) {
@@ -227,7 +258,21 @@ router.patch("/products/:id", requireAdmin, async (req, res) => {
     }
 
     console.log(`Admin ${req.user?.userId} updated product ${req.params.id}:`, validation.data);
-    res.json(updatedProduct);
+    
+    // Transform updated product for frontend compatibility
+    const transformedProduct = {
+      ...updatedProduct,
+      // Convert basePrice string to price number for frontend
+      price: updatedProduct.basePrice ? parseFloat(updatedProduct.basePrice) : 0,
+      // Parse additionalImages JSON string to array
+      additionalImages: updatedProduct.additionalImages ? 
+        (typeof updatedProduct.additionalImages === 'string' ? 
+          JSON.parse(updatedProduct.additionalImages) : 
+          updatedProduct.additionalImages) : 
+        []
+    };
+    
+    res.json(transformedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
     res.status(500).json({ error: "Failed to update product" });
