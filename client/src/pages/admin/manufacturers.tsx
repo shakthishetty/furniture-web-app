@@ -185,74 +185,88 @@ export default function AdminManufacturers() {
               ))}
             </div>
           ) : directManufacturers && directManufacturers.length > 0 ? (
-            <div className="space-y-4">
-              {directManufacturers.map((manufacturer) => (
-                <Card key={manufacturer.id} className="mb-4">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Building2 className="h-5 w-5" />
-                          {manufacturer.name}
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-4 mt-2">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-4 w-4" />
-                            {manufacturer.email}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-4 w-4" />
-                            {manufacturer.phone}
-                          </span>
-                        </CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={manufacturer.isActive ? "default" : "secondary"}>
+            <div className="overflow-x-auto">
+              <table className="w-full" data-testid="table-manufacturers">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Name</th>
+                    <th className="text-left py-3 px-4">Email</th>
+                    <th className="text-left py-3 px-4">Phone</th>
+                    <th className="text-left py-3 px-4">Address</th>
+                    <th className="text-left py-3 px-4">Status</th>
+                    <th className="text-left py-3 px-4">Created</th>
+                    <th className="text-center py-3 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {directManufacturers.map((manufacturer) => (
+                    <tr key={manufacturer.id} className="border-b hover:bg-muted/50" data-testid={`row-manufacturer-${manufacturer.id}`}>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">{manufacturer.name}</div>
+                            {manufacturer.description && (
+                              <div className="text-xs text-muted-foreground">{manufacturer.description}</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-sm">
+                          <Mail className="h-3 w-3 text-muted-foreground" />
+                          <span>{manufacturer.email}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-sm">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          <span>{manufacturer.phone}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-sm">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span>{manufacturer.address}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={manufacturer.isActive ? "default" : "secondary"} data-testid={`badge-status-${manufacturer.id}`}>
                           {manufacturer.isActive ? "Active" : "Inactive"}
                         </Badge>
-                        <Badge variant="outline">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {manufacturer.createdAt ? new Date(manufacturer.createdAt).toLocaleDateString() : "N/A"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <MapPin className="h-4 w-4" />
-                        {manufacturer.address}
-                      </div>
-                      {manufacturer.description && (
-                        <p className="text-sm text-muted-foreground">{manufacturer.description}</p>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditDirectManufacturer(manufacturer)}
-                          data-testid={`button-edit-manufacturer-${manufacturer.id}`}
-                        >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteDirectManufacturer(manufacturer.id)}
-                          data-testid={`button-delete-manufacturer-${manufacturer.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{manufacturer.createdAt ? new Date(manufacturer.createdAt).toLocaleDateString() : "N/A"}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditDirectManufacturer(manufacturer)}
+                            data-testid={`button-edit-manufacturer-${manufacturer.id}`}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteDirectManufacturer(manufacturer.id)}
+                            data-testid={`button-delete-manufacturer-${manufacturer.id}`}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="text-center py-8">
