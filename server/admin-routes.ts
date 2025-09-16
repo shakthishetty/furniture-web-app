@@ -24,18 +24,15 @@ const adminDiscountUpdateSchema = z.object({
 const createProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional(),
-  category: z.string().min(1, "Category is required"),
   categoryId: z.string().min(1, "Category ID is required"),
-  basePrice: z.string().refine(val => parseFloat(val) >= 0, "Price must be a positive number"),
+  basePrice: z.string().refine(val => parseFloat(val) >= 0, "Price must be a positive number").optional(),
   status: z.enum(["active", "inactive", "out_of_stock"]).default("inactive"),
   imageUrl: z.string().url().optional(),
   model3dUrl: z.string().url().optional(),
   pdfUrl: z.string().url().optional(),
-  additionalImages: z.array(z.string()).optional(),
+  additionalImages: z.string().optional(), // Frontend sends JSON string, not array
   inStock: z.boolean().default(true),
-  stock: z.number().int().min(0).default(0),
-  price: z.number().min(0).optional(), // For frontend compatibility
-  modelUrl: z.string().url().optional() // For frontend compatibility
+  stock: z.number().int().min(0).default(0)
 });
 
 const adminProductUpdateSchema = z.object({
@@ -175,22 +172,28 @@ router.get("/products", requireAdmin, async (req, res) => {
 
 router.post("/products", requireAdmin, async (req, res) => {
   try {
+    console.log("Create product request body:", JSON.stringify(req.body, null, 2));
     const validation = createProductSchema.safeParse(req.body);
     if (!validation.success) {
+      console.log("Validation errors:", JSON.stringify(validation.error.flatten(), null, 2));
       return res.status(400).json({ error: "Invalid product data", details: validation.error.flatten() });
+    }
+
+    // Get category slug from categoryId for backward compatibility
+    let categorySlug = '';
+    if (validation.data.categoryId) {
+      // Fetch category to get the slug
+      const category = await storage.getCategoryById(validation.data.categoryId);
+      categorySlug = category?.slug || '';
     }
 
     // Transform frontend data to match backend schema
     const productData: any = {
       ...validation.data,
-      basePrice: validation.data.price ? validation.data.price.toString() : validation.data.basePrice,
-      model3dUrl: validation.data.modelUrl || validation.data.model3dUrl,
-      additionalImages: validation.data.additionalImages ? JSON.stringify(validation.data.additionalImages) : undefined,
+      category: categorySlug, // Add category field for backend compatibility
+      // additionalImages is already a JSON string from frontend
+      // All other fields are already in the correct format
     };
-
-    // Remove frontend-only fields
-    delete productData.price;
-    delete productData.modelUrl;
     
     // Remove undefined values
     Object.keys(productData).forEach(key => {
