@@ -41,6 +41,7 @@ export default function Configurator() {
   const rendererRef = useRef<THREE.WebGLRenderer>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const furnitureRef = useRef<THREE.Group>();
+  const animationIdRef = useRef<number>();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [configuration, setConfiguration] = useState<Configuration>({});
@@ -114,9 +115,11 @@ export default function Configurator() {
     },
   });
 
-  // Initialize 3D scene (run once when component mounts)
+  // Initialize 3D scene (run when loading completes and canvas exists)
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (productLoading || optionsLoading) return;
+    const canvas = canvasRef.current;
+    if (!canvas || sceneRef.current) return; // wait for canvas, avoid double init
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -131,7 +134,7 @@ export default function Configurator() {
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ 
-      canvas: canvasRef.current, 
+      canvas: canvas, 
       antialias: true 
     });
     renderer.shadowMap.enabled = true;
@@ -140,7 +143,6 @@ export default function Configurator() {
 
     // Responsive sizing function
     const resize = () => {
-      const canvas = canvasRef.current!;
       const width = canvas.clientWidth || 800;
       const height = canvas.clientHeight || 600;
       renderer.setPixelRatio(window.devicePixelRatio);
@@ -193,13 +195,13 @@ export default function Configurator() {
       mouseY = event.clientY;
     };
 
-    canvasRef.current.addEventListener('mousedown', handleMouseDown);
-    canvasRef.current.addEventListener('mouseup', handleMouseUp);
-    canvasRef.current.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousemove', handleMouseMove);
 
     // Animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationIdRef.current = requestAnimationFrame(animate);
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
@@ -210,14 +212,18 @@ export default function Configurator() {
     setSceneReady(true);
 
     return () => {
-      window.removeEventListener('resize', resize);
-      if (canvasRef.current) {
-        canvasRef.current.removeEventListener('mousedown', handleMouseDown);
-        canvasRef.current.removeEventListener('mouseup', handleMouseUp);
-        canvasRef.current.removeEventListener('mousemove', handleMouseMove);
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
       }
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mousemove', handleMouseMove);
     };
-  }, []); // Remove product dependency
+  }, [productLoading, optionsLoading]); // Wait for loading to complete
 
   // Add furniture model when both scene and product are ready
   useEffect(() => {
