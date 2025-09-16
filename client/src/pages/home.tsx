@@ -573,7 +573,7 @@ export default function Home() {
             <div className="min-w-0">
               <h4 className="font-sans font-medium mb-4 text-sm break-words">Join our newsletter and get 20% off your first purchase</h4>
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:max-w-none max-w-xs">
                   <input 
                     type="email" 
                     placeholder="name@gmail.com"
@@ -581,7 +581,7 @@ export default function Home() {
                     data-testid="input-newsletter-email"
                   />
                   <Button 
-                    className="bg-white text-black px-4 py-2 text-sm font-sans hover:bg-gray-100 whitespace-nowrap"
+                    className="bg-white text-black px-4 py-2 text-sm font-sans hover:bg-gray-100 whitespace-nowrap sm:flex-shrink-0"
                     data-testid="button-subscribe"
                   >
                     Subscribe
