@@ -46,6 +46,7 @@ export default function Configurator() {
   const [configuration, setConfiguration] = useState<Configuration>({});
   const [configurationName, setConfigurationName] = useState("");
   const [savedConfigurationId, setSavedConfigurationId] = useState<string | null>(null);
+  const [sceneReady, setSceneReady] = useState(false);
 
   // Fetch product details
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -133,10 +134,24 @@ export default function Configurator() {
       canvas: canvasRef.current, 
       antialias: true 
     });
-    renderer.setSize(800, 600);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
+
+    // Responsive sizing function
+    const resize = () => {
+      const canvas = canvasRef.current!;
+      const width = canvas.clientWidth || 800;
+      const height = canvas.clientHeight || 600;
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+
+    // Initial sizing
+    resize();
+    window.addEventListener('resize', resize);
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -191,7 +206,11 @@ export default function Configurator() {
     };
     animate();
 
+    // Mark scene as ready
+    setSceneReady(true);
+
     return () => {
+      window.removeEventListener('resize', resize);
       if (canvasRef.current) {
         canvasRef.current.removeEventListener('mousedown', handleMouseDown);
         canvasRef.current.removeEventListener('mouseup', handleMouseUp);
@@ -200,9 +219,9 @@ export default function Configurator() {
     };
   }, []); // Remove product dependency
 
-  // Add furniture model when product data is available
+  // Add furniture model when both scene and product are ready
   useEffect(() => {
-    if (!sceneRef.current || !product) return;
+    if (!sceneReady || !sceneRef.current || !product) return;
 
     // Remove existing furniture if any
     if (furnitureRef.current) {
@@ -213,7 +232,7 @@ export default function Configurator() {
     const furnitureGroup = createFurnitureModel(product.name, sceneRef.current);
     sceneRef.current.add(furnitureGroup);
     furnitureRef.current = furnitureGroup;
-  }, [product]);
+  }, [sceneReady, product]);
 
   // Update 3D model based on configuration
   useEffect(() => {
