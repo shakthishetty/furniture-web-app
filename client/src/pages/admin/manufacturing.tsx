@@ -234,9 +234,6 @@ export default function AdminManufacturing() {
       return { previousProcesses };
     },
     onSuccess: (data, { manufacturerId }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
-      
       const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
       
       toast({
@@ -248,6 +245,12 @@ export default function AdminManufacturing() {
       setIsAssignDialogOpen(false);
       setAssignmentProcessId(null);
       setSelectedManufacturer("");
+      
+      // Add a small delay to ensure server has processed the change
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
+      }, 100);
     },
     onError: (error: any, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
@@ -441,14 +444,17 @@ export default function AdminManufacturing() {
     });
   };
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds, but pause during mutations
   useEffect(() => {
     const interval = setInterval(() => {
-      refetchProcesses();
+      // Don't auto-refresh if a mutation is in progress
+      if (!assignManufacturerMutation.isPending && !bulkAssignMutation.isPending) {
+        refetchProcesses();
+      }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [refetchProcesses]);
+  }, [refetchProcesses, assignManufacturerMutation.isPending, bulkAssignMutation.isPending]);
 
   // Utility functions
   const getStatusBadge = (status: string) => {
