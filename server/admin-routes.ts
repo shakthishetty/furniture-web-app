@@ -21,6 +21,23 @@ const adminDiscountUpdateSchema = z.object({
   expiresAt: z.string().optional()
 });
 
+const createProductSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().optional(),
+  category: z.string().min(1, "Category is required"),
+  categoryId: z.string().min(1, "Category ID is required"),
+  basePrice: z.string().refine(val => parseFloat(val) >= 0, "Price must be a positive number"),
+  status: z.enum(["active", "inactive", "out_of_stock"]).default("inactive"),
+  imageUrl: z.string().url().optional(),
+  model3dUrl: z.string().url().optional(),
+  pdfUrl: z.string().url().optional(),
+  additionalImages: z.array(z.string()).optional(),
+  inStock: z.boolean().default(true),
+  stock: z.number().int().min(0).default(0),
+  price: z.number().min(0).optional(), // For frontend compatibility
+  modelUrl: z.string().url().optional() // For frontend compatibility
+});
+
 const adminProductUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
@@ -153,6 +170,44 @@ router.get("/products", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ error: "Failed to fetch products" });
+  }
+});
+
+router.post("/products", requireAdmin, async (req, res) => {
+  try {
+    const validation = createProductSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid product data", details: validation.error.flatten() });
+    }
+
+    // Transform frontend data to match backend schema
+    const productData: any = {
+      ...validation.data,
+      basePrice: validation.data.price ? validation.data.price.toString() : validation.data.basePrice,
+      model3dUrl: validation.data.modelUrl || validation.data.model3dUrl,
+      additionalImages: validation.data.additionalImages ? JSON.stringify(validation.data.additionalImages) : undefined,
+    };
+
+    // Remove frontend-only fields
+    delete productData.price;
+    delete productData.modelUrl;
+    
+    // Remove undefined values
+    Object.keys(productData).forEach(key => {
+      if (productData[key] === undefined) {
+        delete productData[key];
+      }
+    });
+
+    const newProduct = await storage.createProduct(productData);
+    console.log(`Admin ${req.user?.userId} created product ${newProduct.id}:`, productData);
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error("Error creating product:", error);
+    if (error instanceof Error && error.message?.includes("unique constraint")) {
+      return res.status(409).json({ error: "Product name already exists" });
+    }
+    res.status(500).json({ error: "Failed to create product" });
   }
 });
 

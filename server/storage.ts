@@ -173,6 +173,7 @@ export interface IStorage {
   getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }>;
   getManufacturers(): Promise<User[]>; // Get all users with manufacturer role
   getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }>;
+  createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product>;
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
   getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }>;
   getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }>;
@@ -940,6 +941,19 @@ export class DatabaseStorage implements IStorage {
       products: productsResult,
       total: totalResult[0]?.count || 0
     };
+  }
+
+  async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
+    const [product] = await db
+      .insert(products)
+      .values({
+        ...productData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    return product;
   }
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> {
