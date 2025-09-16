@@ -1,16 +1,69 @@
 import { storage } from './storage';
 import { db } from './db';
-import { products, materials, configurationOptions, discountCodes } from '@shared/schema';
+import { products, materials, configurationOptions, discountCodes, categories } from '@shared/schema';
 
 export async function seedSampleData() {
   try {
     console.log('Seeding sample data...');
 
-    // Insert sample products
+    // Insert sample categories first
+    const sampleCategories = [
+      {
+        name: 'Dining Room',
+        description: 'Dining chairs, tables, and dining room furniture',
+        slug: 'dining',
+        sortOrder: 1,
+        isActive: true,
+      },
+      {
+        name: 'Living Room',
+        description: 'Coffee tables, sofas, and living room furniture',
+        slug: 'living-room',
+        sortOrder: 2,
+        isActive: true,
+      },
+      {
+        name: 'Bedroom',
+        description: 'Beds, dressers, and bedroom furniture',
+        slug: 'bedroom',
+        sortOrder: 3,
+        isActive: true,
+      },
+      {
+        name: 'Study',
+        description: 'Desks, bookshelves, and study furniture',
+        slug: 'study',
+        sortOrder: 4,
+        isActive: true,
+      },
+      {
+        name: 'Outdoor',
+        description: 'Outdoor and patio furniture',
+        slug: 'outdoor',
+        sortOrder: 5,
+        isActive: true,
+      },
+    ];
+
+    // Insert categories
+    const insertedCategories = [];
+    for (const category of sampleCategories) {
+      const [insertedCategory] = await db.insert(categories).values(category).returning();
+      insertedCategories.push(insertedCategory);
+    }
+
+    // Create category lookup map
+    const categoryMap = insertedCategories.reduce((map, cat) => {
+      map[cat.slug] = cat.id;
+      return map;
+    }, {} as Record<string, string>);
+
+    // Insert sample products with proper category references
     const sampleProducts = [
       {
         name: 'STRATA TEAK DINING CHAIR',
         description: 'Modern dining chair crafted from sustainable teak wood with ergonomic design.',
+        categoryId: categoryMap['dining'],
         category: 'dining',
         basePrice: '450.00',
         isCustomizable: true,
@@ -22,6 +75,7 @@ export async function seedSampleData() {
       {
         name: 'STRATA TEAK COFFEE TABLE',
         description: 'Elegant coffee table with clean lines and natural teak finish.',
+        categoryId: categoryMap['living-room'],
         category: 'living-room',
         basePrice: '850.00',
         isCustomizable: true,
@@ -33,6 +87,7 @@ export async function seedSampleData() {
       {
         name: 'STRATA TEAK PLATFORM BED',
         description: 'Minimalist platform bed with integrated nightstands.',
+        categoryId: categoryMap['bedroom'],
         category: 'bedroom',
         basePrice: '1800.00',
         isCustomizable: true,
@@ -44,6 +99,7 @@ export async function seedSampleData() {
       {
         name: 'STRATA TEAK DESK',
         description: 'Executive desk with built-in cable management and drawers.',
+        categoryId: categoryMap['study'],
         category: 'study',
         basePrice: '1200.00',
         isCustomizable: true,
@@ -223,6 +279,7 @@ export async function seedSampleData() {
     }
 
     console.log('Sample data seeded successfully!');
+    console.log(`Inserted ${insertedCategories.length} categories`);
     console.log(`Inserted ${insertedProducts.length} products`);
     console.log(`Inserted ${insertedMaterials.length} materials`);
     console.log(`Inserted ${insertedProducts.length * 4} configuration options`);
