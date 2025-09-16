@@ -172,19 +172,105 @@ router.get("/processes/:id", requireManufacturer, verifyProcessAccess, async (re
       return res.status(404).json({ error: "Process details not found" });
     }
 
-    // Get order information
-    const order = await storage.getOrder(process.orderId);
+    // Get comprehensive order information
+    const orderWithItems = await storage.getOrderWithItems(process.orderId);
     
-    // Include order details for context
+    let comprehensiveOrderDetails = null;
+    
+    if (orderWithItems) {
+      // Get customer information
+      const customer = await storage.getUser(orderWithItems.userId);
+      
+      // Get addresses
+      const shippingAddress = orderWithItems.shippingAddressId 
+        ? await storage.getAddress(orderWithItems.shippingAddressId) 
+        : null;
+      const billingAddress = orderWithItems.billingAddressId 
+        ? await storage.getAddress(orderWithItems.billingAddressId) 
+        : null;
+      
+      // Note: Order status history functionality can be added later if needed
+      
+      comprehensiveOrderDetails = {
+        // Basic order info
+        id: orderWithItems.id,
+        orderNumber: orderWithItems.orderNumber,
+        status: orderWithItems.status,
+        paymentStatus: orderWithItems.paymentStatus,
+        paymentMethod: orderWithItems.paymentMethod,
+        
+        // Pricing details
+        subtotal: orderWithItems.subtotal,
+        discountAmount: orderWithItems.discountAmount,
+        taxAmount: orderWithItems.taxAmount,
+        shippingAmount: orderWithItems.shippingAmount,
+        totalAmount: orderWithItems.totalAmount,
+        
+        // Customer information
+        customer: customer ? {
+          id: customer.id,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          email: customer.email
+        } : null,
+        
+        // Order items with product details
+        items: orderWithItems.items.map(item => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.productName,
+          productImage: item.productImage,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          customConfiguration: item.customConfiguration
+        })),
+        
+        // Addresses
+        shippingAddress: shippingAddress ? {
+          label: shippingAddress.label,
+          firstName: shippingAddress.firstName,
+          lastName: shippingAddress.lastName,
+          street: shippingAddress.street,
+          apartment: shippingAddress.apartment,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postalCode: shippingAddress.postalCode,
+          country: shippingAddress.country,
+          phone: shippingAddress.phone
+        } : null,
+        
+        billingAddress: billingAddress ? {
+          label: billingAddress.label,
+          firstName: billingAddress.firstName,
+          lastName: billingAddress.lastName,
+          street: billingAddress.street,
+          apartment: billingAddress.apartment,
+          city: billingAddress.city,
+          state: billingAddress.state,
+          postalCode: billingAddress.postalCode,
+          country: billingAddress.country,
+          phone: billingAddress.phone
+        } : null,
+        
+        // Additional details
+        discountCodeUsed: orderWithItems.discountCodeUsed,
+        trackingNumber: orderWithItems.trackingNumber,
+        shippingCarrier: orderWithItems.shippingCarrier,
+        estimatedDeliveryDate: orderWithItems.estimatedDeliveryDate,
+        
+        // Order history - can be added later if needed
+        
+        // Timestamps
+        createdAt: orderWithItems.createdAt,
+        updatedAt: orderWithItems.updatedAt
+      };
+    }
+    
+    // Include comprehensive order details
     const processWithOrderDetails = {
       ...fullProcess,
-      order: order ? {
-        orderNumber: order.orderNumber,
-        userId: order.userId,
-        status: order.status,
-        totalAmount: order.totalAmount,
-        createdAt: order.createdAt
-      } : null
+      order: comprehensiveOrderDetails
     };
 
     res.json(processWithOrderDetails);
