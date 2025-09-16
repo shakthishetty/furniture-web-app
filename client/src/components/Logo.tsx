@@ -10,8 +10,8 @@ interface LogoProps {
 }
 
 export default function Logo({ 
-  height = 32, 
-  width = 120, 
+  height = 40, 
+  width = 150, 
   className = "", 
   onClick,
   "data-testid": testId = "logo",

@@ -72,7 +72,7 @@ function ManufacturerSidebar() {
     <Sidebar data-testid="manufacturer-sidebar">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <Logo height={24} width={90} />
+          <Logo height={30} width={110} />
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate text-xs text-muted-foreground">Manufacturer Portal</span>
             <span className="truncate text-xs text-muted-foreground">
