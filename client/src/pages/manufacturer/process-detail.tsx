@@ -41,11 +41,76 @@ import type {
 
 interface ProcessWithDetails extends ManufacturingProcess {
   order?: {
+    // Basic order info
+    id: string;
     orderNumber: string;
-    userId: string;
     status: string;
+    paymentStatus: string;
+    paymentMethod: string;
+    
+    // Pricing details
+    subtotal: string;
+    discountAmount: string | null;
+    taxAmount: string | null;
+    shippingAmount: string | null;
     totalAmount: string;
-    createdAt: string;
+    
+    // Customer information
+    customer: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+      email: string;
+    } | null;
+    
+    // Order items with product details
+    items: Array<{
+      id: string;
+      productId: string;
+      productName: string;
+      productImage: string | null;
+      quantity: number;
+      unitPrice: string;
+      totalPrice: string;
+      customConfiguration: any;
+    }>;
+    
+    // Addresses
+    shippingAddress: {
+      label: string;
+      firstName: string;
+      lastName: string;
+      street: string;
+      apartment: string | null;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      phone: string | null;
+    } | null;
+    
+    billingAddress: {
+      label: string;
+      firstName: string;
+      lastName: string;
+      street: string;
+      apartment: string | null;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      phone: string | null;
+    } | null;
+    
+    // Additional details
+    discountCodeUsed: string | null;
+    trackingNumber: string | null;
+    shippingCarrier: string | null;
+    estimatedDeliveryDate: Date | null;
+    
+    // Timestamps
+    createdAt: Date;
+    updatedAt: Date;
   };
   stages: Array<ManufacturingStage & {
     updates: Array<StageUpdate & {
