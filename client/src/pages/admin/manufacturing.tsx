@@ -205,18 +205,59 @@ export default function AdminManufacturing() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async ({ processId, manufacturerId }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
+      
+      // Snapshot the previous value
+      const previousProcesses = queryClient.getQueryData(["/api/admin/manufacturing/processes", page, statusFilter, manufacturerFilter, searchTerm]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        ["/api/admin/manufacturing/processes", page, statusFilter, manufacturerFilter, searchTerm],
+        (old: ProcessesResponse | undefined) => {
+          if (!old) return old;
+          
+          const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
+          
+          return {
+            ...old,
+            processes: old.processes.map(process =>
+              process.id === processId
+                ? { ...process, assignedManufacturer: manufacturer }
+                : process
+            )
+          };
+        }
+      );
+      
+      return { previousProcesses };
+    },
+    onSuccess: (data, { manufacturerId }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
+      
+      const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
+      
       toast({
         title: "Success",
-        description: "Manufacturer assignment updated successfully",
+        description: manufacturer 
+          ? `Successfully assigned to ${manufacturer.name}`
+          : "Successfully unassigned manufacturer",
       });
       setIsAssignDialogOpen(false);
       setAssignmentProcessId(null);
       setSelectedManufacturer("");
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousProcesses) {
+        queryClient.setQueryData(
+          ["/api/admin/manufacturing/processes", page, statusFilter, manufacturerFilter, searchTerm],
+          context.previousProcesses
+        );
+      }
+      
       toast({
         title: "Error",
         description: error.message || "Failed to assign manufacturer",
