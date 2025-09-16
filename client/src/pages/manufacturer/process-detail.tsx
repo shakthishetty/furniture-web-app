@@ -356,29 +356,231 @@ export default function ManufacturerProcessDetail() {
         <Card data-testid="card-order-info">
           <CardHeader>
             <CardTitle className="text-base">Order Information</CardTitle>
+            <CardDescription>Complete order details and customer information</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             {process.order ? (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Order Number:</span>
-                  <span className="text-sm font-mono">#{process.order.orderNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Order Status:</span>
-                  <Badge variant="outline">{process.order.status}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Order Date:</span>
-                  <span className="text-sm">
-                    {new Date(process.order.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Amount:</span>
-                  <span className="text-sm font-medium">${process.order.totalAmount}</span>
-                </div>
-              </>
+              <Tabs defaultValue="summary" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="summary" data-testid="tab-order-summary">Summary</TabsTrigger>
+                  <TabsTrigger value="customer" data-testid="tab-customer-info">Customer</TabsTrigger>
+                  <TabsTrigger value="items" data-testid="tab-order-items">Items</TabsTrigger>
+                  <TabsTrigger value="addresses" data-testid="tab-addresses">Addresses</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="summary" className="mt-4 space-y-3" data-testid="content-order-summary">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Order Number:</span>
+                        <span className="text-sm font-mono">#{process.order.orderNumber}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Order Status:</span>
+                        <Badge variant="outline" data-testid="badge-order-status">{process.order.status}</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Payment Status:</span>
+                        <Badge variant={process.order.paymentStatus === 'paid' ? 'default' : 'destructive'} data-testid="badge-payment-status">
+                          {process.order.paymentStatus}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Payment Method:</span>
+                        <span className="text-sm" data-testid="text-payment-method">{process.order.paymentMethod}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Order Date:</span>
+                        <span className="text-sm" data-testid="text-order-date">
+                          {new Date(process.order.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Subtotal:</span>
+                        <span className="text-sm" data-testid="text-subtotal">${process.order.subtotal}</span>
+                      </div>
+                      {process.order.discountAmount && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Discount:</span>
+                          <span className="text-sm" data-testid="text-discount">-${process.order.discountAmount}</span>
+                        </div>
+                      )}
+                      {process.order.taxAmount && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tax:</span>
+                          <span className="text-sm" data-testid="text-tax">${process.order.taxAmount}</span>
+                        </div>
+                      )}
+                      {process.order.shippingAmount && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Shipping:</span>
+                          <span className="text-sm" data-testid="text-shipping">${process.order.shippingAmount}</span>
+                        </div>
+                      )}
+                      <Separator />
+                      <div className="flex justify-between font-medium">
+                        <span>Total Amount:</span>
+                        <span className="text-sm" data-testid="text-total-amount">${process.order.totalAmount}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {(process.order.trackingNumber || process.order.shippingCarrier || process.order.estimatedDeliveryDate) && (
+                    <>
+                      <Separator className="my-4" />
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Shipping Information</h4>
+                        <div className="grid grid-cols-1 gap-2 text-sm">
+                          {process.order.trackingNumber && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Tracking Number:</span>
+                              <span className="font-mono" data-testid="text-tracking-number">{process.order.trackingNumber}</span>
+                            </div>
+                          )}
+                          {process.order.shippingCarrier && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Carrier:</span>
+                              <span data-testid="text-shipping-carrier">{process.order.shippingCarrier}</span>
+                            </div>
+                          )}
+                          {process.order.estimatedDeliveryDate && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Est. Delivery:</span>
+                              <span data-testid="text-estimated-delivery">
+                                {new Date(process.order.estimatedDeliveryDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="customer" className="mt-4 space-y-3" data-testid="content-customer-info">
+                  {process.order.customer ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <h4 className="font-medium">Customer Details</h4>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 pl-6">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Name:</span>
+                          <span className="text-sm font-medium" data-testid="text-customer-name">
+                            {process.order.customer.firstName} {process.order.customer.lastName}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Email:</span>
+                          <span className="text-sm" data-testid="text-customer-email">{process.order.customer.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Customer information not available</p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="items" className="mt-4 space-y-3" data-testid="content-order-items">
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Order Items ({process.order.items.length})</h4>
+                    <div className="space-y-4">
+                      {process.order.items.map((item, index) => (
+                        <Card key={item.id} className="p-4" data-testid={`item-${item.id}`}>
+                          <div className="flex gap-4">
+                            {item.productImage && (
+                              <img 
+                                src={item.productImage} 
+                                alt={item.productName}
+                                className="w-16 h-16 object-cover rounded border"
+                                data-testid={`img-product-${item.id}`}
+                              />
+                            )}
+                            <div className="flex-1 space-y-2">
+                              <div className="flex justify-between items-start">
+                                <h5 className="font-medium text-sm" data-testid={`text-product-name-${item.id}`}>
+                                  {item.productName}
+                                </h5>
+                                <Badge variant="secondary" data-testid={`badge-quantity-${item.id}`}>
+                                  Qty: {item.quantity}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Unit Price:</span>
+                                <span data-testid={`text-unit-price-${item.id}`}>${item.unitPrice}</span>
+                              </div>
+                              <div className="flex justify-between text-sm font-medium">
+                                <span>Total:</span>
+                                <span data-testid={`text-item-total-${item.id}`}>${item.totalPrice}</span>
+                              </div>
+                              {item.customConfiguration && (
+                                <div className="mt-2 p-2 bg-muted rounded text-xs">
+                                  <span className="text-muted-foreground">Custom Configuration:</span>
+                                  <pre className="mt-1 whitespace-pre-wrap" data-testid={`text-custom-config-${item.id}`}>
+                                    {JSON.stringify(item.customConfiguration, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="addresses" className="mt-4 space-y-3" data-testid="content-addresses">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {process.order.shippingAddress && (
+                      <Card className="p-4" data-testid="card-shipping-address">
+                        <h4 className="font-medium mb-3">Shipping Address</h4>
+                        <div className="space-y-1 text-sm">
+                          <div data-testid="text-shipping-name">
+                            {process.order.shippingAddress.firstName} {process.order.shippingAddress.lastName}
+                          </div>
+                          <div data-testid="text-shipping-street">{process.order.shippingAddress.street}</div>
+                          {process.order.shippingAddress.apartment && (
+                            <div data-testid="text-shipping-apartment">{process.order.shippingAddress.apartment}</div>
+                          )}
+                          <div data-testid="text-shipping-location">
+                            {process.order.shippingAddress.city}, {process.order.shippingAddress.state} {process.order.shippingAddress.postalCode}
+                          </div>
+                          <div data-testid="text-shipping-country">{process.order.shippingAddress.country}</div>
+                          {process.order.shippingAddress.phone && (
+                            <div data-testid="text-shipping-phone">Phone: {process.order.shippingAddress.phone}</div>
+                          )}
+                        </div>
+                      </Card>
+                    )}
+                    
+                    {process.order.billingAddress && (
+                      <Card className="p-4" data-testid="card-billing-address">
+                        <h4 className="font-medium mb-3">Billing Address</h4>
+                        <div className="space-y-1 text-sm">
+                          <div data-testid="text-billing-name">
+                            {process.order.billingAddress.firstName} {process.order.billingAddress.lastName}
+                          </div>
+                          <div data-testid="text-billing-street">{process.order.billingAddress.street}</div>
+                          {process.order.billingAddress.apartment && (
+                            <div data-testid="text-billing-apartment">{process.order.billingAddress.apartment}</div>
+                          )}
+                          <div data-testid="text-billing-location">
+                            {process.order.billingAddress.city}, {process.order.billingAddress.state} {process.order.billingAddress.postalCode}
+                          </div>
+                          <div data-testid="text-billing-country">{process.order.billingAddress.country}</div>
+                          {process.order.billingAddress.phone && (
+                            <div data-testid="text-billing-phone">Phone: {process.order.billingAddress.phone}</div>
+                          )}
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             ) : (
               <p className="text-muted-foreground text-sm">Order information not available</p>
             )}
