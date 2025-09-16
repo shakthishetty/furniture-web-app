@@ -1668,6 +1668,7 @@ export class DatabaseStorage implements IStorage {
 
   // Simple Manufacturer operations (direct admin creation)
   async createDirectManufacturer(manufacturerData: CreateManufacturerRequest, adminUserId: string): Promise<Manufacturer> {
+    // Create the manufacturer record
     const [manufacturer] = await db
       .insert(manufacturers)
       .values({
@@ -1675,6 +1676,27 @@ export class DatabaseStorage implements IStorage {
         createdBy: adminUserId,
       })
       .returning();
+    
+    // Also create a user account so the manufacturer can log in
+    // Check if user already exists with this email
+    const existingUser = await this.getUserByEmail(manufacturerData.email);
+    if (!existingUser) {
+      // Create user account with default password "password"
+      const hashedPassword = await hashPassword("password");
+      
+      await db
+        .insert(users)
+        .values({
+          id: manufacturer.id, // Use the manufacturer ID as the user ID for consistency
+          email: manufacturerData.email,
+          password: hashedPassword,
+          firstName: manufacturerData.name.split(' ')[0] || manufacturerData.name,
+          lastName: manufacturerData.name.split(' ').slice(1).join(' ') || '',
+          role: 'manufacturer',
+          emailVerified: true, // Auto-verify admin-created accounts
+          status: 'active',
+        });
+    }
     
     return manufacturer;
   }
