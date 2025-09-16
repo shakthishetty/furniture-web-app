@@ -21,8 +21,11 @@ export default function Logo({
   const shouldUseDarkStyling = variant === 'dark' || 
     (variant === 'auto' && !className.includes('text-white') && !className.includes('dark:'));
   
-  // Apply appropriate filter for dark styling (inverts white logo to dark)
-  const filterClass = shouldUseDarkStyling ? 'filter brightness-0 invert' : '';
+  // Use inline styles for more reliable filter application
+  const filterStyle = shouldUseDarkStyling ? {
+    filter: 'invert(1)',
+    WebkitFilter: 'invert(1)'
+  } : {};
   
   return (
     <img
@@ -30,7 +33,8 @@ export default function Logo({
       alt="Site logo"
       height={height}
       width={width}
-      className={`cursor-pointer ${className} ${filterClass}`}
+      className={`cursor-pointer ${className}`}
+      style={filterStyle}
       onClick={onClick}
       data-testid={testId}
     />
