@@ -206,19 +206,20 @@ export default function AdminManufacturing() {
       return response.json();
     },
     onMutate: async ({ processId, manufacturerId }) => {
-      // Cancel any outgoing refetches
+      // Cancel any outgoing refetches for all possible query key variations
       await queryClient.cancelQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
       
-      // Snapshot the previous value
-      const previousProcesses = queryClient.getQueryData(["/api/admin/manufacturing/processes", page, statusFilter, manufacturerFilter, searchTerm]);
+      // Get manufacturer data
+      const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
       
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        ["/api/admin/manufacturing/processes", page, statusFilter, manufacturerFilter, searchTerm],
+      // Snapshot all current cache entries
+      const previousData = queryClient.getQueriesData({ queryKey: ["/api/admin/manufacturing/processes"] });
+      
+      // Update all cache entries optimistically
+      queryClient.setQueriesData(
+        { queryKey: ["/api/admin/manufacturing/processes"] },
         (old: ProcessesResponse | undefined) => {
           if (!old) return old;
-          
-          const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
           
           return {
             ...old,
@@ -231,7 +232,7 @@ export default function AdminManufacturing() {
         }
       );
       
-      return { previousProcesses };
+      return { previousData };
     },
     onSuccess: (data, { manufacturerId }) => {
       const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
@@ -246,19 +247,16 @@ export default function AdminManufacturing() {
       setAssignmentProcessId(null);
       setSelectedManufacturer("");
       
-      // Add a small delay to ensure server has processed the change
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
-      }, 100);
+      // Invalidate queries immediately to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
     },
     onError: (error: any, variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousProcesses) {
-        queryClient.setQueryData(
-          ["/api/admin/manufacturing/processes", page, statusFilter, manufacturerFilter, searchTerm],
-          context.previousProcesses
-        );
+      // If the mutation fails, restore all previous cache entries
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       
       toast({
