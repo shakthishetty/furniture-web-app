@@ -303,7 +303,7 @@ export default function ManufacturerProcesses() {
                         variant="outline"
                         data-testid={`button-view-process-${process.id}`}
                       >
-                        <Link href={`processes/${process.id}`}>
+                        <Link href={`/manufacturer/processes/${process.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Link>
