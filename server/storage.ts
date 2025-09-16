@@ -1301,10 +1301,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined> {
+    let userIdToAssign = manufacturerId;
+
+    // If manufacturerId is provided, find the corresponding user ID
+    if (manufacturerId) {
+      // Check if this is already a user ID (if it can log in as manufacturer)
+      const userCheck = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.id, manufacturerId), eq(users.role, 'manufacturer')))
+        .limit(1);
+
+      if (userCheck.length === 0) {
+        // This is a manufacturer table ID, find the corresponding user ID
+        const manufacturer = await db
+          .select({ email: manufacturers.email })
+          .from(manufacturers)
+          .where(eq(manufacturers.id, manufacturerId))
+          .limit(1);
+
+        if (manufacturer.length > 0) {
+          // Find user with matching email and manufacturer role
+          const correspondingUser = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(and(eq(users.email, manufacturer[0].email), eq(users.role, 'manufacturer')))
+            .limit(1);
+
+          if (correspondingUser.length > 0) {
+            userIdToAssign = correspondingUser[0].id;
+          } else {
+            // No corresponding user found, assignment will fail
+            console.warn(`No user found for manufacturer ${manufacturerId} with email ${manufacturer[0].email}`);
+          }
+        }
+      }
+    }
+
     const [process] = await db
       .update(manufacturingProcesses)
       .set({ 
-        assignedManufacturerId: manufacturerId,
+        assignedManufacturerId: userIdToAssign,
         updatedAt: new Date() 
       })
       .where(eq(manufacturingProcesses.id, processId))
