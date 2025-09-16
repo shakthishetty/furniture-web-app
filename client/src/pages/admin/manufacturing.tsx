@@ -61,6 +61,7 @@ import type {
 
 interface ProcessesResponse {
   processes: (ManufacturingProcess & {
+    assignedManufacturerId?: string | null;
     assignedManufacturer?: Manufacturer | null;
     stages?: ManufacturingStage[];
     order?: {
@@ -225,7 +226,11 @@ export default function AdminManufacturing() {
             ...old,
             processes: old.processes.map(process =>
               process.id === processId
-                ? { ...process, assignedManufacturer: manufacturer }
+                ? { 
+                    ...process, 
+                    assignedManufacturerId: manufacturerId,
+                    assignedManufacturer: manufacturer 
+                  }
                 : process
             )
           };
@@ -490,7 +495,11 @@ export default function AdminManufacturing() {
   };
 
   const getManufacturerDisplay = (process: ProcessesResponse['processes'][0]) => {
-    if (!process.assignedManufacturer) {
+    // Use ID-first approach to find manufacturer
+    const manufacturerId = process.assignedManufacturerId || process.assignedManufacturer?.id || "";
+    const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
+    
+    if (!manufacturer) {
       return (
         <div className="flex items-center gap-2 text-muted-foreground">
           <UserX className="h-3 w-3" />
@@ -503,7 +512,7 @@ export default function AdminManufacturing() {
       <div className="flex items-center gap-2">
         <UserCheck className="h-3 w-3 text-green-600" />
         <span className="text-xs font-medium">
-          {process.assignedManufacturer.name}
+          {manufacturer.name}
         </span>
       </div>
     );
@@ -797,7 +806,7 @@ export default function AdminManufacturing() {
                           </td>
                           <td className="py-3">
                             <Select 
-                              value={process.assignedManufacturer?.id || "unassigned"} 
+                              value={process.assignedManufacturerId || process.assignedManufacturer?.id || "unassigned"} 
                               onValueChange={(manufacturerId) => {
                                 assignManufacturerMutation.mutate({
                                   processId: process.id,
@@ -811,17 +820,22 @@ export default function AdminManufacturing() {
                                 data-testid={`manufacturer-dropdown-${process.id}`}
                               >
                                 <SelectValue placeholder="Select manufacturer">
-                                  {process.assignedManufacturer ? (
-                                    <div className="flex items-center gap-2">
-                                      <User className="h-3 w-3" />
-                                      <span>{process.assignedManufacturer.name}</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                      <UserX className="h-3 w-3" />
-                                      <span>Unassigned</span>
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const manufacturerId = process.assignedManufacturerId || process.assignedManufacturer?.id || "";
+                                    const manufacturer = manufacturerId ? manufacturers.find(m => m.id === manufacturerId) : null;
+                                    
+                                    return manufacturer ? (
+                                      <div className="flex items-center gap-2">
+                                        <User className="h-3 w-3" />
+                                        <span>{manufacturer.name}</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-2 text-muted-foreground">
+                                        <UserX className="h-3 w-3" />
+                                        <span>Unassigned</span>
+                                      </div>
+                                    );
+                                  })()}
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
