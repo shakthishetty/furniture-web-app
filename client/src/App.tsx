@@ -42,6 +42,7 @@ import ManufacturerDashboard from "@/pages/manufacturer/dashboard";
 import ManufacturerProcesses from "@/pages/manufacturer/processes";
 import ManufacturerProcessDetail from "@/pages/manufacturer/process-detail";
 import ManufacturerRegistration from "@/pages/manufacturer-registration";
+import ManufacturerLogin from "@/pages/manufacturer-login";
 
 function AdminRouter() {
   return (
@@ -92,6 +93,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/manufacturer-registration" component={ManufacturerRegistration} />
+      <Route path="/manufacturer-login" component={ManufacturerLogin} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/catalog" component={Catalog} />
       <Route path="/configurator/:id" component={Configurator} />
