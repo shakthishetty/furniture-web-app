@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Logo from "@/components/Logo";
 
 const manufacturerMenuItems = [
   {
@@ -71,11 +72,9 @@ function ManufacturerSidebar() {
     <Sidebar data-testid="manufacturer-sidebar">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white">
-            <Wrench className="h-4 w-4" />
-          </div>
+          <Logo height={24} width={90} />
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Teak Theory Mfg</span>
+            <span className="truncate text-xs text-muted-foreground">Manufacturer Portal</span>
             <span className="truncate text-xs text-muted-foreground">
               {displayName}
             </span>

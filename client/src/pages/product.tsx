@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag, Plus, Minus } from "lucide-react";
+import { Link } from "wouter";
+import Logo from "@/components/Logo";
 import productChairImage from "../assets/product-chair.jpg";
 
 export default function Product() {
@@ -29,15 +31,9 @@ export default function Product() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center space-x-2" data-testid="logo">
-              <svg width="32" height="32" viewBox="0 0 100 100" fill="currentColor">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="3"/>
-                <path d="M30 35 L50 25 L70 35 L70 45 L50 35 L30 45 Z" fill="currentColor"/>
-                <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
-                <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
-              </svg>
-              <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
-            </div>
+            <Link href="/">
+              <Logo variant="dark" data-testid="logo" />
+            </Link>
 
             {/* Navigation Menu */}
             <div className="hidden md:flex items-center space-x-8">

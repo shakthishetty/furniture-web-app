@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
 import { useCart } from "@/hooks/useCart";
+import Logo from "@/components/Logo";
 import heroImage from "../assets/hero-bedroom.jpg";
 import bedroomImage from "../assets/bedroom-category.jpg";
 import livingRoomImage from "../assets/living-room-category.jpg";
@@ -24,11 +25,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center space-x-2" data-testid="logo">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <div className="w-4 h-4 bg-primary rounded-full"></div>
-              </div>
-              <span className="text-xl font-bold text-white font-serif">TEAK THEORY</span>
+            <div data-testid="logo">
+              <Logo />
             </div>
 
             {/* Navigation Menu */}
@@ -532,14 +530,10 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 text-white">
             {/* Logo */}
             <div className="lg:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <svg width="32" height="32" viewBox="0 0 100 100" fill="currentColor">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="3"/>
-                  <path d="M30 35 L50 25 L70 35 L70 45 L50 35 L30 45 Z" fill="currentColor"/>
-                  <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
-                  <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
-                </svg>
-                <span className="font-serif text-xl">TEAK THEORY</span>
+              <div className="mb-4">
+                <Link href="/">
+                  <Logo variant="light" className="text-white" data-testid="footer-logo" />
+                </Link>
               </div>
             </div>
 

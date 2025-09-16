@@ -9,7 +9,6 @@ import {
   Heart, 
   ShoppingBag, 
   Menu,
-  TreePine,
   X,
   Package,
   Truck,
@@ -21,6 +20,7 @@ import {
   CreditCard
 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import Logo from "@/components/Logo";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,12 +33,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/">
-            <div className="flex items-center space-x-2 cursor-pointer" data-testid="logo">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <TreePine className="text-primary-foreground text-sm" />
-              </div>
-              <span className="text-xl font-bold text-foreground">TEAK THEORY</span>
-            </div>
+            <Logo data-testid="logo" />
           </Link>
 
           {/* Navigation Menu */}

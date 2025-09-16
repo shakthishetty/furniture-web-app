@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Logo from "@/components/Logo";
 
 const adminMenuItems = [
   {
@@ -102,11 +103,9 @@ function AdminSidebar() {
     <Sidebar data-testid="admin-sidebar">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <LayoutDashboard className="h-4 w-4" />
-          </div>
+          <Logo height={24} width={90} />
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Teak Theory Admin</span>
+            <span className="truncate text-xs text-muted-foreground">Admin Portal</span>
             <span className="truncate text-xs text-muted-foreground">
               {adminUser?.email}
             </span>

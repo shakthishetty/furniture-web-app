@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import Logo from "@/components/Logo";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -61,14 +62,8 @@ export default function Register() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/">
-              <div className="flex items-center space-x-2 cursor-pointer" data-testid="logo">
-                <svg width="32" height="32" viewBox="0 0 100 100" fill="currentColor">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="3"/>
-                  <path d="M30 35 L50 25 L70 35 L70 45 L50 35 L30 45 Z" fill="currentColor"/>
-                  <path d="M30 50 L50 40 L70 50 L70 60 L50 50 L30 60 Z" fill="currentColor"/>
-                  <path d="M30 65 L50 55 L70 65 L70 75 L50 65 L30 75 Z" fill="currentColor"/>
-                </svg>
-                <span className="text-xl font-bold text-black font-serif">TEAK THEORY</span>
+              <div data-testid="logo">
+                <Logo />
               </div>
             </Link>
 
