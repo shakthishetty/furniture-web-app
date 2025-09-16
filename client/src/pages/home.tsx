@@ -26,7 +26,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div data-testid="logo">
-              <Logo />
+              <Logo variant="light" />
             </div>
 
             {/* Navigation Menu */}
