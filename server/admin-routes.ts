@@ -21,16 +21,28 @@ const adminDiscountUpdateSchema = z.object({
   expiresAt: z.string().optional()
 });
 
+// Helper to validate URLs and object storage paths
+const urlOrPathSchema = z.string().refine(
+  (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/objects/'),
+  "Must be a valid URL or object storage path"
+);
+
 const createProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional(),
   categoryId: z.string().min(1, "Category ID is required"),
+  // Accept both basePrice (string) and price (number) from frontend
   basePrice: z.string().refine(val => parseFloat(val) >= 0, "Price must be a positive number").optional(),
-  status: z.enum(["active", "inactive", "out_of_stock"]).default("inactive"),
-  imageUrl: z.string().url().optional(),
-  model3dUrl: z.string().url().optional(),
-  pdfUrl: z.string().url().optional(),
-  additionalImages: z.string().optional(), // Frontend sends JSON string, not array
+  price: z.number().min(0).optional(), // Frontend compatibility
+  // Accept both draft and other statuses, map draft to inactive
+  status: z.enum(["active", "inactive", "out_of_stock", "draft"]).default("inactive"),
+  imageUrl: urlOrPathSchema.optional(),
+  // Accept both model3dUrl and modelUrl from frontend
+  model3dUrl: urlOrPathSchema.optional(),
+  modelUrl: urlOrPathSchema.optional(), // Frontend compatibility
+  pdfUrl: urlOrPathSchema.optional(),
+  // Accept both string and array for additionalImages
+  additionalImages: z.union([z.string(), z.array(z.string())]).optional(),
   inStock: z.boolean().default(true),
   stock: z.number().int().min(0).default(0)
 });
@@ -40,12 +52,20 @@ const adminProductUpdateSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   categoryId: z.string().optional(),
+  // Accept both basePrice and price
   basePrice: z.string().refine(val => !val || (parseFloat(val) >= 0), "Base price must be positive").optional(),
-  status: z.enum(["active", "inactive", "out_of_stock"]).optional(),
-  imageUrl: z.string().url().optional().nullable(),
-  model3dUrl: z.string().url().optional().nullable(),
-  pdfUrl: z.string().url().optional().nullable(),
-  additionalImages: z.string().optional()
+  price: z.number().min(0).optional(),
+  // Accept draft status
+  status: z.enum(["active", "inactive", "out_of_stock", "draft"]).optional(),
+  imageUrl: urlOrPathSchema.optional().nullable(),
+  // Accept both model field names
+  model3dUrl: urlOrPathSchema.optional().nullable(),
+  modelUrl: urlOrPathSchema.optional().nullable(),
+  pdfUrl: urlOrPathSchema.optional().nullable(),
+  // Accept both string and array
+  additionalImages: z.union([z.string(), z.array(z.string())]).optional(),
+  inStock: z.boolean().optional(),
+  stock: z.number().int().min(0).optional()
 });
 
 const router = express.Router();
@@ -164,17 +184,28 @@ router.get("/products", requireAdmin, async (req, res) => {
 
     const result = await storage.getProducts({ page, limit, category, status });
     
+    // Helper function to safely parse additionalImages
+    const parseAdditionalImages = (additionalImages: any) => {
+      if (!additionalImages) return [];
+      if (Array.isArray(additionalImages)) return additionalImages;
+      if (typeof additionalImages === 'string') {
+        try {
+          return JSON.parse(additionalImages);
+        } catch (error) {
+          console.error('Error parsing additionalImages JSON:', error);
+          return [];
+        }
+      }
+      return [];
+    };
+
     // Transform products for frontend compatibility
     const transformedProducts = result.products.map(product => ({
       ...product,
       // Convert basePrice string to price number for frontend
       price: product.basePrice ? parseFloat(product.basePrice) : 0,
-      // Parse additionalImages JSON string to array
-      additionalImages: product.additionalImages ? 
-        (typeof product.additionalImages === 'string' ? 
-          JSON.parse(product.additionalImages) : 
-          product.additionalImages) : 
-        [],
+      // Parse additionalImages JSON string to array with error handling
+      additionalImages: parseAdditionalImages(product.additionalImages),
       // Keep basePrice for API compatibility
       basePrice: product.basePrice
     }));
@@ -199,17 +230,38 @@ router.post("/products", requireAdmin, async (req, res) => {
     // Get category slug from categoryId for backward compatibility
     let categorySlug = '';
     if (validation.data.categoryId) {
-      // Fetch category to get the slug
-      const category = await storage.getCategoryById(validation.data.categoryId);
-      categorySlug = category?.slug || '';
+      try {
+        const category = await storage.getCategoryById(validation.data.categoryId);
+        categorySlug = category?.slug || '';
+      } catch (error) {
+        console.error('Error fetching category:', error);
+      }
     }
 
     // Transform frontend data to match backend schema
     const productData: any = {
-      ...validation.data,
-      category: categorySlug, // Add category field for backend compatibility
-      // additionalImages is already a JSON string from frontend
-      // All other fields are already in the correct format
+      name: validation.data.name,
+      description: validation.data.description,
+      categoryId: validation.data.categoryId,
+      category: categorySlug,
+      // Handle price field - accept both basePrice and price
+      basePrice: validation.data.basePrice || 
+                 (validation.data.price ? validation.data.price.toString() : undefined),
+      // Map status: convert "draft" to "inactive" for backend
+      status: validation.data.status === 'draft' ? 'inactive' : validation.data.status,
+      // Handle file URLs
+      imageUrl: validation.data.imageUrl,
+      // Map both modelUrl and model3dUrl
+      model3dUrl: validation.data.model3dUrl || validation.data.modelUrl,
+      pdfUrl: validation.data.pdfUrl,
+      // Handle additionalImages - convert array to JSON string if needed
+      additionalImages: validation.data.additionalImages ? 
+        (Array.isArray(validation.data.additionalImages) ? 
+          JSON.stringify(validation.data.additionalImages) : 
+          validation.data.additionalImages) : 
+        undefined,
+      inStock: validation.data.inStock,
+      stock: validation.data.stock
     };
     
     // Remove undefined values
@@ -227,12 +279,20 @@ router.post("/products", requireAdmin, async (req, res) => {
       ...newProduct,
       // Convert basePrice string to price number for frontend
       price: newProduct.basePrice ? parseFloat(newProduct.basePrice) : 0,
-      // Parse additionalImages JSON string to array
-      additionalImages: newProduct.additionalImages ? 
-        (typeof newProduct.additionalImages === 'string' ? 
-          JSON.parse(newProduct.additionalImages) : 
-          newProduct.additionalImages) : 
-        []
+      // Parse additionalImages JSON string to array with error handling
+      additionalImages: (() => {
+        if (!newProduct.additionalImages) return [];
+        if (Array.isArray(newProduct.additionalImages)) return newProduct.additionalImages;
+        if (typeof newProduct.additionalImages === 'string') {
+          try {
+            return JSON.parse(newProduct.additionalImages);
+          } catch (error) {
+            console.error('Error parsing additionalImages JSON:', error);
+            return [];
+          }
+        }
+        return [];
+      })()
     };
     
     res.status(201).json(transformedProduct);
@@ -252,24 +312,82 @@ router.patch("/products/:id", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Invalid product data", details: validation.error.flatten() });
     }
 
-    const updatedProduct = await storage.updateProduct(req.params.id, validation.data);
+    // Transform update data to match backend schema
+    const updateData: any = {};
+    
+    // Copy basic fields
+    if (validation.data.name !== undefined) updateData.name = validation.data.name;
+    if (validation.data.description !== undefined) updateData.description = validation.data.description;
+    if (validation.data.categoryId !== undefined) updateData.categoryId = validation.data.categoryId;
+    if (validation.data.inStock !== undefined) updateData.inStock = validation.data.inStock;
+    if (validation.data.stock !== undefined) updateData.stock = validation.data.stock;
+    
+    // Handle price fields
+    if (validation.data.basePrice !== undefined) {
+      updateData.basePrice = validation.data.basePrice;
+    } else if (validation.data.price !== undefined) {
+      updateData.basePrice = validation.data.price.toString();
+    }
+    
+    // Handle status mapping
+    if (validation.data.status !== undefined) {
+      updateData.status = validation.data.status === 'draft' ? 'inactive' : validation.data.status;
+    }
+    
+    // Handle file URLs
+    if (validation.data.imageUrl !== undefined) updateData.imageUrl = validation.data.imageUrl;
+    if (validation.data.pdfUrl !== undefined) updateData.pdfUrl = validation.data.pdfUrl;
+    
+    // Handle model URL mapping
+    if (validation.data.model3dUrl !== undefined) {
+      updateData.model3dUrl = validation.data.model3dUrl;
+    } else if (validation.data.modelUrl !== undefined) {
+      updateData.model3dUrl = validation.data.modelUrl;
+    }
+    
+    // Handle additionalImages
+    if (validation.data.additionalImages !== undefined) {
+      updateData.additionalImages = Array.isArray(validation.data.additionalImages) ? 
+        JSON.stringify(validation.data.additionalImages) : 
+        validation.data.additionalImages;
+    }
+    
+    // Handle category slug derivation if categoryId changed
+    if (validation.data.categoryId) {
+      try {
+        const category = await storage.getCategoryById(validation.data.categoryId);
+        if (category) updateData.category = category.slug;
+      } catch (error) {
+        console.error('Error fetching category for update:', error);
+      }
+    }
+
+    const updatedProduct = await storage.updateProduct(req.params.id, updateData);
     if (!updatedProduct) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    console.log(`Admin ${req.user?.userId} updated product ${req.params.id}:`, validation.data);
+    console.log(`Admin ${req.user?.userId} updated product ${req.params.id}:`, updateData);
     
     // Transform updated product for frontend compatibility
     const transformedProduct = {
       ...updatedProduct,
       // Convert basePrice string to price number for frontend
       price: updatedProduct.basePrice ? parseFloat(updatedProduct.basePrice) : 0,
-      // Parse additionalImages JSON string to array
-      additionalImages: updatedProduct.additionalImages ? 
-        (typeof updatedProduct.additionalImages === 'string' ? 
-          JSON.parse(updatedProduct.additionalImages) : 
-          updatedProduct.additionalImages) : 
-        []
+      // Parse additionalImages JSON string to array with error handling
+      additionalImages: (() => {
+        if (!updatedProduct.additionalImages) return [];
+        if (Array.isArray(updatedProduct.additionalImages)) return updatedProduct.additionalImages;
+        if (typeof updatedProduct.additionalImages === 'string') {
+          try {
+            return JSON.parse(updatedProduct.additionalImages);
+          } catch (error) {
+            console.error('Error parsing additionalImages JSON:', error);
+            return [];
+          }
+        }
+        return [];
+      })()
     };
     
     res.json(transformedProduct);
