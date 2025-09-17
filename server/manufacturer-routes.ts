@@ -114,13 +114,35 @@ router.get("/processes", requireManufacturer, async (req, res) => {
       manufacturerId
     });
 
-    // For each process, get basic stage information and recent updates
+    // For each process, get comprehensive information including customer details
     const processesWithDetails = await Promise.all(
       result.processes.map(async (process) => {
         const [stages, order] = await Promise.all([
           storage.getManufacturingStages(process.id),
           storage.getOrder(process.orderId)
         ]);
+
+        // Get customer information and addresses if order exists
+        let customer = null;
+        let orderItems: any[] = [];
+        let shippingAddress = null;
+        let billingAddress = null;
+
+        if (order) {
+          // Get customer details
+          customer = await storage.getUser(order.userId);
+          
+          // Get order items
+          orderItems = await storage.getOrderItems(order.id);
+          
+          // Get addresses
+          if (order.shippingAddressId) {
+            shippingAddress = await storage.getAddress(order.shippingAddressId);
+          }
+          if (order.billingAddressId) {
+            billingAddress = await storage.getAddress(order.billingAddressId);
+          }
+        }
 
         // Get recent updates for each stage (limit to 3 most recent per stage)
         const stagesWithRecentUpdates = await Promise.all(
@@ -136,9 +158,34 @@ router.get("/processes", requireManufacturer, async (req, res) => {
         return {
           ...process,
           order: order ? {
+            id: order.id,
             orderNumber: order.orderNumber,
             userId: order.userId,
-            status: order.status
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            paymentMethod: order.paymentMethod,
+            subtotal: order.subtotal,
+            totalAmount: order.totalAmount,
+            createdAt: order.createdAt,
+            // Customer information
+            customer: customer ? {
+              id: customer.id,
+              firstName: customer.firstName,
+              lastName: customer.lastName,
+              email: customer.email
+            } : null,
+            // Order items for product details
+            items: orderItems.map(item => ({
+              id: item.id,
+              productName: item.productName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              productImage: item.productImage
+            })),
+            // Addresses
+            shippingAddress,
+            billingAddress
           } : null,
           stages: stagesWithRecentUpdates,
           totalStages: stages.length,
