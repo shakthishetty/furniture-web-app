@@ -248,7 +248,7 @@ export default function ManufacturerProcesses() {
                       asChild 
                       data-testid={`button-view-details-${process.id}`}
                     >
-                      <Link href={`/manufacturer/processes/${process.id}`}>
+                      <Link href={`/processes/${process.id}`}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </Link>
