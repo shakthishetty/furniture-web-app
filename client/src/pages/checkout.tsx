@@ -137,6 +137,8 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
         title: "Order placed successfully!",
         description: `Order #${data.orderNumber} has been created.`,
       });
+      // Invalidate orders cache so the new order appears immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       onSuccess?.();
     },
     onError: (error: any) => {
