@@ -1,0 +1,60 @@
+TypeError: Invalid URL
+    at new URL (node:internal/url:806:29)
+    at Object.parse (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:841:225)
+    at parse (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:848:1)
+    at new ConnectionParameters (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:869:23)
+    at new Client (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1226:35)
+    at new NeonClient (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1570:121)
+    at Cn.newClient (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1378:74)
+    at Cn.connect (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1378:23)
+    at Cn.query (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1407:63)
+    at Cn.query (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1623:14) {
+  code: 'ERR_INVALID_URL',
+  input: "psql%20'postgresql://neondb_owner:npg_9uO3QLGoakXP@ep-winter-morning-admlgk6n-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'"
+}
+
+Node.js v20.19.5
+
+C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop>npm run dev
+
+> rest-express@1.0.0 dev
+> cross-env NODE_ENV=development tsx server/index.ts
+
+Found 4 existing products, skipping seed.
+3:40:20 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Error fetching manufacturing processes: Error: timeout exceeded when trying to connect
+    at file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at runNextTicks (node:internal/process/task_queues:60:5)   
+    at listOnTimeout (node:internal/timers:545:9)
+    at process.processTimers (node:internal/timers:519:7)      
+    at async NeonPreparedQuery.execute (C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop\node_modules\src\neon-serverless\session.ts:102:18)
+    at async Promise.all (index 1)
+    at async DatabaseStorage.getManufacturingProcesses (C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop\server\storage.ts:1196:44)
+    at async <anonymous> (C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop\server\admin-routes.ts:820:20)
+3:40:26 PM [express] GET /api/admin/manufacturing/processes 500 in 2969ms :: {"error":"Failed to fet…
+file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1384       
+ connect",o),this._clients=this._clients.filter(u=>u!==t),s&&(o.message="Connect\
+                                                               
+        ^
+
+TypeError: Cannot set property message of #<ErrorEvent> which has only a getter
+    at An._connectionCallback (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1384:72)
+    at An._handleErrorWhileConnecting (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1290:38)
+    at An._handleErrorEvent (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1291:33)
+    at fn.emit (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:397:12)
+    at v.reportStreamError (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:1201:46)
+    at v.emit (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:397:12)
+    at WebSocket.<anonymous> (file:///C:/Users/shakthi/Desktop/FurnitureShop%20(4)/FurnitureShop/node_modules/@neondatabase/serverless/index.mjs:986:42)
+    at callListener (C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop\node_modules\ws\lib\event-target.js:290:14)     
+    at WebSocket.onError (C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop\node_modules\ws\lib\event-target.js:230:9) 
+    at WebSocket.emit (node:events:524:28)
+    at emitErrorAndClose (C:\Users\shakthi\Desktop\FurnitureShop (4)\FurnitureShop\node_modules\ws\lib\websocket.js:1041:13)  
+    at processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at runNextTicks (node:internal/process/task_queues:64:3)   
+    at listOnTimeout (node:internal/timers:545:9)
+    at process.processTimers (node:internal/timers:519:7)      
+
+Node.js v20.19.5

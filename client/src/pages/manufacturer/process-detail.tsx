@@ -19,6 +19,7 @@ import {
   StageUpdateComposer, 
   useManufacturingSSE 
 } from "@/components/manufacturing";
+import { ManufacturingProgressBar } from "@/components/manufacturing/ManufacturingProgressBar";
 import { 
   ArrowLeft, 
   Clock, 
@@ -629,6 +630,34 @@ export default function ManufacturerProcessDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Manufacturing Progress Overview */}
+      <Card data-testid="card-manufacturing-progress" className="bg-gradient-to-br from-background to-blue-50/30 dark:to-blue-950/20">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Manufacturing Progress Overview</CardTitle>
+              <CardDescription className="text-sm">
+                Visual progress tracking across all manufacturing stages
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <ManufacturingProgressBar 
+            stages={process.stages.map(stage => ({
+              id: stage.id,
+              name: stage.name,
+              status: stage.status as 'not_started' | 'in_progress' | 'completed',
+              position: stage.position
+            }))}
+            data-testid="manufacturing-progress-bar"
+          />
+        </CardContent>
+      </Card>
 
       {/* Manufacturing Stages */}
       <Card data-testid="card-manufacturing-stages" className="bg-gradient-to-br from-background to-orange-50/30 dark:to-orange-950/20">
