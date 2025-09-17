@@ -615,41 +615,6 @@ export default function ManufacturerProcessDetail() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-progress-info">
-          <CardHeader>
-            <CardTitle className="text-base">Progress</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Completion</span>
-                <span>{process.stages.filter(s => s.status === 'completed').length}/{process.stages.length}</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{ 
-                    width: `${(process.stages.filter(s => s.status === 'completed').length / process.stages.length) * 100}%` 
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="text-center p-2 bg-blue-50 rounded">
-                <div className="font-medium text-blue-600">
-                  {process.stages.filter(s => s.status === 'in_progress').length}
-                </div>
-                <div className="text-muted-foreground">In Progress</div>
-              </div>
-              <div className="text-center p-2 bg-green-50 rounded">
-                <div className="font-medium text-green-600">
-                  {process.stages.filter(s => s.status === 'completed').length}
-                </div>
-                <div className="text-muted-foreground">Completed</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Process Notes */}
