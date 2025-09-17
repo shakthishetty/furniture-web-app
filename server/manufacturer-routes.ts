@@ -106,6 +106,8 @@ router.get("/processes", requireManufacturer, async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const status = req.query.status as string;
 
+    console.log(`[DEBUG] Manufacturer ${manufacturerId} requesting processes - page: ${page}, limit: ${limit}, status: ${status}`);
+
     // Get processes assigned to this manufacturer
     const result = await storage.getManufacturingProcesses({
       page,
@@ -113,6 +115,8 @@ router.get("/processes", requireManufacturer, async (req, res) => {
       status,
       manufacturerId
     });
+
+    console.log(`[DEBUG] Found ${result.total} total processes for manufacturer ${manufacturerId}, returning ${result.processes.length} processes`);
 
     // For each process, get comprehensive information including customer details
     const processesWithDetails = await Promise.all(
