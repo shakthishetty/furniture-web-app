@@ -484,59 +484,71 @@ export default function ManufacturerProcessDetail() {
                               </div>
                               
                               {/* Product Specifications */}
-                              {item.customConfiguration && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {/* Parse and display custom configuration */}
-                                  {typeof item.customConfiguration === 'object' && (
-                                    <>
-                                      {(item.customConfiguration as any).color && (
+                              {item.customConfiguration && (() => {
+                                try {
+                                  // Parse JSON string if it's a string, otherwise use as-is
+                                  const config = typeof item.customConfiguration === 'string' 
+                                    ? JSON.parse(item.customConfiguration) 
+                                    : item.customConfiguration;
+                                  
+                                  return (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {config.color && (
                                         <div className="space-y-1">
                                           <span className="text-sm font-medium text-muted-foreground">Color:</span>
-                                          <div className="text-sm" data-testid={`text-color-${item.id}`}>
-                                            {(item.customConfiguration as any).color}
+                                          <div className="text-sm font-medium" data-testid={`text-color-${item.id}`}>
+                                            {config.color}
                                           </div>
                                         </div>
                                       )}
-                                      {(item.customConfiguration as any).texture && (
+                                      {config.texture && (
                                         <div className="space-y-1">
                                           <span className="text-sm font-medium text-muted-foreground">Texture:</span>
-                                          <div className="text-sm" data-testid={`text-texture-${item.id}`}>
-                                            {(item.customConfiguration as any).texture}
+                                          <div className="text-sm font-medium" data-testid={`text-texture-${item.id}`}>
+                                            {config.texture}
                                           </div>
                                         </div>
                                       )}
-                                      {(item.customConfiguration as any).dimensions && (
+                                      {config.dimensions && (
                                         <div className="space-y-1">
                                           <span className="text-sm font-medium text-muted-foreground">Dimensions:</span>
-                                          <div className="text-sm" data-testid={`text-dimensions-${item.id}`}>
-                                            {typeof (item.customConfiguration as any).dimensions === 'object' 
-                                              ? `${(item.customConfiguration as any).dimensions.width || 'N/A'} × ${(item.customConfiguration as any).dimensions.height || 'N/A'} × ${(item.customConfiguration as any).dimensions.depth || 'N/A'}`
-                                              : (item.customConfiguration as any).dimensions}
+                                          <div className="text-sm font-medium" data-testid={`text-dimensions-${item.id}`}>
+                                            {typeof config.dimensions === 'object' 
+                                              ? `${config.dimensions.width || 'N/A'} × ${config.dimensions.height || 'N/A'} × ${config.dimensions.depth || 'N/A'}`
+                                              : config.dimensions}
                                           </div>
                                         </div>
                                       )}
-                                      {(item.customConfiguration as any).material && (
+                                      {config.material && (
                                         <div className="space-y-1">
                                           <span className="text-sm font-medium text-muted-foreground">Material:</span>
-                                          <div className="text-sm" data-testid={`text-material-${item.id}`}>
-                                            {(item.customConfiguration as any).material}
+                                          <div className="text-sm font-medium" data-testid={`text-material-${item.id}`}>
+                                            {config.material}
                                           </div>
                                         </div>
                                       )}
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Show raw configuration if it doesn't match expected structure */}
-                              {item.customConfiguration && typeof item.customConfiguration === 'string' && (
-                                <div className="mt-3 p-3 bg-muted rounded text-xs">
-                                  <span className="text-muted-foreground">Configuration Details:</span>
-                                  <pre className="mt-1 whitespace-pre-wrap" data-testid={`text-custom-config-${item.id}`}>
-                                    {item.customConfiguration}
-                                  </pre>
-                                </div>
-                              )}
+                                      {config.finish && (
+                                        <div className="space-y-1">
+                                          <span className="text-sm font-medium text-muted-foreground">Finish:</span>
+                                          <div className="text-sm font-medium" data-testid={`text-finish-${item.id}`}>
+                                            {config.finish}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                } catch (error) {
+                                  // Fallback to raw display if JSON parsing fails
+                                  return (
+                                    <div className="mt-3 p-3 bg-muted rounded text-xs">
+                                      <span className="text-muted-foreground">Configuration Details:</span>
+                                      <pre className="mt-1 whitespace-pre-wrap" data-testid={`text-custom-config-${item.id}`}>
+                                        {typeof item.customConfiguration === 'string' ? item.customConfiguration : JSON.stringify(item.customConfiguration, null, 2)}
+                                      </pre>
+                                    </div>
+                                  );
+                                }
+                              })()}
                             </div>
                           </div>
                         </Card>
