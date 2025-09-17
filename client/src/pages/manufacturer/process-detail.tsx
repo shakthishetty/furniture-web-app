@@ -449,106 +449,127 @@ export default function ManufacturerProcessDetail() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="items" className="mt-4 space-y-3" data-testid="content-order-items">
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Product Details ({process.order.items.length} item{process.order.items.length !== 1 ? 's' : ''})</h4>
+                <TabsContent value="items" className="mt-4 space-y-4" data-testid="content-order-items">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-lg">Product Details ({process.order.items.length} item{process.order.items.length !== 1 ? 's' : ''})</h4>
                     <div className="space-y-6">
                       {process.order.items.map((item, index) => (
-                        <Card key={item.id} className="p-6" data-testid={`item-${item.id}`}>
-                          <div className="flex gap-6">
+                        <Card key={item.id} className="overflow-hidden" data-testid={`item-${item.id}`}>
+                          <div className="grid grid-cols-1 lg:grid-cols-4 gap-0">
                             {/* Product Image */}
-                            <div className="flex-shrink-0">
-                              {item.productImage ? (
-                                <img 
-                                  src={item.productImage} 
-                                  alt={item.productName}
-                                  className="w-24 h-24 object-cover rounded-lg border"
-                                  data-testid={`img-product-${item.id}`}
-                                />
-                              ) : (
-                                <div className="w-24 h-24 bg-muted rounded-lg border flex items-center justify-center">
-                                  <Package className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Product Information */}
-                            <div className="flex-1 space-y-4">
-                              <div className="flex justify-between items-start">
-                                <h5 className="font-medium text-lg" data-testid={`text-product-name-${item.id}`}>
-                                  {item.productName}
-                                </h5>
-                                <Badge variant="secondary" data-testid={`badge-quantity-${item.id}`}>
-                                  Quantity: {item.quantity}
+                            <div className="lg:col-span-1 p-6 bg-muted/30">
+                              <div className="flex flex-col items-center space-y-3">
+                                {item.productImage ? (
+                                  <img 
+                                    src={item.productImage} 
+                                    alt={item.productName}
+                                    className="w-32 h-32 object-cover rounded-lg border shadow-sm"
+                                    data-testid={`img-product-${item.id}`}
+                                  />
+                                ) : (
+                                  <div className="w-32 h-32 bg-muted rounded-lg border flex items-center justify-center">
+                                    <Package className="h-12 w-12 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <Badge variant="outline" className="text-xs" data-testid={`badge-quantity-${item.id}`}>
+                                  Qty: {item.quantity}
                                 </Badge>
                               </div>
-                              
-                              {/* Product Specifications */}
-                              {item.customConfiguration && (() => {
-                                try {
-                                  // Parse JSON string if it's a string, otherwise use as-is
-                                  const config = typeof item.customConfiguration === 'string' 
-                                    ? JSON.parse(item.customConfiguration) 
-                                    : item.customConfiguration;
-                                  
-                                  return (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {config.color && (
-                                        <div className="space-y-1">
-                                          <span className="text-sm font-medium text-muted-foreground">Color:</span>
-                                          <div className="text-sm font-medium" data-testid={`text-color-${item.id}`}>
-                                            {config.color}
+                            </div>
+                            
+                            {/* Product Information and Specifications */}
+                            <div className="lg:col-span-3 p-6">
+                              <div className="space-y-6">
+                                {/* Product Header */}
+                                <div>
+                                  <h5 className="font-semibold text-xl mb-2" data-testid={`text-product-name-${item.id}`}>
+                                    {item.productName}
+                                  </h5>
+                                  <div className="w-16 h-1 bg-primary rounded-full"></div>
+                                </div>
+                                
+                                {/* Product Specifications Grid */}
+                                {item.customConfiguration && (() => {
+                                  try {
+                                    // Parse JSON string if it's a string, otherwise use as-is
+                                    const config = typeof item.customConfiguration === 'string' 
+                                      ? JSON.parse(item.customConfiguration) 
+                                      : item.customConfiguration;
+                                    
+                                    return (
+                                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {config.color && (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Color</span>
+                                            </div>
+                                            <div className="text-base font-semibold" data-testid={`text-color-${item.id}`}>
+                                              {config.color}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                      {config.texture && (
-                                        <div className="space-y-1">
-                                          <span className="text-sm font-medium text-muted-foreground">Texture:</span>
-                                          <div className="text-sm font-medium" data-testid={`text-texture-${item.id}`}>
-                                            {config.texture}
+                                        )}
+                                        {config.texture && (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Texture</span>
+                                            </div>
+                                            <div className="text-base font-semibold" data-testid={`text-texture-${item.id}`}>
+                                              {config.texture}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                      {config.dimensions && (
-                                        <div className="space-y-1">
-                                          <span className="text-sm font-medium text-muted-foreground">Dimensions:</span>
-                                          <div className="text-sm font-medium" data-testid={`text-dimensions-${item.id}`}>
-                                            {typeof config.dimensions === 'object' 
-                                              ? `${config.dimensions.width || 'N/A'} × ${config.dimensions.height || 'N/A'} × ${config.dimensions.depth || 'N/A'}`
-                                              : config.dimensions}
+                                        )}
+                                        {config.dimensions && (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Dimensions</span>
+                                            </div>
+                                            <div className="text-base font-semibold" data-testid={`text-dimensions-${item.id}`}>
+                                              {typeof config.dimensions === 'object' 
+                                                ? `${config.dimensions.width || 'N/A'} × ${config.dimensions.height || 'N/A'} × ${config.dimensions.depth || 'N/A'}`
+                                                : config.dimensions}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                      {config.material && (
-                                        <div className="space-y-1">
-                                          <span className="text-sm font-medium text-muted-foreground">Material:</span>
-                                          <div className="text-sm font-medium" data-testid={`text-material-${item.id}`}>
-                                            {config.material}
+                                        )}
+                                        {config.material && (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Material</span>
+                                            </div>
+                                            <div className="text-base font-semibold" data-testid={`text-material-${item.id}`}>
+                                              {config.material}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                      {config.finish && (
-                                        <div className="space-y-1">
-                                          <span className="text-sm font-medium text-muted-foreground">Finish:</span>
-                                          <div className="text-sm font-medium" data-testid={`text-finish-${item.id}`}>
-                                            {config.finish}
+                                        )}
+                                        {config.finish && (
+                                          <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Finish</span>
+                                            </div>
+                                            <div className="text-base font-semibold" data-testid={`text-finish-${item.id}`}>
+                                              {config.finish}
+                                            </div>
                                           </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                } catch (error) {
-                                  // Fallback to raw display if JSON parsing fails
-                                  return (
-                                    <div className="mt-3 p-3 bg-muted rounded text-xs">
-                                      <span className="text-muted-foreground">Configuration Details:</span>
-                                      <pre className="mt-1 whitespace-pre-wrap" data-testid={`text-custom-config-${item.id}`}>
-                                        {typeof item.customConfiguration === 'string' ? item.customConfiguration : JSON.stringify(item.customConfiguration, null, 2)}
-                                      </pre>
-                                    </div>
-                                  );
-                                }
-                              })()}
+                                        )}
+                                      </div>
+                                    );
+                                  } catch (error) {
+                                    // Fallback to raw display if JSON parsing fails
+                                    return (
+                                      <div className="mt-3 p-4 bg-muted rounded-lg">
+                                        <span className="text-sm font-medium text-muted-foreground mb-2 block">Configuration Details:</span>
+                                        <pre className="text-xs whitespace-pre-wrap text-muted-foreground" data-testid={`text-custom-config-${item.id}`}>
+                                          {typeof item.customConfiguration === 'string' ? item.customConfiguration : JSON.stringify(item.customConfiguration, null, 2)}
+                                        </pre>
+                                      </div>
+                                    );
+                                  }
+                                })()}
+                              </div>
                             </div>
                           </div>
                         </Card>
