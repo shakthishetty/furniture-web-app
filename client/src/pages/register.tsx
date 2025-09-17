@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Search, Heart, ShoppingBag } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Logo from "@/components/Logo";
 
@@ -15,6 +15,8 @@ export default function Register() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -31,7 +33,11 @@ export default function Register() {
         description: 'Please check your email to verify your account.',
       });
       
-      window.location.href = '/';
+      // Invalidate auth cache to refresh authentication state immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      
+      // Use React router navigation instead of hard redirect
+      setLocation('/');
     },
     onError: (error: any) => {
       toast({
