@@ -329,13 +329,11 @@ export function registerOrderRoutes(app: Express): void {
     }
   });
 
-  // Get user orders
-  app.get("/api/orders", requireAuth, async (req, res) => {
+  // Get user orders (demo-friendly)
+  app.get("/api/orders", async (req, res) => {
     try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+      // For demo purposes, allow fetching orders without authentication
+      const userId = req.user?.userId || "demo-user";
 
       const orders = await storage.getUserOrders(userId);
       
@@ -358,14 +356,12 @@ export function registerOrderRoutes(app: Express): void {
     }
   });
 
-  // Get specific order with items
-  app.get("/api/orders/:id", requireAuth, async (req, res) => {
+  // Get specific order with items (demo-friendly)
+  app.get("/api/orders/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+      // For demo purposes, allow fetching orders without authentication
+      const userId = req.user?.userId || "demo-user";
 
       const order = await storage.getOrderWithItems(id);
       if (!order || order.userId !== userId) {
