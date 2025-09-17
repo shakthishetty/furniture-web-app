@@ -1265,12 +1265,12 @@ export default function AdminProducts() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category-parent">Parent Category</Label>
-                <Select value={newCategory.parentId} onValueChange={(value) => setNewCategory({ ...newCategory, parentId: value })}>
+                <Select value={newCategory.parentId || 'none'} onValueChange={(value) => setNewCategory({ ...newCategory, parentId: value === 'none' ? '' : value })}>
                   <SelectTrigger data-testid="select-parent-category">
                     <SelectValue placeholder="Select parent category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None (Top Level Category)</SelectItem>
                     {categoriesData?.categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
