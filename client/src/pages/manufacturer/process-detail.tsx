@@ -494,28 +494,28 @@ export default function ManufacturerProcessDetail() {
                                     : item.customConfiguration;
                                   
                                   return (
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                       <h6 className="font-medium text-sm text-muted-foreground">Product Specifications</h6>
-                                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                      <div className="space-y-3">
                                         {config.color && (
-                                          <div className="space-y-1">
-                                            <span className="text-xs font-medium text-muted-foreground">Color</span>
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <span className="text-xs font-medium text-muted-foreground w-20 flex-shrink-0">Color:</span>
                                             <div className="text-sm font-semibold" data-testid={`text-color-${item.id}`}>
                                               {config.color}
                                             </div>
                                           </div>
                                         )}
                                         {config.texture && (
-                                          <div className="space-y-1">
-                                            <span className="text-xs font-medium text-muted-foreground">Texture</span>
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <span className="text-xs font-medium text-muted-foreground w-20 flex-shrink-0">Texture:</span>
                                             <div className="text-sm font-semibold" data-testid={`text-texture-${item.id}`}>
                                               {config.texture}
                                             </div>
                                           </div>
                                         )}
                                         {config.dimensions && (
-                                          <div className="space-y-1">
-                                            <span className="text-xs font-medium text-muted-foreground">Dimensions</span>
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <span className="text-xs font-medium text-muted-foreground w-20 flex-shrink-0">Dimensions:</span>
                                             <div className="text-sm font-semibold" data-testid={`text-dimensions-${item.id}`}>
                                               {typeof config.dimensions === 'object' 
                                                 ? `${config.dimensions.width || 'N/A'} × ${config.dimensions.height || 'N/A'} × ${config.dimensions.depth || 'N/A'}`
@@ -524,16 +524,16 @@ export default function ManufacturerProcessDetail() {
                                           </div>
                                         )}
                                         {config.material && (
-                                          <div className="space-y-1">
-                                            <span className="text-xs font-medium text-muted-foreground">Material</span>
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <span className="text-xs font-medium text-muted-foreground w-20 flex-shrink-0">Material:</span>
                                             <div className="text-sm font-semibold" data-testid={`text-material-${item.id}`}>
                                               {config.material}
                                             </div>
                                           </div>
                                         )}
                                         {config.finish && (
-                                          <div className="space-y-1">
-                                            <span className="text-xs font-medium text-muted-foreground">Finish</span>
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <span className="text-xs font-medium text-muted-foreground w-20 flex-shrink-0">Finish:</span>
                                             <div className="text-sm font-semibold" data-testid={`text-finish-${item.id}`}>
                                               {config.finish}
                                             </div>
