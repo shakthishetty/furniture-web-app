@@ -315,37 +315,42 @@ export default function ManufacturerProcessDetail() {
       </div>
 
       {/* Process Overview */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card data-testid="card-process-info">
-          <CardHeader>
-            <CardTitle className="text-base">Process Information</CardTitle>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card data-testid="card-process-info" className="bg-gradient-to-br from-background to-blue-50/30 dark:to-blue-950/20">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <CardTitle className="text-lg">Process Information</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Status:</span>
+          <CardContent className="space-y-4 pt-0">
+            <div className="flex justify-between items-center py-2 border-b border-muted">
+              <span className="text-muted-foreground font-medium">Status:</span>
               <div className="flex items-center gap-1">
                 {getStatusIcon(process.status)}
                 {getStatusBadge(process.status)}
               </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Started:</span>
-              <span className="text-sm">
+            <div className="flex justify-between items-center py-2 border-b border-muted">
+              <span className="text-muted-foreground font-medium">Started:</span>
+              <span className="text-sm font-semibold">
                 {process.startedAt ? new Date(process.startedAt).toLocaleDateString() : 'Not started'}
               </span>
             </div>
             {process.estimatedCompletionDate && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Est. Completion:</span>
-                <span className="text-sm">
+              <div className="flex justify-between items-center py-2 border-b border-muted">
+                <span className="text-muted-foreground font-medium">Est. Completion:</span>
+                <span className="text-sm font-semibold">
                   {new Date(process.estimatedCompletionDate).toLocaleDateString()}
                 </span>
               </div>
             )}
             {process.completedAt && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Completed:</span>
-                <span className="text-sm">
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground font-medium">Completed:</span>
+                <span className="text-sm font-semibold">
                   {new Date(process.completedAt).toLocaleDateString()}
                 </span>
               </div>
@@ -353,18 +358,25 @@ export default function ManufacturerProcessDetail() {
           </CardContent>
         </Card>
 
-        <Card data-testid="card-order-info">
-          <CardHeader>
-            <CardTitle className="text-base">Order Information</CardTitle>
-            <CardDescription>Complete order details and customer information</CardDescription>
+        <Card data-testid="card-order-info" className="lg:col-span-2 bg-gradient-to-br from-background to-green-50/30 dark:to-green-950/20">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Order Information</CardTitle>
+                <CardDescription className="text-sm">Complete order details and customer information</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {process.order ? (
               <Tabs defaultValue="summary" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="summary" data-testid="tab-order-summary">Summary</TabsTrigger>
-                  <TabsTrigger value="items" data-testid="tab-order-items">Items</TabsTrigger>
-                  <TabsTrigger value="address" data-testid="tab-address">Address</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+                  <TabsTrigger value="summary" data-testid="tab-order-summary" className="data-[state=active]:bg-background">Summary</TabsTrigger>
+                  <TabsTrigger value="items" data-testid="tab-order-items" className="data-[state=active]:bg-background">Items</TabsTrigger>
+                  <TabsTrigger value="address" data-testid="tab-address" className="data-[state=active]:bg-background">Address</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="summary" className="mt-4 space-y-4" data-testid="content-order-summary">
@@ -652,142 +664,29 @@ export default function ManufacturerProcessDetail() {
         </Card>
       )}
 
-      {/* Stages and Timeline */}
-      <Tabs defaultValue="timeline" className="space-y-4" data-testid="tabs-process-detail">
-        <TabsList>
-          <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="stages" data-testid="tab-stages">Stages</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="timeline" className="space-y-4">
-          <Card data-testid="card-timeline">
-            <CardHeader>
-              <CardTitle>Manufacturing Timeline</CardTitle>
-              <CardDescription>
+      {/* Manufacturing Timeline */}
+      <Card data-testid="card-timeline" className="bg-gradient-to-br from-background to-muted/20">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Manufacturing Timeline</CardTitle>
+              <CardDescription className="text-sm">
                 Complete process timeline with all updates and activities
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Timeline 
-                process={process}
-                userRole="manufacturer"
-                data-testid="process-timeline"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="stages" className="space-y-4">
-          <div className="grid gap-4">
-            {process.stages
-              .sort((a, b) => a.position - b.position)
-              .map((stage) => (
-                <Card key={stage.id} data-testid={`stage-${stage.id}`}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-base">
-                          {stage.position}. {stage.name}
-                        </CardTitle>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(stage.status)}
-                          {getStatusBadge(stage.status)}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select 
-                          value={stage.status} 
-                          onValueChange={(value) => handleStageStatusChange(stage.id, value)}
-                          disabled={updateStageMutation.isPending}
-                        >
-                          <SelectTrigger className="w-40" data-testid={`select-stage-status-${stage.id}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="not_started">Not Started</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="blocked">Blocked</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    {stage.notes && (
-                      <CardDescription>{stage.notes}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Stage Details */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {stage.startedAt && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Started</Label>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{new Date(stage.startedAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      )}
-                      {stage.completedAt && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Completed</Label>
-                          <div className="flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span>{new Date(stage.completedAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Stage Updates */}
-                    {stage.updates && stage.updates.length > 0 && (
-                      <div className="space-y-3">
-                        <Separator />
-                        <div>
-                          <Label className="text-sm font-medium mb-3 block">Updates</Label>
-                          <div className="space-y-3">
-                            {stage.updates.slice(0, 3).map((update) => (
-                              <UpdateCard
-                                key={update.id}
-                                update={update}
-                                userRole="manufacturer"
-                                data-testid={`update-${update.id}`}
-                              />
-                            ))}
-                            {stage.updates.length > 3 && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setSelectedStageId(stage.id)}
-                                data-testid={`button-view-all-updates-${stage.id}`}
-                              >
-                                View all {stage.updates.length} updates
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Add Update Form */}
-                    <div className="space-y-3">
-                      <Separator />
-                      <div>
-                        <Label className="text-sm font-medium mb-3 block">Add Update</Label>
-                        <StageUpdateComposer
-                          processId={process.id}
-                          stageId={stage.id}
-                          userRole="manufacturer"
-                          data-testid={`update-composer-${stage.id}`}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Timeline 
+            process={process}
+            userRole="manufacturer"
+            data-testid="process-timeline"
+          />
+        </CardContent>
+      </Card>
 
       {/* Stage Status Update Modal */}
       {stageStatusUpdate && (
