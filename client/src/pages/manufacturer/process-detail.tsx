@@ -455,34 +455,34 @@ export default function ManufacturerProcessDetail() {
                     <div className="space-y-6">
                       {process.order.items.map((item, index) => (
                         <Card key={item.id} className="p-6" data-testid={`item-${item.id}`}>
-                          <div className="flex flex-col md:flex-row gap-6">
+                          <div className="flex flex-col md:flex-row gap-4">
                             {/* Product Image */}
                             <div className="flex-shrink-0 flex flex-col items-center md:items-start">
                               {item.productImage ? (
                                 <img 
                                   src={item.productImage} 
                                   alt={item.productName}
-                                  className="w-40 h-40 object-cover rounded-lg border"
+                                  className="w-24 h-24 object-cover rounded-lg border"
                                   data-testid={`img-product-${item.id}`}
                                 />
                               ) : (
-                                <div className="w-40 h-40 bg-muted rounded-lg border flex items-center justify-center">
-                                  <Package className="h-16 w-16 text-muted-foreground" />
+                                <div className="w-24 h-24 bg-muted rounded-lg border flex items-center justify-center">
+                                  <Package className="h-8 w-8 text-muted-foreground" />
                                 </div>
                               )}
-                              <Badge variant="outline" className="mt-3" data-testid={`badge-quantity-${item.id}`}>
-                                Quantity: {item.quantity}
+                              <Badge variant="outline" className="mt-2 text-xs" data-testid={`badge-quantity-${item.id}`}>
+                                Qty: {item.quantity}
                               </Badge>
                             </div>
                             
                             {/* Product Information */}
-                            <div className="flex-1 space-y-6">
+                            <div className="flex-1 space-y-4">
                               {/* Product Header */}
                               <div>
-                                <h5 className="font-semibold text-xl mb-2" data-testid={`text-product-name-${item.id}`}>
+                                <h5 className="font-semibold text-lg mb-1" data-testid={`text-product-name-${item.id}`}>
                                   {item.productName}
                                 </h5>
-                                <div className="w-20 h-1 bg-primary rounded-full"></div>
+                                <div className="w-16 h-0.5 bg-primary rounded-full"></div>
                               </div>
                               
                               {/* Product Specifications */}
@@ -494,29 +494,29 @@ export default function ManufacturerProcessDetail() {
                                     : item.customConfiguration;
                                   
                                   return (
-                                    <div className="space-y-4">
-                                      <h6 className="font-medium text-base text-muted-foreground">Product Specifications</h6>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="space-y-3">
+                                      <h6 className="font-medium text-sm text-muted-foreground">Product Specifications</h6>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                         {config.color && (
-                                          <div className="space-y-2">
-                                            <span className="text-sm font-medium text-muted-foreground">Color</span>
-                                            <div className="text-base font-semibold" data-testid={`text-color-${item.id}`}>
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-muted-foreground">Color</span>
+                                            <div className="text-sm font-semibold" data-testid={`text-color-${item.id}`}>
                                               {config.color}
                                             </div>
                                           </div>
                                         )}
                                         {config.texture && (
-                                          <div className="space-y-2">
-                                            <span className="text-sm font-medium text-muted-foreground">Texture</span>
-                                            <div className="text-base font-semibold" data-testid={`text-texture-${item.id}`}>
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-muted-foreground">Texture</span>
+                                            <div className="text-sm font-semibold" data-testid={`text-texture-${item.id}`}>
                                               {config.texture}
                                             </div>
                                           </div>
                                         )}
                                         {config.dimensions && (
-                                          <div className="space-y-2">
-                                            <span className="text-sm font-medium text-muted-foreground">Dimensions</span>
-                                            <div className="text-base font-semibold" data-testid={`text-dimensions-${item.id}`}>
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-muted-foreground">Dimensions</span>
+                                            <div className="text-sm font-semibold" data-testid={`text-dimensions-${item.id}`}>
                                               {typeof config.dimensions === 'object' 
                                                 ? `${config.dimensions.width || 'N/A'} × ${config.dimensions.height || 'N/A'} × ${config.dimensions.depth || 'N/A'}`
                                                 : config.dimensions}
@@ -524,17 +524,17 @@ export default function ManufacturerProcessDetail() {
                                           </div>
                                         )}
                                         {config.material && (
-                                          <div className="space-y-2">
-                                            <span className="text-sm font-medium text-muted-foreground">Material</span>
-                                            <div className="text-base font-semibold" data-testid={`text-material-${item.id}`}>
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-muted-foreground">Material</span>
+                                            <div className="text-sm font-semibold" data-testid={`text-material-${item.id}`}>
                                               {config.material}
                                             </div>
                                           </div>
                                         )}
                                         {config.finish && (
-                                          <div className="space-y-2">
-                                            <span className="text-sm font-medium text-muted-foreground">Finish</span>
-                                            <div className="text-base font-semibold" data-testid={`text-finish-${item.id}`}>
+                                          <div className="space-y-1">
+                                            <span className="text-xs font-medium text-muted-foreground">Finish</span>
+                                            <div className="text-sm font-semibold" data-testid={`text-finish-${item.id}`}>
                                               {config.finish}
                                             </div>
                                           </div>
@@ -545,8 +545,8 @@ export default function ManufacturerProcessDetail() {
                                 } catch (error) {
                                   // Fallback to raw display if JSON parsing fails
                                   return (
-                                    <div className="mt-3 p-4 bg-muted rounded-lg">
-                                      <span className="text-sm font-medium text-muted-foreground mb-2 block">Configuration Details:</span>
+                                    <div className="mt-3 p-3 bg-muted rounded-lg">
+                                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Configuration Details:</span>
                                       <pre className="text-xs whitespace-pre-wrap text-muted-foreground" data-testid={`text-custom-config-${item.id}`}>
                                         {typeof item.customConfiguration === 'string' ? item.customConfiguration : JSON.stringify(item.customConfiguration, null, 2)}
                                       </pre>
