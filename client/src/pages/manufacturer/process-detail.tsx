@@ -29,7 +29,8 @@ import {
   Package,
   Calendar,
   User,
-  Upload
+  Upload,
+  Camera
 } from "lucide-react";
 import { Link } from "wouter";
 import type { 
@@ -628,6 +629,120 @@ export default function ManufacturerProcessDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Manufacturing Stages */}
+      <Card data-testid="card-manufacturing-stages" className="bg-gradient-to-br from-background to-orange-50/30 dark:to-orange-950/20">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+              <Upload className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Manufacturing Stages</CardTitle>
+              <CardDescription className="text-sm">
+                Update progress and upload photos for each manufacturing stage
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="grid gap-6">
+            {process.stages
+              .sort((a, b) => a.position - b.position)
+              .map((stage) => (
+                <Card key={stage.id} className="border-2 border-muted hover:border-muted-foreground/20 transition-colors" data-testid={`stage-${stage.id}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                          {stage.position}
+                        </div>
+                        <div>
+                          <CardTitle className="text-base font-semibold">
+                            {stage.name}
+                          </CardTitle>
+                          {stage.notes && (
+                            <CardDescription className="text-xs mt-1">{stage.notes}</CardDescription>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(stage.status)}
+                        {getStatusBadge(stage.status)}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-0">
+                    {/* Stage Timeline */}
+                    {stage.startedAt && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>Started: {new Date(stage.startedAt).toLocaleDateString()}</span>
+                        {stage.completedAt && (
+                          <>
+                            <span>•</span>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span>Completed: {new Date(stage.completedAt).toLocaleDateString()}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Recent Updates Preview */}
+                    {stage.updates && stage.updates.length > 0 && (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div>
+                          <Label className="text-sm font-medium mb-3 block">Recent Updates</Label>
+                          <div className="space-y-3">
+                            {stage.updates.slice(0, 2).map((update) => (
+                              <UpdateCard
+                                key={update.id}
+                                update={update}
+                                userRole="manufacturer"
+                                data-testid={`update-${update.id}`}
+                              />
+                            ))}
+                            {stage.updates.length > 2 && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSelectedStageId(stage.id)}
+                                data-testid={`button-view-all-updates-${stage.id}`}
+                              >
+                                View all {stage.updates.length} updates
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Update Form */}
+                    <div className="space-y-3">
+                      <Separator />
+                      <div className="bg-muted/30 p-4 rounded-lg">
+                        <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                          <Camera className="h-4 w-4 text-primary" />
+                          Add Progress Update
+                        </Label>
+                        <StageUpdateComposer
+                          processId={process.id}
+                          stageId={stage.id}
+                          userRole="manufacturer"
+                          placeholder={`Share progress on ${stage.name.toLowerCase()}... Upload photos to show current state!`}
+                          compact={true}
+                          showTitle={false}
+                          data-testid={`update-composer-${stage.id}`}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Manufacturing Timeline */}
       <Card data-testid="card-timeline" className="bg-gradient-to-br from-background to-muted/20">
