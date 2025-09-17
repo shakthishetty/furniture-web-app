@@ -361,76 +361,65 @@ export default function ManufacturerProcessDetail() {
           <CardContent>
             {process.order ? (
               <Tabs defaultValue="summary" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="summary" data-testid="tab-order-summary">Summary</TabsTrigger>
-                  <TabsTrigger value="customer" data-testid="tab-customer-info">Customer</TabsTrigger>
                   <TabsTrigger value="items" data-testid="tab-order-items">Items</TabsTrigger>
-                  <TabsTrigger value="addresses" data-testid="tab-addresses">Addresses</TabsTrigger>
+                  <TabsTrigger value="address" data-testid="tab-address">Address</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="summary" className="mt-4 space-y-3" data-testid="content-order-summary">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Order Number:</span>
-                        <span className="text-sm font-mono">#{process.order.orderNumber}</span>
+                <TabsContent value="summary" className="mt-4 space-y-4" data-testid="content-order-summary">
+                  <div className="space-y-4">
+                    {/* Basic Order Information */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Order Number:</span>
+                          <span className="text-sm font-mono">#{process.order.orderNumber}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Order Date:</span>
+                          <span className="text-sm" data-testid="text-order-date">
+                            {new Date(process.order.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Order Status:</span>
+                          <Badge variant="outline" data-testid="badge-order-status">{process.order.status}</Badge>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Order Status:</span>
-                        <Badge variant="outline" data-testid="badge-order-status">{process.order.status}</Badge>
+                      
+                      <div className="space-y-3">
+                        {process.order.customer && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Customer:</span>
+                            <span className="text-sm font-medium" data-testid="text-customer-name">
+                              {process.order.customer.firstName} {process.order.customer.lastName}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Payment Status:</span>
+                          <Badge variant={process.order.paymentStatus === 'paid' ? 'default' : 'destructive'} data-testid="badge-payment-status">
+                            {process.order.paymentStatus}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Payment Status:</span>
-                        <Badge variant={process.order.paymentStatus === 'paid' ? 'default' : 'destructive'} data-testid="badge-payment-status">
-                          {process.order.paymentStatus}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Payment Method:</span>
-                        <span className="text-sm" data-testid="text-payment-method">{process.order.paymentMethod}</span>
+                    </div>
+
+                    {/* Product Names */}
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Products</h4>
+                      <div className="space-y-1">
+                        {process.order.items.map((item, index) => (
+                          <div key={item.id} className="text-sm text-muted-foreground">
+                            • {item.productName} (Qty: {item.quantity})
+                          </div>
+                        ))}
                       </div>
                     </div>
                     
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Order Date:</span>
-                        <span className="text-sm" data-testid="text-order-date">
-                          {new Date(process.order.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal:</span>
-                        <span className="text-sm" data-testid="text-subtotal">${process.order.subtotal}</span>
-                      </div>
-                      {process.order.discountAmount && (
-                        <div className="flex justify-between text-green-600">
-                          <span>Discount:</span>
-                          <span className="text-sm" data-testid="text-discount">-${process.order.discountAmount}</span>
-                        </div>
-                      )}
-                      {process.order.taxAmount && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Tax:</span>
-                          <span className="text-sm" data-testid="text-tax">${process.order.taxAmount}</span>
-                        </div>
-                      )}
-                      {process.order.shippingAmount && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Shipping:</span>
-                          <span className="text-sm" data-testid="text-shipping">${process.order.shippingAmount}</span>
-                        </div>
-                      )}
-                      <Separator />
-                      <div className="flex justify-between font-medium">
-                        <span>Total Amount:</span>
-                        <span className="text-sm" data-testid="text-total-amount">${process.order.totalAmount}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {(process.order.trackingNumber || process.order.shippingCarrier || process.order.estimatedDeliveryDate) && (
-                    <>
-                      <Separator className="my-4" />
+                    {/* Shipping Information */}
+                    {(process.order.trackingNumber || process.order.shippingCarrier || process.order.estimatedDeliveryDate) && (
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">Shipping Information</h4>
                         <div className="grid grid-cols-1 gap-2 text-sm">
@@ -456,72 +445,95 @@ export default function ManufacturerProcessDetail() {
                           )}
                         </div>
                       </div>
-                    </>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="customer" className="mt-4 space-y-3" data-testid="content-customer-info">
-                  {process.order.customer ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <h4 className="font-medium">Customer Details</h4>
-                      </div>
-                      <div className="grid grid-cols-1 gap-3 pl-6">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Name:</span>
-                          <span className="text-sm font-medium" data-testid="text-customer-name">
-                            {process.order.customer.firstName} {process.order.customer.lastName}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Email:</span>
-                          <span className="text-sm" data-testid="text-customer-email">{process.order.customer.email}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">Customer information not available</p>
-                  )}
+                    )}
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="items" className="mt-4 space-y-3" data-testid="content-order-items">
                   <div className="space-y-3">
-                    <h4 className="font-medium">Order Items ({process.order.items.length})</h4>
-                    <div className="space-y-4">
+                    <h4 className="font-medium">Product Details ({process.order.items.length} item{process.order.items.length !== 1 ? 's' : ''})</h4>
+                    <div className="space-y-6">
                       {process.order.items.map((item, index) => (
-                        <Card key={item.id} className="p-4" data-testid={`item-${item.id}`}>
-                          <div className="flex gap-4">
-                            {item.productImage && (
-                              <img 
-                                src={item.productImage} 
-                                alt={item.productName}
-                                className="w-16 h-16 object-cover rounded border"
-                                data-testid={`img-product-${item.id}`}
-                              />
-                            )}
-                            <div className="flex-1 space-y-2">
+                        <Card key={item.id} className="p-6" data-testid={`item-${item.id}`}>
+                          <div className="flex gap-6">
+                            {/* Product Image */}
+                            <div className="flex-shrink-0">
+                              {item.productImage ? (
+                                <img 
+                                  src={item.productImage} 
+                                  alt={item.productName}
+                                  className="w-24 h-24 object-cover rounded-lg border"
+                                  data-testid={`img-product-${item.id}`}
+                                />
+                              ) : (
+                                <div className="w-24 h-24 bg-muted rounded-lg border flex items-center justify-center">
+                                  <Package className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Product Information */}
+                            <div className="flex-1 space-y-4">
                               <div className="flex justify-between items-start">
-                                <h5 className="font-medium text-sm" data-testid={`text-product-name-${item.id}`}>
+                                <h5 className="font-medium text-lg" data-testid={`text-product-name-${item.id}`}>
                                   {item.productName}
                                 </h5>
                                 <Badge variant="secondary" data-testid={`badge-quantity-${item.id}`}>
-                                  Qty: {item.quantity}
+                                  Quantity: {item.quantity}
                                 </Badge>
                               </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Unit Price:</span>
-                                <span data-testid={`text-unit-price-${item.id}`}>${item.unitPrice}</span>
-                              </div>
-                              <div className="flex justify-between text-sm font-medium">
-                                <span>Total:</span>
-                                <span data-testid={`text-item-total-${item.id}`}>${item.totalPrice}</span>
-                              </div>
+                              
+                              {/* Product Specifications */}
                               {item.customConfiguration && (
-                                <div className="mt-2 p-2 bg-muted rounded text-xs">
-                                  <span className="text-muted-foreground">Custom Configuration:</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Parse and display custom configuration */}
+                                  {typeof item.customConfiguration === 'object' && (
+                                    <>
+                                      {(item.customConfiguration as any).color && (
+                                        <div className="space-y-1">
+                                          <span className="text-sm font-medium text-muted-foreground">Color:</span>
+                                          <div className="text-sm" data-testid={`text-color-${item.id}`}>
+                                            {(item.customConfiguration as any).color}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {(item.customConfiguration as any).texture && (
+                                        <div className="space-y-1">
+                                          <span className="text-sm font-medium text-muted-foreground">Texture:</span>
+                                          <div className="text-sm" data-testid={`text-texture-${item.id}`}>
+                                            {(item.customConfiguration as any).texture}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {(item.customConfiguration as any).dimensions && (
+                                        <div className="space-y-1">
+                                          <span className="text-sm font-medium text-muted-foreground">Dimensions:</span>
+                                          <div className="text-sm" data-testid={`text-dimensions-${item.id}`}>
+                                            {typeof (item.customConfiguration as any).dimensions === 'object' 
+                                              ? `${(item.customConfiguration as any).dimensions.width || 'N/A'} × ${(item.customConfiguration as any).dimensions.height || 'N/A'} × ${(item.customConfiguration as any).dimensions.depth || 'N/A'}`
+                                              : (item.customConfiguration as any).dimensions}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {(item.customConfiguration as any).material && (
+                                        <div className="space-y-1">
+                                          <span className="text-sm font-medium text-muted-foreground">Material:</span>
+                                          <div className="text-sm" data-testid={`text-material-${item.id}`}>
+                                            {(item.customConfiguration as any).material}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Show raw configuration if it doesn't match expected structure */}
+                              {item.customConfiguration && typeof item.customConfiguration === 'string' && (
+                                <div className="mt-3 p-3 bg-muted rounded text-xs">
+                                  <span className="text-muted-foreground">Configuration Details:</span>
                                   <pre className="mt-1 whitespace-pre-wrap" data-testid={`text-custom-config-${item.id}`}>
-                                    {JSON.stringify(item.customConfiguration, null, 2)}
+                                    {item.customConfiguration}
                                   </pre>
                                 </div>
                               )}
@@ -533,52 +545,39 @@ export default function ManufacturerProcessDetail() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="addresses" className="mt-4 space-y-3" data-testid="content-addresses">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {process.order.shippingAddress && (
-                      <Card className="p-4" data-testid="card-shipping-address">
-                        <h4 className="font-medium mb-3">Shipping Address</h4>
-                        <div className="space-y-1 text-sm">
-                          <div data-testid="text-shipping-name">
-                            {process.order.shippingAddress.firstName} {process.order.shippingAddress.lastName}
-                          </div>
-                          <div data-testid="text-shipping-street">{process.order.shippingAddress.street}</div>
-                          {process.order.shippingAddress.apartment && (
-                            <div data-testid="text-shipping-apartment">{process.order.shippingAddress.apartment}</div>
-                          )}
-                          <div data-testid="text-shipping-location">
-                            {process.order.shippingAddress.city}, {process.order.shippingAddress.state} {process.order.shippingAddress.postalCode}
-                          </div>
-                          <div data-testid="text-shipping-country">{process.order.shippingAddress.country}</div>
-                          {process.order.shippingAddress.phone && (
-                            <div data-testid="text-shipping-phone">Phone: {process.order.shippingAddress.phone}</div>
-                          )}
+                <TabsContent value="address" className="mt-4 space-y-3" data-testid="content-address">
+                  {process.order.shippingAddress ? (
+                    <Card className="p-6" data-testid="card-shipping-address">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="h-4 w-4 text-muted-foreground">📍</div>
+                        <h4 className="font-medium">Shipping Address</h4>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="font-medium" data-testid="text-shipping-name">
+                          {process.order.shippingAddress.firstName} {process.order.shippingAddress.lastName}
                         </div>
-                      </Card>
-                    )}
-                    
-                    {process.order.billingAddress && (
-                      <Card className="p-4" data-testid="card-billing-address">
-                        <h4 className="font-medium mb-3">Billing Address</h4>
-                        <div className="space-y-1 text-sm">
-                          <div data-testid="text-billing-name">
-                            {process.order.billingAddress.firstName} {process.order.billingAddress.lastName}
-                          </div>
-                          <div data-testid="text-billing-street">{process.order.billingAddress.street}</div>
-                          {process.order.billingAddress.apartment && (
-                            <div data-testid="text-billing-apartment">{process.order.billingAddress.apartment}</div>
-                          )}
-                          <div data-testid="text-billing-location">
-                            {process.order.billingAddress.city}, {process.order.billingAddress.state} {process.order.billingAddress.postalCode}
-                          </div>
-                          <div data-testid="text-billing-country">{process.order.billingAddress.country}</div>
-                          {process.order.billingAddress.phone && (
-                            <div data-testid="text-billing-phone">Phone: {process.order.billingAddress.phone}</div>
-                          )}
+                        <div data-testid="text-shipping-street">{process.order.shippingAddress.street}</div>
+                        {process.order.shippingAddress.apartment && (
+                          <div data-testid="text-shipping-apartment">{process.order.shippingAddress.apartment}</div>
+                        )}
+                        <div data-testid="text-shipping-location">
+                          {process.order.shippingAddress.city}, {process.order.shippingAddress.state} {process.order.shippingAddress.postalCode}
                         </div>
-                      </Card>
-                    )}
-                  </div>
+                        <div data-testid="text-shipping-country">{process.order.shippingAddress.country}</div>
+                        {process.order.shippingAddress.phone && (
+                          <div className="flex items-center gap-2 mt-3 pt-2 border-t">
+                            <span className="text-muted-foreground">Phone:</span>
+                            <span data-testid="text-shipping-phone">{process.order.shippingAddress.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <div className="text-4xl mb-2">📍</div>
+                      <p className="text-sm">No shipping address available</p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             ) : (
