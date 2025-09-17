@@ -92,6 +92,10 @@ export default function ManufacturerProcesses() {
   
   const { data: processesData, isLoading } = useQuery<ProcessesResponse>({
     queryKey: ['/api/manufacturer/processes', page],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/manufacturer/processes?page=${page}&limit=20`);
+      return response.json();
+    }
   });
 
   const getStatusBadge = (status: string) => {
