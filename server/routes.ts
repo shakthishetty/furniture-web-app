@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import authRoutes from "./auth-routes";
@@ -12,6 +12,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { verifyAuth, requireAdmin } from "./utils/auth";
 import { createStageUpdateReplySchema, type CreateStageUpdateReplyRequest } from "@shared/schema";
 import { z } from "zod";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize sample data
@@ -32,6 +33,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Manufacturer routes
   app.use('/api/manufacturer', manufacturerRoutes);
+  
+  // Serve uploaded files statically (for local development)
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Object Storage routes for file uploads
   const objectStorageService = new ObjectStorageService();

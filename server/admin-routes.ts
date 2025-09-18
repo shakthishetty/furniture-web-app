@@ -4,6 +4,9 @@ import { requireAdmin, verifyAuth } from "./utils/auth";
 import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
+import fs from "fs";
+import path from "path";
+import { randomUUID } from "crypto";
 
 // Validation schemas for admin operations
 const orderStatusUpdateSchema = z.object({
@@ -665,54 +668,74 @@ router.delete("/categories/:id", requireAdmin, async (req, res) => {
   }
 });
 
-// Object Storage Routes
-router.post("/objects/upload-url", requireAdmin, async (req, res) => {
+// ====================================
+// File Upload Routes (Local Development)
+// ====================================
+
+// Setup uploads directory
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Simple file upload endpoint (replaces the old upload-url + finalize pattern)
+router.post("/objects/upload", requireAdmin, express.raw({limit: '50mb', type: '*/*'}), async (req, res) => {
   try {
-    const objectStorageService = new ObjectStorageService();
-    const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
+    const contentType = req.headers['content-type'] || 'application/octet-stream';
+    const originalName = req.headers['x-original-name'] as string || 'unnamed';
+    
+    // Generate unique filename
+    const uniqueSuffix = `${Date.now()}-${randomUUID()}`;
+    const ext = path.extname(originalName);
+    const filename = `${uniqueSuffix}${ext}`;
+    const filePath = path.join(uploadsDir, filename);
+    
+    // Validate file type
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'model/gltf-binary', 'model/gltf+json', 'application/octet-stream'
+    ];
+    
+    const isValidType = allowedTypes.includes(contentType) || originalName.toLowerCase().endsWith('.glb');
+    if (!isValidType) {
+      return res.status(400).json({ error: 'Invalid file type. Only images, PDFs, and 3D models (GLB) are allowed.' });
+    }
+
+    // Write file to disk
+    fs.writeFileSync(filePath, req.body);
+    
+    const publicPath = `/uploads/${filename}`;
+    
+    console.log(`Admin ${req.user?.userId} uploaded file: ${originalName} -> ${publicPath}`);
     
     res.json({
-      method: "PUT",
-      url: uploadUrl
+      success: true,
+      path: publicPath,
+      originalName,
+      size: req.body.length,
+      mimetype: contentType
     });
   } catch (error) {
-    console.error("Error getting upload URL:", error);
-    res.status(500).json({ error: "Failed to get upload URL" });
+    console.error("Error uploading file:", error);
+    res.status(500).json({ error: "Failed to upload file" });
   }
 });
 
+// Legacy compatibility routes (for existing frontend that might still call these)
+router.post("/objects/upload-url", requireAdmin, async (req, res) => {
+  // For local development, return a direct upload endpoint
+  res.json({
+    method: "POST",
+    url: "/api/admin/objects/upload",
+    useDirectUpload: true
+  });
+});
+
 router.post("/objects/finalize", requireAdmin, async (req, res) => {
-  try {
-    const { path, visibility } = req.body;
-    
-    if (!path) {
-      return res.status(400).json({ error: "Path is required" });
-    }
-
-    // Validate path format for security - allow object storage paths
-    if (!path || path.includes('..') || path.startsWith('/')) {
-      return res.status(400).json({ error: "Invalid path format" });
-    }
-
-    const objectStorageService = new ObjectStorageService();
-    
-    // Set object ACL based on visibility
-    if (visibility === 'public') {
-      const aclPolicy = {
-        owner: req.user?.userId || 'admin',
-        visibility: 'public' as const,
-      };
-      await objectStorageService.trySetObjectEntityAclPolicy(path, aclPolicy);
-    }
-    
-    // Return normalized path
-    const normalizedPath = objectStorageService.normalizeObjectEntityPath(path);
-    
-    res.json({ path: normalizedPath });
-  } catch (error) {
-    console.error("Error finalizing upload:", error);
-    res.status(500).json({ error: "Failed to finalize upload" });
-  }
+  // For local development, files are immediately available after upload
+  const { path } = req.body;
+  res.json({ path });
 });
 
 // ====================================

@@ -24,23 +24,13 @@ export function SimpleUploader({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getUploadParams = async () => {
-    const response = await apiRequest("POST", "/api/admin/objects/upload-url");
-    return response.json();
-  };
-
-  const finalizeUpload = async (uploadURL: string) => {
-    // Extract full object key/path from upload URL
-    const urlParts = uploadURL.split('?')[0].split('/');
-    const bucketIndex = urlParts.findIndex(part => part.includes('repl-default-bucket'));
-    const path = urlParts.slice(bucketIndex + 1).join('/'); // Get everything after bucket name
+  // Direct upload to local server (replaces signed URL approach)
+  const uploadFileDirectly = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
     
-    const response = await apiRequest("POST", "/api/admin/objects/finalize", {
-      path,
-      visibility: 'public'
-    });
+    const response = await apiRequest("POST", "/api/admin/objects/upload", formData);
     const result = await response.json();
-    // Return the normalized path from backend (e.g., /objects/filename)
     return result.path;
   };
 
@@ -74,51 +64,25 @@ export function SimpleUploader({
 
     try {
       setUploading(true);
+      setProgress(25);
 
-      // Get upload parameters
-      const { method, url } = await getUploadParams();
-
-      // Upload file with progress tracking
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          setProgress((e.loaded / e.total) * 100);
-        }
-      };
-
-      xhr.onload = async () => {
-        try {
-          if (xhr.status === 200) {
-            // Finalize upload to get normalized path
-            const normalizedPath = await finalizeUpload(url);
-            onUploadSuccess(normalizedPath);
-            setProgress(100);
-          } else {
-            throw new Error(`Upload failed with status ${xhr.status}`);
-          }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Upload failed');
-        } finally {
-          setUploading(false);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-        }
-      };
-
-      xhr.onerror = () => {
-        setError('Upload failed');
-        setUploading(false);
-      };
-
-      xhr.open(method, url);
-      xhr.setRequestHeader('Content-Type', file.type);
-      xhr.send(file);
-
+      // Direct upload to local server
+      setProgress(75);
+      const filePath = await uploadFileDirectly(file);
+      
+      // Upload complete
+      setProgress(100);
+      onUploadSuccess(filePath);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      // Reset progress after a delay
+      setTimeout(() => setProgress(0), 1000);
     }
   };
 
