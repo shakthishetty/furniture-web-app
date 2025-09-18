@@ -53,3 +53,35 @@ export function updateFurnitureDimensions(furniture: THREE.Group, dimensions: { 
   
   furniture.scale.set(scaleX, scaleY, scaleZ);
 }
+
+// Simple fallback model for when GLB files are not available
+export function createFallbackModel(): THREE.Group {
+  const fallbackGroup = new THREE.Group();
+  const material = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+  
+  // Create a simple furniture-like shape (box with legs)
+  const mainGeometry = new THREE.BoxGeometry(2, 0.2, 1.2);
+  const main = new THREE.Mesh(mainGeometry, material);
+  main.position.set(0, 1.5, 0);
+  fallbackGroup.add(main);
+  
+  // Add simple legs
+  const legGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.4);
+  const legPositions = [[-0.8, 0.7, -0.5], [0.8, 0.7, -0.5], [-0.8, 0.7, 0.5], [0.8, 0.7, 0.5]];
+  
+  legPositions.forEach(pos => {
+    const leg = new THREE.Mesh(legGeometry, material);
+    leg.position.set(pos[0], pos[1], pos[2]);
+    fallbackGroup.add(leg);
+  });
+  
+  // Add shadows
+  fallbackGroup.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  
+  return fallbackGroup;
+}

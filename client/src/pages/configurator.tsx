@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye, ShoppingCart, Plus } from "lucide-react";
 import * as THREE from 'three';
-import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions } from "@/utils/3d-models";
+import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
 
 interface Configuration {
@@ -243,14 +243,14 @@ export default function Configurator() {
           console.log('Loading 3D model from:', product.model3dUrl);
           furnitureGroup = await loadFurnitureModel(product.model3dUrl);
         } catch (error) {
-          console.error('Failed to load GLB model:', error);
-          // Create an empty group if GLB loading fails
-          furnitureGroup = new THREE.Group();
+          console.error('Failed to load GLB model, using fallback model:', error);
+          // Use fallback model if GLB loading fails
+          furnitureGroup = createFallbackModel();
         }
       } else {
-        // No GLB file, create empty group
-        console.log('No 3D model URL found');
-        furnitureGroup = new THREE.Group();
+        // No GLB file, use fallback model
+        console.log('No 3D model URL found, using fallback model');
+        furnitureGroup = createFallbackModel();
       }
 
       if (sceneRef.current) {
