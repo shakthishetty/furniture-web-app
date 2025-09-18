@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SimpleUploader } from "@/components/SimpleUploader";
+import { Model3DViewer } from "@/components/Model3DViewer";
 
 interface Category {
   id: string;
@@ -748,19 +749,16 @@ export default function AdminProducts() {
                 </div>
               )}
               
-              {/* 3D Model */}
-              {viewingProduct.modelUrl && (
+              {/* 3D Model Viewer */}
+              {(viewingProduct.modelUrl || (viewingProduct as any).model3dUrl) && (
                 <div>
-                  <Label>3D Model</Label>
-                  <a 
-                    href={viewingProduct.modelUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 mt-1"
-                  >
-                    <Box className="h-4 w-4" />
-                    View 3D Model
-                  </a>
+                  <Label className="mb-2 block">3D Model</Label>
+                  <Model3DViewer 
+                    modelUrl={(viewingProduct as any).model3dUrl || viewingProduct.modelUrl!}
+                    width={400}
+                    height={250}
+                    className="mx-auto"
+                  />
                 </div>
               )}
             </div>
