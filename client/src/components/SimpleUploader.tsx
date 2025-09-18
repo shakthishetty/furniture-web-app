@@ -24,12 +24,28 @@ export function SimpleUploader({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Direct upload to local server (replaces signed URL approach)
+  // Direct upload to local server using raw file data (like Replit system)
   const uploadFileDirectly = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
+    // Convert file to ArrayBuffer for raw upload
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
     
-    const response = await apiRequest("POST", "/api/admin/objects/upload", formData);
+    // Send raw file data with headers
+    const response = await fetch('/api/admin/objects/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-Original-Name': file.name,
+        'Content-Length': file.size.toString()
+      },
+      body: uint8Array
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    
     const result = await response.json();
     return result.path;
   };

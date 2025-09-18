@@ -678,11 +678,17 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Simple file upload endpoint (replaces the old upload-url + finalize pattern)
+// Simple file upload endpoint - handle raw file data like Replit system
 router.post("/objects/upload", requireAdmin, express.raw({limit: '50mb', type: '*/*'}), async (req, res) => {
   try {
     const contentType = req.headers['content-type'] || 'application/octet-stream';
     const originalName = req.headers['x-original-name'] as string || 'unnamed';
+    
+    console.log('Upload attempt:', {
+      contentType,
+      originalName,
+      bodySize: req.body?.length
+    });
     
     // Generate unique filename
     const uniqueSuffix = `${Date.now()}-${randomUUID()}`;
@@ -690,15 +696,16 @@ router.post("/objects/upload", requireAdmin, express.raw({limit: '50mb', type: '
     const filename = `${uniqueSuffix}${ext}`;
     const filePath = path.join(uploadsDir, filename);
     
-    // Validate file type
-    const allowedTypes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf',
-      'model/gltf-binary', 'model/gltf+json', 'application/octet-stream'
-    ];
+    // More flexible file type validation based on both content type and file extension
+    const isImage = contentType.startsWith('image/') || /\\.(jpg|jpeg|png|gif|webp)$/i.test(originalName);
+    const isPDF = contentType === 'application/pdf' || originalName.toLowerCase().endsWith('.pdf');
+    const is3DModel = contentType.includes('gltf') || originalName.toLowerCase().endsWith('.glb') || 
+                     (contentType === 'application/octet-stream' && originalName.toLowerCase().endsWith('.glb'));
     
-    const isValidType = allowedTypes.includes(contentType) || originalName.toLowerCase().endsWith('.glb');
+    const isValidType = isImage || isPDF || is3DModel;
+    
     if (!isValidType) {
+      console.log('File rejected:', { contentType, originalName, isImage, isPDF, is3DModel });
       return res.status(400).json({ error: 'Invalid file type. Only images, PDFs, and 3D models (GLB) are allowed.' });
     }
 
