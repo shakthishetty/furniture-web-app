@@ -39,6 +39,7 @@ interface Product {
   imageUrl?: string;
   additionalImages?: string[];
   modelUrl?: string;
+  model3dUrl?: string;
   pdfUrl?: string;
   inStock: boolean;
   stock?: number;
@@ -75,6 +76,7 @@ interface ProductFormData {
   imageUrl?: string;
   additionalImages?: string[];
   modelUrl?: string;
+  model3dUrl?: string;
   pdfUrl?: string;
   inStock: boolean;
   stock?: number;
@@ -567,7 +569,7 @@ export default function AdminProducts() {
                             PDF
                           </Badge>
                         )}
-                        {product.modelUrl && (
+                        {(product.modelUrl || product.model3dUrl) && (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700">
                             <Box className="h-3 w-3 mr-1" />
                             3D Model
@@ -750,11 +752,11 @@ export default function AdminProducts() {
               )}
               
               {/* 3D Model Viewer */}
-              {(viewingProduct.modelUrl || (viewingProduct as any).model3dUrl) && (
+              {(viewingProduct.model3dUrl || viewingProduct.modelUrl) && (
                 <div>
                   <Label className="mb-2 block">3D Model</Label>
                   <Model3DViewer 
-                    modelUrl={(viewingProduct as any).model3dUrl || viewingProduct.modelUrl!}
+                    modelUrl={viewingProduct.model3dUrl || viewingProduct.modelUrl!}
                     width={400}
                     height={250}
                     className="mx-auto"

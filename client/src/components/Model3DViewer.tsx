@@ -23,7 +23,11 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    console.log('Model3DViewer: Starting with modelUrl:', modelUrl);
+    if (!canvasRef.current) {
+      console.log('Model3DViewer: Canvas not ready');
+      return;
+    }
     
     // Clean up previous scene
     cleanup();
@@ -58,10 +62,12 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
     scene.add(directionalLight);
 
     // Load the 3D model
+    console.log('Model3DViewer: Loading GLB file:', modelUrl);
     const loader = new GLTFLoader();
     loader.load(
       modelUrl,
       (gltf) => {
+        console.log('Model3DViewer: GLB loaded successfully:', gltf);
         const model = gltf.scene;
         
         // Add shadows to the model
@@ -95,7 +101,8 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
         console.log('3D model loading progress:', (progress.loaded / progress.total * 100) + '%');
       },
       (error) => {
-        console.error('Error loading 3D model:', error);
+        console.error('Model3DViewer: Error loading 3D model:', error);
+        console.error('Model3DViewer: Failed URL was:', modelUrl);
         setError('Failed to load 3D model');
         setLoading(false);
       }
