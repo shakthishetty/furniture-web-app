@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye, ShoppingCart, Plus } from "lucide-react";
 import * as THREE from 'three';
-import { createFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions } from "@/utils/3d-models";
+import { createFurnitureModel, loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
 
 interface Configuration {
@@ -229,15 +229,37 @@ export default function Configurator() {
   useEffect(() => {
     if (!sceneReady || !sceneRef.current || !product) return;
 
-    // Remove existing furniture if any
-    if (furnitureRef.current) {
-      sceneRef.current.remove(furnitureRef.current);
-    }
+    const loadModel = async () => {
+      // Remove existing furniture if any
+      if (furnitureRef.current && sceneRef.current) {
+        sceneRef.current.remove(furnitureRef.current);
+      }
 
-    // Create new furniture model
-    const furnitureGroup = createFurnitureModel(product.name, sceneRef.current);
-    sceneRef.current.add(furnitureGroup);
-    furnitureRef.current = furnitureGroup;
+      let furnitureGroup;
+      
+      // Try to load the actual uploaded GLB file first
+      if (product.model3dUrl) {
+        try {
+          console.log('Loading 3D model from:', product.model3dUrl);
+          furnitureGroup = await loadFurnitureModel(product.model3dUrl);
+        } catch (error) {
+          console.error('Failed to load GLB model, falling back to synthetic model:', error);
+          // Fall back to synthetic model if GLB loading fails
+          furnitureGroup = sceneRef.current ? createFurnitureModel(product.name, sceneRef.current) : new THREE.Group();
+        }
+      } else {
+        // No GLB file, use synthetic model
+        console.log('No 3D model URL found, creating synthetic model');
+        furnitureGroup = sceneRef.current ? createFurnitureModel(product.name, sceneRef.current) : new THREE.Group();
+      }
+
+      if (sceneRef.current) {
+        sceneRef.current.add(furnitureGroup);
+        furnitureRef.current = furnitureGroup;
+      }
+    };
+
+    loadModel();
   }, [sceneReady, product]);
 
   // Update 3D model based on configuration

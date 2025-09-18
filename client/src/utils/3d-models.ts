@@ -1,5 +1,39 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+// Load actual GLB file instead of creating synthetic models
+export async function loadFurnitureModel(model3dUrl: string): Promise<THREE.Group> {
+  const loader = new GLTFLoader();
+  
+  try {
+    const gltf = await new Promise<any>((resolve, reject) => {
+      loader.load(
+        model3dUrl,
+        (gltf) => resolve(gltf),
+        undefined,
+        (error) => reject(error)
+      );
+    });
+    
+    const model = gltf.scene;
+    
+    // Add shadows to loaded model
+    model.traverse((child: any) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    
+    return model;
+  } catch (error) {
+    console.error('Error loading 3D model:', error);
+    // Fall back to a default model if GLB loading fails
+    return createDefaultModel();
+  }
+}
+
+// Fallback function for backwards compatibility (creates synthetic models)
 export function createFurnitureModel(productName: string, scene: THREE.Scene): THREE.Group {
   const furnitureGroup = new THREE.Group();
   
