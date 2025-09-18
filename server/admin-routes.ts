@@ -24,10 +24,10 @@ const adminDiscountUpdateSchema = z.object({
   expiresAt: z.string().optional()
 });
 
-// Helper to validate URLs and object storage paths
+// Helper to validate URLs, object storage paths, and local upload paths
 const urlOrPathSchema = z.string().refine(
-  (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/objects/'),
-  "Must be a valid URL or object storage path"
+  (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/objects/') || val.startsWith('/uploads/'),
+  "Must be a valid URL, object storage path, or upload path"
 );
 
 const createProductSchema = z.object({
