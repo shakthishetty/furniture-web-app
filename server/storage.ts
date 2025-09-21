@@ -71,7 +71,19 @@ import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
 import { hashPassword, generateRandomToken } from "./utils/auth";
 
+// Test database connectivity
+async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    await db.execute(sql`SELECT 1`);
+    return true;
+  } catch (error) {
+    console.warn('Database connection failed:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
+  }
+}
+
 export interface IStorage {
+  isPersistent: boolean; // Flag to indicate if storage is persistent or in-memory
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -232,7 +244,296 @@ export interface IStorage {
   deleteDirectManufacturer(id: string): Promise<boolean>;
 }
 
+// In-memory storage implementation for fallback when database is unavailable
+export class MemStorage implements IStorage {
+  public isPersistent = false;
+
+  private users = new Map<string, User>();
+  private sessions = new Map<string, Session>();
+  private products = new Map<string, Product>();
+  private materials = new Map<string, Material>();
+  private configurationOptions = new Map<string, ConfigurationOption[]>();
+  private savedConfigurations = new Map<string, SavedConfiguration>();
+  private categories = new Map<string, Category>();
+  private discountCodes = new Map<string, DiscountCode>();
+  
+  // Generate simple ID
+  private generateId(): string {
+    return Math.random().toString(36).substring(2, 15);
+  }
+
+  // User operations - basic implementation
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.email === email) return user;
+    }
+    return undefined;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.googleId === googleId) return user;
+    }
+    return undefined;
+  }
+
+  async createUser(userData: RegisterRequest & { emailVerificationToken?: string }): Promise<User> {
+    const id = this.generateId();
+    const hashedPassword = await hashPassword(userData.password);
+    const user: User = {
+      id,
+      email: userData.email,
+      username: null,
+      password: hashedPassword,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      googleId: null,
+      profileImage: null,
+      isAdmin: false,
+      role: userData.role || 'customer',
+      status: 'active',
+      emailVerified: false,
+      emailVerificationToken: userData.emailVerificationToken || generateRandomToken(),
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async createGoogleUser(googleData: { googleId: string; email: string; firstName: string; lastName: string; profileImage?: string }): Promise<User> {
+    const id = this.generateId();
+    const user: User = {
+      id,
+      email: googleData.email,
+      username: null,
+      password: null,
+      firstName: googleData.firstName,
+      lastName: googleData.lastName,
+      googleId: googleData.googleId,
+      profileImage: googleData.profileImage || null,
+      isAdmin: false,
+      role: 'customer',
+      status: 'active',
+      emailVerified: true,
+      emailVerificationToken: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, ...updates, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async verifyEmail(token: string): Promise<boolean> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.emailVerificationToken === token) {
+        user.emailVerified = true;
+        user.emailVerificationToken = null;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Product operations - essential for sample data
+  async getAllProducts(): Promise<Product[]> {
+    return Array.from(this.products.values());
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    return this.products.get(id);
+  }
+
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    return Array.from(this.products.values()).filter(p => p.category === category);
+  }
+
+  async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
+    const id = this.generateId();
+    const product: Product = {
+      id,
+      ...productData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.products.set(id, product);
+    return product;
+  }
+
+  // Category operations
+  async getCategories(): Promise<{ categories: Category[]; total: number; page: number; limit: number; totalPages: number }> {
+    const categories = Array.from(this.categories.values());
+    return {
+      categories,
+      total: categories.length,
+      page: 1,
+      limit: categories.length,
+      totalPages: 1,
+    };
+  }
+
+  async createCategory(categoryData: CreateCategoryRequest): Promise<Category> {
+    const id = this.generateId();
+    const category: Category = {
+      id,
+      name: categoryData.name,
+      description: categoryData.description || null,
+      parentId: categoryData.parentId || null,
+      slug: categoryData.slug,
+      imageUrl: categoryData.imageUrl || null,
+      sortOrder: categoryData.sortOrder || null,
+      isActive: categoryData.isActive || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.categories.set(id, category);
+    return category;
+  }
+
+  // Materials
+  async getAllMaterials(): Promise<Material[]> {
+    return Array.from(this.materials.values());
+  }
+
+  // Configuration Options
+  async getConfigurationOptions(productId: string): Promise<ConfigurationOption[]> {
+    return this.configurationOptions.get(productId) || [];
+  }
+
+  // Discount codes
+  async createDiscountCode(codeData: CreateDiscountCodeRequest): Promise<DiscountCode> {
+    const id = this.generateId();
+    const discountCode: DiscountCode = {
+      id,
+      code: codeData.code,
+      description: codeData.description || null,
+      discountType: codeData.discountType,
+      discountValue: codeData.discountValue,
+      minimumOrderAmount: codeData.minimumOrderAmount || null,
+      maxUsageCount: codeData.maxUsageCount || null,
+      currentUsageCount: 0,
+      expiresAt: codeData.expiresAt || null,
+      isActive: codeData.isActive || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.discountCodes.set(codeData.code, discountCode);
+    return discountCode;
+  }
+
+  async getDiscountCode(code: string): Promise<DiscountCode | undefined> {
+    return this.discountCodes.get(code);
+  }
+
+  // Stub implementations for other required methods (would need full implementation for production)
+  async createPasswordResetToken(email: string): Promise<string | null> { return null; }
+  async resetPassword(token: string, newPassword: string): Promise<boolean> { return false; }
+  async createSession(userId: string, refreshToken: string, expiresAt: Date): Promise<Session> { throw new Error('Sessions not implemented in MemStorage'); }
+  async getSession(refreshToken: string): Promise<Session | undefined> { return undefined; }
+  async deleteSession(refreshToken: string): Promise<void> {}
+  async deleteAllUserSessions(userId: string): Promise<void> {}
+  async deleteProduct(id: string): Promise<boolean> { return false; }
+  async getCategoryById(categoryId: string): Promise<Category | null> { return this.categories.get(categoryId) || null; }
+  async updateCategory(categoryId: string, updates: UpdateCategoryRequest): Promise<Category | null> { return null; }
+  async deleteCategory(categoryId: string): Promise<boolean> { return false; }
+  async getProductsByCategoryId(categoryId: string): Promise<Product[]> { return []; }
+  async getMaterialsByType(type: string): Promise<Material[]> { return []; }
+  async saveConfiguration(userId: string | null, config: CreateConfigurationRequest): Promise<SavedConfiguration> { throw new Error('Not implemented'); }
+  async getUserConfigurations(userId: string): Promise<SavedConfiguration[]> { return []; }
+  async getConfiguration(id: string): Promise<SavedConfiguration | undefined> { return undefined; }
+  async updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined> { return undefined; }
+  async deleteConfiguration(id: string): Promise<void> {}
+  async getPublicConfigurations(): Promise<SavedConfiguration[]> { return []; }
+  async createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address> { throw new Error('Not implemented'); }
+  async getUserAddresses(userId: string): Promise<Address[]> { return []; }
+  async getAddress(id: string): Promise<Address | undefined> { return undefined; }
+  async updateAddress(id: string, updates: UpdateAddressRequest): Promise<Address | undefined> { return undefined; }
+  async deleteAddress(id: string): Promise<void> {}
+  async setDefaultAddress(userId: string, addressId: string): Promise<void> {}
+  async getDiscountCodes(options: { page: number; limit: number }): Promise<{ discounts: DiscountCode[]; total: number }> { return { discounts: [], total: 0 }; }
+  async getDiscountCodeById(id: string): Promise<DiscountCode | undefined> { return undefined; }
+  async updateDiscountCode(id: string, updates: Partial<DiscountCode>): Promise<DiscountCode | undefined> { return undefined; }
+  async deleteDiscountCode(id: string): Promise<boolean> { return false; }
+  async validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }> { return { valid: false }; }
+  async useDiscountCode(code: string): Promise<void> {}
+  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order> { throw new Error('Not implemented'); }
+  async getUserOrders(userId: string): Promise<Order[]> { return []; }
+  async getOrder(id: string): Promise<Order | undefined> { return undefined; }
+  async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined> { return undefined; }
+  async updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined> { return undefined; }
+  async updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined> { return undefined; }
+  async cancelOrder(id: string, cancelData: CancelOrderRequest): Promise<Order | undefined> { return undefined; }
+  async createOrderItem(itemData: Omit<OrderItem, 'id' | 'createdAt'>): Promise<OrderItem> { throw new Error('Not implemented'); }
+  async getOrderItems(orderId: string): Promise<OrderItem[]> { return []; }
+  async createRefund(refundData: Omit<Refund, 'id' | 'createdAt'>): Promise<Refund> { throw new Error('Not implemented'); }
+  async getOrderRefunds(orderId: string): Promise<Refund[]> { return []; }
+  async updateRefundStatus(id: string, status: string, stripeRefundId?: string): Promise<Refund | undefined> { return undefined; }
+  async addToWishlist(userId: string, itemData: CreateWishlistItemRequest): Promise<WishlistItem> { throw new Error('Not implemented'); }
+  async getUserWishlist(userId: string): Promise<WishlistItem[]> { return []; }
+  async removeFromWishlist(userId: string, productId: string): Promise<void> {}
+  async isInWishlist(userId: string, productId: string): Promise<boolean> { return false; }
+  async getUserById(id: string): Promise<User | undefined> { return this.getUser(id); }
+  async getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }> { return { users: [], total: 0 }; }
+  async getManufacturers(): Promise<User[]> { return []; }
+  async getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }> { return { products: Array.from(this.products.values()), total: this.products.size }; }
+  async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> { return undefined; }
+  async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }> { return { orders: [], total: 0 }; }
+  async getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }> { return { revenue: 0, orders: 0, users: 0, avgOrderValue: 0 }; }
+  async getOrdersByDay(days: number): Promise<{ date: string; orders: number; revenue: number }[]> { return []; }
+
+  // All manufacturing and manufacturer profile operations - stub implementations
+  async createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess> { throw new Error('Not implemented'); }
+  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: (ManufacturingProcess & { assignedManufacturer?: User | null })[]; total: number }> { return { processes: [], total: 0 }; }
+  async getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async getManufacturingProcessWithManufacturer(id: string): Promise<(ManufacturingProcess & { assignedManufacturer?: User | null }) | undefined> { return undefined; }
+  async getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async deleteManufacturingProcess(id: string): Promise<boolean> { return false; }
+  async createManufacturingStage(stageData: CreateManufacturingStageRequest): Promise<ManufacturingStage> { throw new Error('Not implemented'); }
+  async getManufacturingStages(processId: string): Promise<ManufacturingStage[]> { return []; }
+  async getManufacturingStage(id: string): Promise<ManufacturingStage | undefined> { return undefined; }
+  async updateManufacturingStage(id: string, updates: StageStatusUpdateRequest): Promise<ManufacturingStage | undefined> { return undefined; }
+  async deleteManufacturingStage(id: string): Promise<boolean> { return false; }
+  async createStageUpdate(updateData: CreateStageUpdateRequest): Promise<StageUpdate> { throw new Error('Not implemented'); }
+  async getStageUpdates(stageId: string, includeInternal?: boolean): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[]> { return []; }
+  async getStageUpdate(id: string): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] }) | undefined> { return undefined; }
+  async createStageUpdateReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply> { throw new Error('Not implemented'); }
+  async getStageUpdateReplies(updateId: string): Promise<StageUpdateReply[]> { return []; }
+  async getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { assignedManufacturer?: User | null; stages: (ManufacturingStage & { updates: (StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[] })[] }) | undefined> { return undefined; }
+  async createManufacturerProfile(userId: string, profileData: CreateManufacturerProfileRequest): Promise<ManufacturerProfile> { throw new Error('Not implemented'); }
+  async getManufacturerProfile(userId: string): Promise<ManufacturerProfile | undefined> { return undefined; }
+  async getManufacturerProfileById(id: string): Promise<ManufacturerProfile | undefined> { return undefined; }
+  async updateManufacturerProfile(id: string, updates: Partial<ManufacturerProfile>): Promise<ManufacturerProfile | undefined> { return undefined; }
+  async approveManufacturer(id: string, adminUserId: string, notes?: string): Promise<ManufacturerProfile | undefined> { return undefined; }
+  async rejectManufacturer(id: string, adminUserId: string, reason: string, notes?: string): Promise<ManufacturerProfile | undefined> { return undefined; }
+  async getPendingManufacturerApplications(): Promise<(ManufacturerProfile & { user: User })[]> { return []; }
+  async getApprovedManufacturers(): Promise<(ManufacturerProfile & { user: User })[]> { return []; }
+  async createDirectManufacturer(manufacturerData: CreateManufacturerRequest, adminUserId: string): Promise<Manufacturer> { throw new Error('Not implemented'); }
+  async getDirectManufacturers(): Promise<Manufacturer[]> { return []; }
+  async getDirectManufacturer(id: string): Promise<Manufacturer | undefined> { return undefined; }
+  async updateDirectManufacturer(id: string, updates: UpdateManufacturerRequest): Promise<Manufacturer | undefined> { return undefined; }
+  async deleteDirectManufacturer(id: string): Promise<boolean> { return false; }
+}
+
 export class DatabaseStorage implements IStorage {
+  public isPersistent = true;
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -1812,4 +2113,43 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Initialize storage with database connectivity test and fallback
+async function initializeStorage(): Promise<IStorage> {
+  const isDatabaseConnected = await testDatabaseConnection();
+  
+  if (isDatabaseConnected) {
+    console.log('Database connected successfully, using persistent storage.');
+    return new DatabaseStorage();
+  } else {
+    console.log('Database connection failed, falling back to in-memory storage.');
+    return new MemStorage();
+  }
+}
+
+// Export storage as a promise-based singleton
+let storageInstance: IStorage | null = null;
+
+export async function getStorage(): Promise<IStorage> {
+  if (!storageInstance) {
+    storageInstance = await initializeStorage();
+  }
+  return storageInstance;
+}
+
+// For backward compatibility, export storage as a synchronous proxy that will be initialized on first use
+export const storage = new Proxy({} as IStorage, {
+  get(target, prop) {
+    if (prop === 'isPersistent') {
+      return storageInstance?.isPersistent ?? false;
+    }
+    
+    return async (...args: any[]) => {
+      const actualStorage = await getStorage();
+      const method = (actualStorage as any)[prop];
+      if (typeof method === 'function') {
+        return method.apply(actualStorage, args);
+      }
+      return method;
+    };
+  }
+});
