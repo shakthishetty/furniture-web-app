@@ -5,6 +5,7 @@ import {
   type RegisterRequest,
   type Product,
   type Material,
+  type CreateMaterialRequest,
   type ConfigurationOption,
   type SavedConfiguration,
   type CreateConfigurationRequest,
@@ -127,6 +128,7 @@ export interface IStorage {
   // Materials
   getAllMaterials(): Promise<Material[]>;
   getMaterialsByType(type: string): Promise<Material[]>;
+  createMaterial(materialData: CreateMaterialRequest): Promise<Material>;
   
   // Configuration Options
   getConfigurationOptions(productId: string): Promise<ConfigurationOption[]>;
@@ -409,6 +411,23 @@ export class MemStorage implements IStorage {
   // Materials
   async getAllMaterials(): Promise<Material[]> {
     return Array.from(this.materials.values());
+  }
+
+  async createMaterial(materialData: CreateMaterialRequest): Promise<Material> {
+    const id = this.generateId();
+    const material: Material = {
+      id,
+      name: materialData.name,
+      type: materialData.type,
+      description: materialData.description || null,
+      priceMultiplier: materialData.priceMultiplier,
+      textureUrl: materialData.textureUrl || null,
+      color: materialData.color || null,
+      isAvailable: materialData.isAvailable ?? true,
+      createdAt: new Date(),
+    };
+    this.materials.set(id, material);
+    return material;
   }
 
   // Configuration Options
@@ -819,6 +838,23 @@ export class DatabaseStorage implements IStorage {
 
   async getAllMaterials(): Promise<Material[]> {
     return await db.select().from(materials).where(eq(materials.isAvailable, true));
+  }
+
+  async createMaterial(materialData: CreateMaterialRequest): Promise<Material> {
+    const [material] = await db
+      .insert(materials)
+      .values({
+        name: materialData.name,
+        type: materialData.type,
+        description: materialData.description,
+        priceMultiplier: materialData.priceMultiplier,
+        textureUrl: materialData.textureUrl,
+        color: materialData.color,
+        isAvailable: materialData.isAvailable ?? true,
+      })
+      .returning();
+    
+    return material;
   }
 
   async getMaterialsByType(type: string): Promise<Material[]> {

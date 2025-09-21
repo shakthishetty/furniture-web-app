@@ -163,9 +163,12 @@ export async function seedSampleData() {
       insertedProducts.push(insertedProduct);
     }
 
-    // For now, skip materials in MemStorage (can be implemented later)
-    // TODO: Add material storage methods when needed
-    const insertedMaterials = sampleMaterials.map((material, index) => ({ id: `material_${index}`, ...material }));
+    // Insert materials using storage interface
+    const insertedMaterials = [];
+    for (const material of sampleMaterials) {
+      const insertedMaterial = await storage.createMaterial(material);
+      insertedMaterials.push(insertedMaterial);
+    }
 
     // For now, skip configuration options in MemStorage (can be implemented later)
     // TODO: Add configuration options storage methods when needed
