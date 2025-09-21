@@ -259,6 +259,7 @@ export class MemStorage implements IStorage {
   private categories = new Map<string, Category>();
   private discountCodes = new Map<string, DiscountCode>();
   private addresses = new Map<string, Address>();
+  private orders = new Map<string, Order>();
   
   // Generate simple ID
   private generateId(): string {
@@ -561,7 +562,7 @@ export class MemStorage implements IStorage {
   }
   async getUserAddresses(userId: string): Promise<Address[]> {
     const userAddresses: Address[] = [];
-    for (const address of this.addresses.values()) {
+    for (const address of Array.from(this.addresses.values())) {
       if (address.userId === userId) {
         userAddresses.push(address);
       }
@@ -578,7 +579,34 @@ export class MemStorage implements IStorage {
   async deleteDiscountCode(id: string): Promise<boolean> { return false; }
   async validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }> { return { valid: false }; }
   async useDiscountCode(code: string): Promise<void> {}
-  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order> { throw new Error('Not implemented'); }
+  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order> {
+    const id = this.generateId();
+    const order: Order = {
+      id,
+      userId: orderData.userId,
+      orderNumber: orderData.orderNumber,
+      status: 'pending',
+      billingAddressId: orderData.billingAddressId,
+      shippingAddressId: orderData.shippingAddressId,
+      paymentMethod: orderData.paymentMethod,
+      paymentStatus: 'pending',
+      subtotal: orderData.subtotal.toString(),
+      discountAmount: '0',
+      taxAmount: '0',
+      shippingAmount: '0',
+      totalAmount: orderData.totalAmount.toString(),
+      discountCode: orderData.discountCode ?? null,
+      notes: null,
+      estimatedDelivery: null,
+      trackingNumber: null,
+      stripePaymentIntentId: null,
+      stripeChargeId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.orders.set(id, order);
+    return order;
+  }
   async getUserOrders(userId: string): Promise<Order[]> { return []; }
   async getOrder(id: string): Promise<Order | undefined> { return undefined; }
   async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined> { return undefined; }
