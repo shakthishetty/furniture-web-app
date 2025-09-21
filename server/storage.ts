@@ -617,8 +617,15 @@ export class MemStorage implements IStorage {
     this.orders.set(id, order);
     return order;
   }
-  async getUserOrders(userId: string): Promise<Order[]> { return []; }
-  async getOrder(id: string): Promise<Order | undefined> { return undefined; }
+  async getUserOrders(userId: string): Promise<Order[]> {
+    const userOrders = Array.from(this.orders.values())
+      .filter(order => order.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return userOrders;
+  }
+  async getOrder(id: string): Promise<Order | undefined> {
+    return this.orders.get(id);
+  }
   async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined> { return undefined; }
   async updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined> { return undefined; }
   async updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined> { return undefined; }
