@@ -258,6 +258,7 @@ export class MemStorage implements IStorage {
   private savedConfigurations = new Map<string, SavedConfiguration>();
   private categories = new Map<string, Category>();
   private discountCodes = new Map<string, DiscountCode>();
+  private addresses = new Map<string, Address>();
   
   // Generate simple ID
   private generateId(): string {
@@ -536,7 +537,28 @@ export class MemStorage implements IStorage {
   }
   async deleteConfiguration(id: string): Promise<void> {}
   async getPublicConfigurations(): Promise<SavedConfiguration[]> { return []; }
-  async createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address> { throw new Error('Not implemented'); }
+  async createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address> {
+    const id = this.generateId();
+    const address: Address = {
+      id,
+      userId,
+      label: addressData.label,
+      firstName: addressData.firstName,
+      lastName: addressData.lastName,
+      street: addressData.street,
+      apartment: addressData.apartment || null,
+      city: addressData.city,
+      state: addressData.state,
+      postalCode: addressData.postalCode,
+      country: addressData.country || 'US',
+      phone: addressData.phone || null,
+      isDefault: addressData.isDefault || false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.addresses.set(id, address);
+    return address;
+  }
   async getUserAddresses(userId: string): Promise<Address[]> { return []; }
   async getAddress(id: string): Promise<Address | undefined> { return undefined; }
   async updateAddress(id: string, updates: UpdateAddressRequest): Promise<Address | undefined> { return undefined; }
