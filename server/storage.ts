@@ -518,7 +518,22 @@ export class MemStorage implements IStorage {
   }
   async getUserConfigurations(userId: string): Promise<SavedConfiguration[]> { return []; }
   async getConfiguration(id: string): Promise<SavedConfiguration | undefined> { return undefined; }
-  async updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined> { return undefined; }
+  async updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined> {
+    const existingConfig = this.savedConfigurations.get(id);
+    if (!existingConfig) {
+      return undefined;
+    }
+    
+    const updatedConfig: SavedConfiguration = {
+      ...existingConfig,
+      configuration: JSON.stringify(updates.configuration),
+      name: updates.name || existingConfig.name,
+      updatedAt: new Date(),
+    };
+    
+    this.savedConfigurations.set(id, updatedConfig);
+    return updatedConfig;
+  }
   async deleteConfiguration(id: string): Promise<void> {}
   async getPublicConfigurations(): Promise<SavedConfiguration[]> { return []; }
   async createAddress(userId: string, addressData: CreateAddressRequest): Promise<Address> { throw new Error('Not implemented'); }
