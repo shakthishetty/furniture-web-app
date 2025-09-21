@@ -559,7 +559,15 @@ export class MemStorage implements IStorage {
     this.addresses.set(id, address);
     return address;
   }
-  async getUserAddresses(userId: string): Promise<Address[]> { return []; }
+  async getUserAddresses(userId: string): Promise<Address[]> {
+    const userAddresses: Address[] = [];
+    for (const address of this.addresses.values()) {
+      if (address.userId === userId) {
+        userAddresses.push(address);
+      }
+    }
+    return userAddresses;
+  }
   async getAddress(id: string): Promise<Address | undefined> { return undefined; }
   async updateAddress(id: string, updates: UpdateAddressRequest): Promise<Address | undefined> { return undefined; }
   async deleteAddress(id: string): Promise<void> {}
