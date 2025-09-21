@@ -142,11 +142,25 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
       onSuccess?.();
     },
     onError: (error: any) => {
-      toast({
-        title: "Payment failed",
-        description: error.message || "Please try again.",
-        variant: "destructive",
-      });
+      // Check if error is due to invalid product ID (cached from before restart)
+      if (error.message && error.message.includes("Product") && error.message.includes("not found")) {
+        clearCart();
+        toast({
+          title: "Cart outdated",
+          description: "Your cart had outdated items. Please add products to your cart again.",
+          variant: "destructive",
+        });
+        // Redirect to catalog to add items again
+        setTimeout(() => {
+          window.location.href = '/catalog';
+        }, 2000);
+      } else {
+        toast({
+          title: "Payment failed",
+          description: error.message || "Please try again.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
