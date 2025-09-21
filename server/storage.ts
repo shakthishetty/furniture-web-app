@@ -1,4 +1,3 @@
-import { db, isDatabaseHealthy } from "./db";
 import { 
   type User, 
   type InsertUser, 
@@ -68,6 +67,7 @@ import {
   manufacturerProfiles,
   manufacturers
 } from "@shared/schema";
+import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
 import { hashPassword, generateRandomToken } from "./utils/auth";
 
@@ -232,73 +232,6 @@ export interface IStorage {
   deleteDirectManufacturer(id: string): Promise<boolean>;
 }
 
-// Fallback products for when database is unavailable (matching actual Product schema)
-const FALLBACK_PRODUCTS: Product[] = [
-  {
-    id: "fallback-chair-1",
-    name: "Classic Teak Chair",
-    description: "Beautiful handcrafted teak chair with ergonomic design",
-    categoryId: "seating",
-    category: "seating",
-    basePrice: "299.99",
-    isCustomizable: true,
-    status: "active",
-    imageUrl: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&q=80&w=400",
-    model3dUrl: null,
-    pdfUrl: null,
-    additionalImages: null,
-    dimensions: null,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: "fallback-table-1",
-    name: "Modern Teak Dining Table",
-    description: "Spacious dining table crafted from sustainable teak wood",
-    categoryId: "tables",
-    category: "tables",
-    basePrice: "899.99",
-    isCustomizable: true,
-    status: "active",
-    imageUrl: "https://images.unsplash.com/photo-1549497538-303791108f95?auto=format&fit=crop&q=80&w=400",
-    model3dUrl: null,
-    pdfUrl: null,
-    additionalImages: null,
-    dimensions: null,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: "fallback-sofa-1",
-    name: "Comfortable Teak Sofa",
-    description: "Luxurious 3-seater sofa with premium teak frame",
-    categoryId: "seating",
-    category: "seating",
-    basePrice: "1299.99",
-    isCustomizable: true,
-    status: "active",
-    imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=400",
-    model3dUrl: null,
-    pdfUrl: null,
-    additionalImages: null,
-    dimensions: null,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
-
-const FALLBACK_CATEGORIES = [
-  { id: "seating", name: "Seating", slug: "seating", description: "Chairs, sofas, and seating furniture", imageUrl: null, isActive: true, sortOrder: 1, parentId: null, createdAt: new Date(), updatedAt: new Date() },
-  { id: "tables", name: "Tables", slug: "tables", description: "Dining tables, coffee tables, and more", imageUrl: null, isActive: true, sortOrder: 2, parentId: null, createdAt: new Date(), updatedAt: new Date() },
-  { id: "storage", name: "Storage", slug: "storage", description: "Cabinets, wardrobes, and storage solutions", imageUrl: null, isActive: true, sortOrder: 3, parentId: null, createdAt: new Date(), updatedAt: new Date() }
-];
-
-const FALLBACK_MATERIALS: Material[] = [
-  { id: "teak", name: "Teak", type: "wood", description: "Premium teak wood", priceMultiplier: "1.0", textureUrl: null, color: "#8B4513", isAvailable: true, createdAt: new Date() },
-  { id: "oak", name: "Oak", type: "wood", description: "Solid oak wood", priceMultiplier: "1.2", textureUrl: null, color: "#D2691E", isAvailable: true, createdAt: new Date() },
-  { id: "mahogany", name: "Mahogany", type: "wood", description: "Rich mahogany wood", priceMultiplier: "1.5", textureUrl: null, color: "#800000", isAvailable: true, createdAt: new Date() }
-];
-
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -450,50 +383,17 @@ export class DatabaseStorage implements IStorage {
 
   // Product Configurator implementations
   async getAllProducts(): Promise<Product[]> {
-    try {
-      // If database is null, return fallback immediately
-      if (!db) {
-        console.log("Database unavailable, returning fallback products");
-        return FALLBACK_PRODUCTS;
-      }
-
-      return await db.select().from(products).where(eq(products.status, 'active'));
-    } catch (error: any) {
-      console.warn("Database query failed, returning fallback products:", error.message || error);
-      return FALLBACK_PRODUCTS;
-    }
+    return await db.select().from(products).where(eq(products.status, 'active'));
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
-    try {
-      // If database is null, return fallback immediately
-      if (!db) {
-        console.log("Database unavailable, returning fallback product for id:", id);
-        return FALLBACK_PRODUCTS.find(p => p.id === id);
-      }
-
-      const [product] = await db.select().from(products).where(eq(products.id, id));
-      return product;
-    } catch (error: any) {
-      console.warn("Database query failed, returning fallback product for id:", id, error.message || error);
-      return FALLBACK_PRODUCTS.find(p => p.id === id);
-    }
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
   }
 
   async getProductsByCategory(category: string): Promise<Product[]> {
-    try {
-      // If database is null, return fallback immediately
-      if (!db) {
-        console.log("Database unavailable, returning fallback products for category:", category);
-        return FALLBACK_PRODUCTS.filter(p => p.categoryId === category);
-      }
-
-      return await db.select().from(products)
-        .where(and(eq(products.category, category), eq(products.status, 'active')));
-    } catch (error: any) {
-      console.warn("Database query failed, returning fallback products for category:", category, error.message || error);
-      return FALLBACK_PRODUCTS.filter(p => p.categoryId === category);
-    }
+    return await db.select().from(products)
+      .where(and(eq(products.category, category), eq(products.status, 'active')));
   }
 
   // Category Management Methods
@@ -590,18 +490,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllMaterials(): Promise<Material[]> {
-    try {
-      // If database is null, return fallback immediately
-      if (!db) {
-        console.log("Database unavailable, returning fallback materials");
-        return FALLBACK_MATERIALS;
-      }
-
-      return await db.select().from(materials).where(eq(materials.isAvailable, true));
-    } catch (error: any) {
-      console.warn("Database query failed, returning fallback materials:", error.message || error);
-      return FALLBACK_MATERIALS;
-    }
+    return await db.select().from(materials).where(eq(materials.isAvailable, true));
   }
 
   async getMaterialsByType(type: string): Promise<Material[]> {

@@ -15,14 +15,8 @@ import { z } from "zod";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize sample data (skip if database is unavailable)
-  try {
-    await initializeSampleData();
-    console.log("Sample data initialized successfully");
-  } catch (error) {
-    console.warn("Failed to initialize sample data (database unavailable):", error.message);
-    console.log("Running in fallback mode without database seeding");
-  }
+  // Initialize sample data
+  await initializeSampleData();
   
   // Authentication routes
   app.use('/api/auth', authRoutes);
