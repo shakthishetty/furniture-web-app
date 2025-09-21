@@ -658,13 +658,119 @@ export class MemStorage implements IStorage {
   async removeFromWishlist(userId: string, productId: string): Promise<void> {}
   async isInWishlist(userId: string, productId: string): Promise<boolean> { return false; }
   async getUserById(id: string): Promise<User | undefined> { return this.getUser(id); }
-  async getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }> { return { users: [], total: 0 }; }
+  async getUsers(options: { page: number; limit: number; search?: string; status?: string }): Promise<{ users: User[]; total: number }> {
+    const allUsers = Array.from(this.users.values());
+    let filteredUsers = allUsers;
+
+    // Apply search filter
+    if (options.search) {
+      const searchLower = options.search.toLowerCase();
+      filteredUsers = filteredUsers.filter(user => 
+        user.email.toLowerCase().includes(searchLower) ||
+        (user.firstName && user.firstName.toLowerCase().includes(searchLower)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply status filter
+    if (options.status && options.status !== 'all') {
+      filteredUsers = filteredUsers.filter(user => user.status === options.status);
+    }
+
+    // Apply pagination
+    const offset = (options.page - 1) * options.limit;
+    const paginatedUsers = filteredUsers.slice(offset, offset + options.limit);
+
+    return {
+      users: paginatedUsers,
+      total: filteredUsers.length
+    };
+  }
   async getManufacturers(): Promise<User[]> { return []; }
   async getProducts(options: { page: number; limit: number; category?: string; status?: string }): Promise<{ products: Product[]; total: number }> { return { products: Array.from(this.products.values()), total: this.products.size }; }
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined> { return undefined; }
-  async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }> { return { orders: [], total: 0 }; }
-  async getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }> { return { revenue: 0, orders: 0, users: 0, avgOrderValue: 0 }; }
-  async getOrdersByDay(days: number): Promise<{ date: string; orders: number; revenue: number }[]> { return []; }
+  async getOrdersForAdmin(options: { page: number; limit: number; status?: string; startDate?: Date; endDate?: Date }): Promise<{ orders: any[]; total: number }> {
+    const allOrders = Array.from(this.orders.values());
+    let filteredOrders = allOrders;
+
+    // Apply status filter
+    if (options.status && options.status !== 'all') {
+      filteredOrders = filteredOrders.filter(order => order.status === options.status);
+    }
+
+    // Apply date range filter
+    if (options.startDate) {
+      filteredOrders = filteredOrders.filter(order => new Date(order.createdAt) >= options.startDate!);
+    }
+    if (options.endDate) {
+      filteredOrders = filteredOrders.filter(order => new Date(order.createdAt) <= options.endDate!);
+    }
+
+    // Sort by creation date (newest first)
+    filteredOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Apply pagination
+    const offset = (options.page - 1) * options.limit;
+    const paginatedOrders = filteredOrders.slice(offset, offset + options.limit);
+
+    return {
+      orders: paginatedOrders,
+      total: filteredOrders.length
+    };
+  }
+  async getAnalyticsSummary(): Promise<{ revenue: number; orders: number; users: number; avgOrderValue: number }> {
+    const allOrders = Array.from(this.orders.values());
+    const allUsers = Array.from(this.users.values());
+    
+    // Calculate total revenue from paid orders
+    const paidOrders = allOrders.filter(order => order.paymentStatus === 'paid');
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+    
+    // Calculate average order value
+    const avgOrderValue = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
+    
+    return {
+      revenue: totalRevenue,
+      orders: allOrders.length,
+      users: allUsers.length,
+      avgOrderValue: avgOrderValue
+    };
+  }
+  async getOrdersByDay(days: number): Promise<{ date: string; orders: number; revenue: number }[]> {
+    const allOrders = Array.from(this.orders.values());
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    // Filter orders within the date range
+    const filteredOrders = allOrders.filter(order => new Date(order.createdAt) >= startDate);
+    
+    // Group orders by date
+    const ordersByDate = new Map<string, { orders: number; revenue: number }>();
+    
+    // Initialize all dates in range with zero values
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      ordersByDate.set(dateStr, { orders: 0, revenue: 0 });
+    }
+    
+    // Aggregate orders by date
+    filteredOrders.forEach(order => {
+      const dateStr = new Date(order.createdAt).toISOString().split('T')[0];
+      const existing = ordersByDate.get(dateStr) || { orders: 0, revenue: 0 };
+      existing.orders++;
+      if (order.paymentStatus === 'paid') {
+        existing.revenue += parseFloat(order.totalAmount);
+      }
+      ordersByDate.set(dateStr, existing);
+    });
+    
+    // Convert to array and sort by date
+    return Array.from(ordersByDate.entries())
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
 
   // All manufacturing and manufacturer profile operations - stub implementations
   async createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess> { throw new Error('Not implemented'); }
