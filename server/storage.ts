@@ -713,8 +713,32 @@ export class MemStorage implements IStorage {
     const offset = (options.page - 1) * options.limit;
     const paginatedOrders = filteredOrders.slice(offset, offset + options.limit);
 
+    // Enrich orders with user information and items
+    const enrichedOrders = await Promise.all(paginatedOrders.map(async order => {
+      // Get user information
+      const user = await this.getUser(order.userId);
+      
+      // Create mock items since we don't have separate order items tracking in memory storage
+      // This prevents the frontend error while keeping it demo-friendly
+      const items = [{
+        id: 'demo-item',
+        productName: 'Custom Furniture Item',
+        quantity: 1,
+        unitPrice: order.totalAmount,
+        totalPrice: order.totalAmount
+      }];
+
+      return {
+        ...order,
+        userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'Unknown User',
+        userEmail: user?.email || 'unknown@email.com',
+        total: order.totalAmount, // Frontend expects 'total' field
+        items: items
+      };
+    }));
+
     return {
-      orders: paginatedOrders,
+      orders: enrichedOrders,
       total: filteredOrders.length
     };
   }
