@@ -500,7 +500,22 @@ export class MemStorage implements IStorage {
   async deleteCategory(categoryId: string): Promise<boolean> { return false; }
   async getProductsByCategoryId(categoryId: string): Promise<Product[]> { return []; }
   async getMaterialsByType(type: string): Promise<Material[]> { return []; }
-  async saveConfiguration(userId: string | null, config: CreateConfigurationRequest): Promise<SavedConfiguration> { throw new Error('Not implemented'); }
+  async saveConfiguration(userId: string | null, config: CreateConfigurationRequest): Promise<SavedConfiguration> {
+    const id = this.generateId();
+    const savedConfiguration: SavedConfiguration = {
+      id,
+      userId: userId || null,
+      productId: config.productId,
+      name: config.name || null,
+      configuration: JSON.stringify(config.configuration),
+      totalPrice: '0', // Will be calculated by pricing service
+      isPublic: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.savedConfigurations.set(id, savedConfiguration);
+    return savedConfiguration;
+  }
   async getUserConfigurations(userId: string): Promise<SavedConfiguration[]> { return []; }
   async getConfiguration(id: string): Promise<SavedConfiguration | undefined> { return undefined; }
   async updateConfiguration(id: string, updates: UpdateConfigurationRequest): Promise<SavedConfiguration | undefined> { return undefined; }
