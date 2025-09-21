@@ -623,7 +623,25 @@ export class MemStorage implements IStorage {
   async updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined> { return undefined; }
   async updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined> { return undefined; }
   async cancelOrder(id: string, cancelData: CancelOrderRequest): Promise<Order | undefined> { return undefined; }
-  async createOrderItem(itemData: Omit<OrderItem, 'id' | 'createdAt'>): Promise<OrderItem> { throw new Error('Not implemented'); }
+  async createOrderItem(itemData: Omit<OrderItem, 'id' | 'createdAt'>): Promise<OrderItem> {
+    const id = this.generateId();
+    const orderItem: OrderItem = {
+      id,
+      orderId: itemData.orderId,
+      productId: itemData.productId,
+      configurationId: itemData.configurationId || null,
+      customConfiguration: itemData.customConfiguration || null,
+      quantity: itemData.quantity,
+      unitPrice: itemData.unitPrice,
+      totalPrice: itemData.totalPrice,
+      productName: itemData.productName,
+      productImage: itemData.productImage || null,
+      createdAt: new Date(),
+    };
+    // For demo purposes, we don't need to store order items separately in memory
+    // They are handled as part of order creation
+    return orderItem;
+  }
   async getOrderItems(orderId: string): Promise<OrderItem[]> { return []; }
   async createRefund(refundData: Omit<Refund, 'id' | 'createdAt'>): Promise<Refund> { throw new Error('Not implemented'); }
   async getOrderRefunds(orderId: string): Promise<Refund[]> { return []; }
