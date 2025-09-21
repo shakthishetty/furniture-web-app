@@ -444,10 +444,37 @@ export class MemStorage implements IStorage {
   // Stub implementations for other required methods (would need full implementation for production)
   async createPasswordResetToken(email: string): Promise<string | null> { return null; }
   async resetPassword(token: string, newPassword: string): Promise<boolean> { return false; }
-  async createSession(userId: string, refreshToken: string, expiresAt: Date): Promise<Session> { throw new Error('Sessions not implemented in MemStorage'); }
-  async getSession(refreshToken: string): Promise<Session | undefined> { return undefined; }
-  async deleteSession(refreshToken: string): Promise<void> {}
-  async deleteAllUserSessions(userId: string): Promise<void> {}
+  async createSession(userId: string, refreshToken: string, expiresAt: Date): Promise<Session> {
+    const session: Session = {
+      id: this.generateId(),
+      userId,
+      refreshToken,
+      expiresAt,
+      createdAt: new Date(),
+    };
+    this.sessions.set(refreshToken, session);
+    return session;
+  }
+  async getSession(refreshToken: string): Promise<Session | undefined> {
+    const session = this.sessions.get(refreshToken);
+    if (session && session.expiresAt > new Date()) {
+      return session;
+    } else if (session) {
+      // Clean up expired session
+      this.sessions.delete(refreshToken);
+    }
+    return undefined;
+  }
+  async deleteSession(refreshToken: string): Promise<void> {
+    this.sessions.delete(refreshToken);
+  }
+  async deleteAllUserSessions(userId: string): Promise<void> {
+    for (const [token, session] of Array.from(this.sessions.entries())) {
+      if (session.userId === userId) {
+        this.sessions.delete(token);
+      }
+    }
+  }
   async deleteProduct(id: string): Promise<boolean> { return false; }
   async getCategoryById(categoryId: string): Promise<Category | null> { return this.categories.get(categoryId) || null; }
   async updateCategory(categoryId: string, updates: UpdateCategoryRequest): Promise<Category | null> { return null; }
