@@ -261,8 +261,18 @@ export class MemStorage implements IStorage {
   private addresses = new Map<string, Address>();
   private orders = new Map<string, Order>();
   
-  // Generate simple ID
-  private generateId(): string {
+  // Generate simple ID - deterministic based on content for consistency
+  private generateId(seed?: string): string {
+    if (seed) {
+      // Create deterministic ID based on seed
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      return Math.abs(hash).toString(36).substring(0, 11);
+    }
     return Math.random().toString(36).substring(2, 15);
   }
 
@@ -369,7 +379,7 @@ export class MemStorage implements IStorage {
   }
 
   async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-    const id = this.generateId();
+    const id = this.generateId(productData.name);
     const product: Product = {
       id,
       ...productData,
@@ -393,7 +403,7 @@ export class MemStorage implements IStorage {
   }
 
   async createCategory(categoryData: CreateCategoryRequest): Promise<Category> {
-    const id = this.generateId();
+    const id = this.generateId(categoryData.slug);
     const category: Category = {
       id,
       name: categoryData.name,
@@ -416,7 +426,7 @@ export class MemStorage implements IStorage {
   }
 
   async createMaterial(materialData: CreateMaterialRequest): Promise<Material> {
-    const id = this.generateId();
+    const id = this.generateId(materialData.name + materialData.type);
     const material: Material = {
       id,
       name: materialData.name,
