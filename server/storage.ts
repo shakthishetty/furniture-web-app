@@ -319,6 +319,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.users.set(id, user);
+    console.log(`MemStorage: Created user ${id} (${user.email}) - Total users: ${this.users.size}`);
     return user;
   }
 

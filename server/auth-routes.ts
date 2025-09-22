@@ -263,9 +263,13 @@ router.post('/reset-password', async (req, res) => {
 // Get current user endpoint
 router.get('/me', requireAuth, async (req, res) => {
   try {
+    console.log('Auth /me route - User ID from token:', req.user?.userId);
+    
     const user = await storage.getUser(req.user!.userId);
+    console.log('Auth /me route - User found:', !!user, user ? `(${user.email})` : 'null');
     
     if (!user) {
+      console.log('Auth /me route - Available users:', Array.from((storage as any).users?.keys() || []));
       return res.status(404).json({ error: 'User not found' });
     }
 
