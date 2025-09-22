@@ -902,7 +902,25 @@ export class MemStorage implements IStorage {
     this.manufacturingProcesses.set(id, updatedProcess);
     return updatedProcess;
   }
-  async assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined> {
+    const process = this.manufacturingProcesses.get(processId);
+    if (!process) {
+      console.log(`MemStorage: Manufacturing process not found: ${processId}`);
+      return undefined;
+    }
+
+    // Update the assigned manufacturer ID
+    const updatedProcess = {
+      ...process,
+      assignedManufacturerId: manufacturerId,
+      updatedAt: new Date(),
+    };
+
+    this.manufacturingProcesses.set(processId, updatedProcess);
+    console.log(`MemStorage: Assigned manufacturer ${manufacturerId} to process ${processId}`);
+    
+    return updatedProcess;
+  }
   async deleteManufacturingProcess(id: string): Promise<boolean> {
     return this.manufacturingProcesses.delete(id);
   }
