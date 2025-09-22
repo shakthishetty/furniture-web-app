@@ -3,9 +3,8 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { type Request, type Response, type NextFunction } from 'express';
 
-// Use fixed secrets for in-memory mode to prevent token invalidation on restart
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-key-fixed-for-memory-storage-2024';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-jwt-refresh-secret-key-fixed-for-memory-storage-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
 
 export interface JWTPayload {
   userId: string;

@@ -31,23 +31,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const savedCart = localStorage.getItem('teak-theory-cart');
     if (savedCart) {
       try {
-        const cartItems = JSON.parse(savedCart);
-        // Check if cart has old product IDs that might be invalid
-        const hasOldProductIds = cartItems.some((item: CartItem) => 
-          item.productId.length > 11 || item.productId.includes('8fpl43maq8')
-        );
-        
-        if (hasOldProductIds) {
-          console.log('Clearing outdated cart with invalid product IDs');
-          localStorage.removeItem('teak-theory-cart');
-          setItems([]);
-        } else {
-          setItems(cartItems);
-        }
+        setItems(JSON.parse(savedCart));
       } catch (error) {
         console.error('Error loading cart from localStorage:', error);
-        localStorage.removeItem('teak-theory-cart');
-        setItems([]);
       }
     }
   }, []);

@@ -231,15 +231,7 @@ export type Category = typeof categories.$inferSelect;
 export type CreateCategoryRequest = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryRequest = z.infer<typeof updateCategorySchema>;
 export type Product = typeof products.$inferSelect;
-
-// Material Schemas
-export const createMaterialSchema = createInsertSchema(materials).omit({
-  id: true,
-  createdAt: true,
-});
-
 export type Material = typeof materials.$inferSelect;
-export type CreateMaterialRequest = z.infer<typeof createMaterialSchema>;
 export type ConfigurationOption = typeof configurationOptions.$inferSelect;
 export type SavedConfiguration = typeof savedConfigurations.$inferSelect;
 export type CreateConfigurationRequest = z.infer<typeof createConfigurationSchema>;

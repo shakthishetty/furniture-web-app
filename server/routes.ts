@@ -15,12 +15,8 @@ import { z } from "zod";
 import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize sample data (gracefully handle database issues)
-  try {
-    await initializeSampleData();
-  } catch (error) {
-    console.warn('Failed to initialize sample data, continuing with empty storage:', error instanceof Error ? error.message : 'Unknown error');
-  }
+  // Initialize sample data
+  await initializeSampleData();
   
   // Authentication routes
   app.use('/api/auth', authRoutes);
