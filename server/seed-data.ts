@@ -242,6 +242,52 @@ export async function seedSampleData() {
 }
 
 // Run this function to seed data
+// Seed default users to prevent auth issues on restart
+export async function seedDefaultUsers() {
+  try {
+    // Check if any users exist
+    const existingUsers = await storage.getUsers({ page: 1, limit: 1 });
+    
+    if (existingUsers.total === 0) {
+      console.log('No users found, seeding default users...');
+      
+      // Create admin user
+      await storage.createUser({
+        email: 'admin@teaktheory.com',
+        password: 'admin123',
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'admin',
+      });
+      
+      // Create the user who was trying to login
+      await storage.createUser({
+        email: 'shakthishetty154@gmail.com',
+        password: 'password123', // Default password - user should change
+        firstName: 'Shakthi',
+        lastName: 'Shetty',
+        role: 'admin', // Making this user admin since they were accessing admin panel
+      });
+      
+      // Create demo customer
+      await storage.createUser({
+        email: 'customer@demo.com',
+        password: 'customer123',
+        firstName: 'Demo',
+        lastName: 'Customer',
+        role: 'customer',
+      });
+      
+      console.log('Default users created successfully!');
+    } else {
+      console.log(`Found ${existingUsers.total} existing users, skipping user seed.`);
+    }
+  } catch (error) {
+    console.error('Error seeding default users:', error);
+    // Don't throw error - continue even if user seeding fails
+  }
+}
+
 export async function initializeSampleData() {
   // Check if products already exist
   const existingProducts = await storage.getAllProducts();
@@ -252,4 +298,7 @@ export async function initializeSampleData() {
   } else {
     console.log(`Found ${existingProducts.length} existing products, skipping seed.`);
   }
+  
+  // Always check and seed users to prevent auth issues on restart
+  await seedDefaultUsers();
 }
