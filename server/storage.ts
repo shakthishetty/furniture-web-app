@@ -284,9 +284,15 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    console.log(`MemStorage: Looking for user by email ${email} - Total users: ${this.users.size}`);
     for (const user of Array.from(this.users.values())) {
-      if (user.email === email) return user;
+      if (user.email === email) {
+        console.log(`MemStorage: Found user ${user.id} (${user.email})`);
+        return user;
+      }
     }
+    console.log(`MemStorage: User not found for email: ${email}`);
+    console.log(`MemStorage: Available user emails:`, Array.from(this.users.values()).map(u => u.email));
     return undefined;
   }
 

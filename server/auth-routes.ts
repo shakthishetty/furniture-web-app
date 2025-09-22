@@ -27,15 +27,18 @@ const router = Router();
 router.post('/register', async (req, res) => {
   try {
     const validatedData = registerSchema.parse(req.body) as RegisterRequest;
+    console.log('Registration attempt for email:', validatedData.email);
     
     // Check if user already exists
     const existingUser = await storage.getUserByEmail(validatedData.email);
     if (existingUser) {
+      console.log('Registration failed - User already exists:', validatedData.email);
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
     // Create user
     const user = await storage.createUser(validatedData);
+    console.log('User registered successfully:', user.id, user.email, `Total users: ${(storage as any).users?.size || 'unknown'}`);
     
     // Send verification email
     if (user.emailVerificationToken) {
@@ -85,10 +88,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const validatedData = loginSchema.parse(req.body) as LoginRequest;
+    console.log('Login attempt for email:', validatedData.email);
     
     // Find user
     const user = await storage.getUserByEmail(validatedData.email);
+    console.log('Login - User found:', !!user, user ? `(${user.email})` : 'null', `Total users: ${(storage as any).users?.size || 'unknown'}`);
     if (!user || !user.password) {
+      console.log('Login failed - User not found or no password for:', validatedData.email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
