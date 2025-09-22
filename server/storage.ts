@@ -260,6 +260,7 @@ export class MemStorage implements IStorage {
   private discountCodes = new Map<string, DiscountCode>();
   private addresses = new Map<string, Address>();
   private orders = new Map<string, Order>();
+  private manufacturers = new Map<string, Manufacturer>();
   
   // Generate simple ID - deterministic based on content for consistency
   private generateId(seed?: string): string {
@@ -824,9 +825,33 @@ export class MemStorage implements IStorage {
   async rejectManufacturer(id: string, adminUserId: string, reason: string, notes?: string): Promise<ManufacturerProfile | undefined> { return undefined; }
   async getPendingManufacturerApplications(): Promise<(ManufacturerProfile & { user: User })[]> { return []; }
   async getApprovedManufacturers(): Promise<(ManufacturerProfile & { user: User })[]> { return []; }
-  async createDirectManufacturer(manufacturerData: CreateManufacturerRequest, adminUserId: string): Promise<Manufacturer> { throw new Error('Not implemented'); }
-  async getDirectManufacturers(): Promise<Manufacturer[]> { return []; }
-  async getDirectManufacturer(id: string): Promise<Manufacturer | undefined> { return undefined; }
+  async createDirectManufacturer(manufacturerData: CreateManufacturerRequest, adminUserId: string): Promise<Manufacturer> {
+    const id = this.generateId();
+    const now = new Date();
+    
+    const manufacturer: Manufacturer = {
+      id,
+      name: manufacturerData.name,
+      address: manufacturerData.address,
+      email: manufacturerData.email,
+      phone: manufacturerData.phone,
+      description: manufacturerData.description || null,
+      photoUrl: manufacturerData.photoUrl || null,
+      isActive: manufacturerData.isActive ?? true,
+      createdBy: adminUserId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.manufacturers.set(id, manufacturer);
+    return manufacturer;
+  }
+  async getDirectManufacturers(): Promise<Manufacturer[]> {
+    return Array.from(this.manufacturers.values());
+  }
+  async getDirectManufacturer(id: string): Promise<Manufacturer | undefined> {
+    return this.manufacturers.get(id);
+  }
   async updateDirectManufacturer(id: string, updates: UpdateManufacturerRequest): Promise<Manufacturer | undefined> { return undefined; }
   async deleteDirectManufacturer(id: string): Promise<boolean> { return false; }
 }
