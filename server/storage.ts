@@ -261,6 +261,7 @@ export class MemStorage implements IStorage {
   private addresses = new Map<string, Address>();
   private orders = new Map<string, Order>();
   private manufacturers = new Map<string, Manufacturer>();
+  private manufacturingProcesses = new Map<string, ManufacturingProcess>();
   
   // Generate simple ID - deterministic based on content for consistency
   private generateId(seed?: string): string {
@@ -799,14 +800,106 @@ export class MemStorage implements IStorage {
   }
 
   // All manufacturing and manufacturer profile operations - stub implementations
-  async createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess> { throw new Error('Not implemented'); }
-  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: (ManufacturingProcess & { assignedManufacturer?: User | null })[]; total: number }> { return { processes: [], total: 0 }; }
-  async getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess> {
+    const id = this.generateId();
+    const now = new Date();
+    
+    const process: ManufacturingProcess = {
+      id,
+      orderId: processData.orderId,
+      status: processData.status || 'pending',
+      currentStageId: processData.currentStageId || null,
+      assignedManufacturerId: processData.assignedManufacturerId || null,
+      startedAt: processData.startedAt || null,
+      completedAt: processData.completedAt || null,
+      estimatedCompletionDate: processData.estimatedCompletionDate || null,
+      notes: processData.notes || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.manufacturingProcesses.set(id, process);
+    console.log(`MemStorage: Created manufacturing process ${id} for order ${process.orderId} - Total processes: ${this.manufacturingProcesses.size}`);
+    return process;
+  }
+  async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: (ManufacturingProcess & { assignedManufacturer?: User | null })[]; total: number }> {
+    let processes = Array.from(this.manufacturingProcesses.values());
+    
+    // Apply filters
+    if (options.status && options.status !== 'all') {
+      processes = processes.filter(process => process.status === options.status);
+    }
+    
+    if (options.orderId) {
+      processes = processes.filter(process => process.orderId === options.orderId!);
+    }
+    
+    if (options.manufacturerId) {
+      processes = processes.filter(process => process.assignedManufacturerId === options.manufacturerId);
+    }
+    
+    // Sort by creation date (newest first)
+    processes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    // Apply pagination
+    const offset = (options.page - 1) * options.limit;
+    const paginatedProcesses = processes.slice(offset, offset + options.limit);
+    
+    // Enrich with manufacturer information
+    const enrichedProcesses = await Promise.all(paginatedProcesses.map(async process => {
+      let assignedManufacturer: User | null = null;
+      
+      if (process.assignedManufacturerId) {
+        assignedManufacturer = await this.getUser(process.assignedManufacturerId) || null;
+      }
+      
+      return {
+        ...process,
+        assignedManufacturer
+      };
+    }));
+    
+    return {
+      processes: enrichedProcesses,
+      total: processes.length
+    };
+  }
+  async getManufacturingProcess(id: string): Promise<ManufacturingProcess | undefined> {
+    return this.manufacturingProcesses.get(id);
+  }
   async getManufacturingProcessWithManufacturer(id: string): Promise<(ManufacturingProcess & { assignedManufacturer?: User | null }) | undefined> { return undefined; }
-  async getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined> { return undefined; }
-  async updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined> { return undefined; }
+  async getManufacturingProcessByOrderId(orderId: string): Promise<ManufacturingProcess | undefined> {
+    for (const process of this.manufacturingProcesses.values()) {
+      if (process.orderId === orderId) {
+        return process;
+      }
+    }
+    return undefined;
+  }
+  async updateManufacturingProcess(id: string, updates: ManufacturingStatusUpdateRequest): Promise<ManufacturingProcess | undefined> {
+    const process = this.manufacturingProcesses.get(id);
+    if (!process) {
+      return undefined;
+    }
+    
+    const updatedProcess: ManufacturingProcess = {
+      ...process,
+      status: updates.status || process.status,
+      currentStageId: updates.currentStageId !== undefined ? updates.currentStageId : process.currentStageId,
+      notes: updates.notes !== undefined ? updates.notes : process.notes,
+      estimatedCompletionDate: updates.estimatedCompletionDate !== undefined 
+        ? (updates.estimatedCompletionDate ? new Date(updates.estimatedCompletionDate) : null)
+        : process.estimatedCompletionDate,
+      updatedAt: new Date(),
+    };
+    
+    this.manufacturingProcesses.set(id, updatedProcess);
+    return updatedProcess;
+  }
   async assignManufacturerToProcess(processId: string, manufacturerId: string | null): Promise<ManufacturingProcess | undefined> { return undefined; }
-  async deleteManufacturingProcess(id: string): Promise<boolean> { return false; }
+  async deleteManufacturingProcess(id: string): Promise<boolean> {
+    return this.manufacturingProcesses.delete(id);
+  }
   async createManufacturingStage(stageData: CreateManufacturingStageRequest): Promise<ManufacturingStage> { throw new Error('Not implemented'); }
   async getManufacturingStages(processId: string): Promise<ManufacturingStage[]> { return []; }
   async getManufacturingStage(id: string): Promise<ManufacturingStage | undefined> { return undefined; }
