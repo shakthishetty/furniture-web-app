@@ -279,12 +279,89 @@ export async function seedDefaultUsers() {
       });
       
       console.log('Default users created successfully!');
+      
+      // Seed sample orders for realistic demo data
+      await seedSampleOrders();
     } else {
       console.log(`Found ${existingUsers.total} existing users, skipping user seed.`);
     }
   } catch (error) {
     console.error('Error seeding default users:', error);
     // Don't throw error - continue even if user seeding fails
+  }
+}
+
+// Seed sample orders to make the admin panel look realistic
+export async function seedSampleOrders() {
+  try {
+    const existingOrders = await storage.getOrdersForAdmin({ page: 1, limit: 1 });
+    
+    if (existingOrders.total === 0) {
+      console.log('No orders found, seeding sample orders...');
+      
+      // Get users for order assignment
+      const allUsers = await storage.getUsers({ page: 1, limit: 10 });
+      if (allUsers.users.length === 0) return;
+      
+      const customer = allUsers.users.find(u => u.role === 'customer') || allUsers.users[0];
+      
+      // Create sample orders
+      const sampleOrders = [
+        {
+          userId: customer.id,
+          orderNumber: 'TK001DEMO',
+          totalAmount: '1850.00',
+          status: 'completed',
+          paymentStatus: 'paid',
+          shippingAddressId: 'demo-address-1',
+          billingAddressId: 'demo-address-1',
+          items: JSON.stringify([{ id: '1', name: 'STRATA TEAK DINING CHAIR', quantity: 2, price: '450.00' }]),
+          discountCodeId: null,
+          notes: 'Sample completed order'
+        },
+        {
+          userId: customer.id,
+          orderNumber: 'TK002DEMO',
+          totalAmount: '2400.00',
+          status: 'processing',
+          paymentStatus: 'paid',
+          shippingAddressId: 'demo-address-1',
+          billingAddressId: 'demo-address-1',
+          items: JSON.stringify([{ id: '1', name: 'STRATA TEAK PLATFORM BED', quantity: 1, price: '1800.00' }]),
+          discountCodeId: null,
+          notes: 'Sample processing order'
+        },
+        {
+          userId: customer.id,
+          orderNumber: 'TK003DEMO',
+          totalAmount: '850.00',
+          status: 'pending',
+          paymentStatus: 'pending',
+          shippingAddressId: 'demo-address-1',
+          billingAddressId: 'demo-address-1',
+          items: JSON.stringify([{ id: '1', name: 'STRATA TEAK COFFEE TABLE', quantity: 1, price: '850.00' }]),
+          discountCodeId: null,
+          notes: 'Sample pending order'
+        }
+      ];
+
+      let createdOrders = 0;
+      for (const orderData of sampleOrders) {
+        try {
+          await storage.createOrder(orderData);
+          createdOrders++;
+        } catch (error) {
+          console.log(`Failed to create sample order ${orderData.orderNumber}:`, error);
+        }
+      }
+      
+      console.log(`Created ${createdOrders} sample orders successfully!`);
+    } else {
+      console.log(`Found ${existingOrders.total} existing orders, skipping order seed.`);
+    }
+  } catch (error) {
+    console.error('Error seeding sample orders:', error);
+    // Don't throw - continue even if order seeding fails
   }
 }
 

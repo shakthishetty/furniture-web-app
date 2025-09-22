@@ -598,22 +598,22 @@ export class MemStorage implements IStorage {
   async deleteDiscountCode(id: string): Promise<boolean> { return false; }
   async validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }> { return { valid: false }; }
   async useDiscountCode(code: string): Promise<void> {}
-  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order> {
+  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal?: number; totalAmount: number | string }): Promise<Order> {
     const id = this.generateId();
     const order: Order = {
       id,
       userId: orderData.userId,
       orderNumber: orderData.orderNumber,
-      status: 'pending',
+      status: orderData.status || 'pending',
       billingAddressId: orderData.billingAddressId,
       shippingAddressId: orderData.shippingAddressId,
-      paymentMethod: orderData.paymentMethod,
-      paymentStatus: 'pending',
-      subtotal: orderData.subtotal.toString(),
+      paymentMethod: orderData.paymentMethod || 'card',
+      paymentStatus: orderData.paymentStatus || 'pending',
+      subtotal: orderData.subtotal?.toString() || '0.00',
       discountAmount: '0',
       taxAmount: '0',
       shippingAmount: '0',
-      totalAmount: orderData.totalAmount.toString(),
+      totalAmount: typeof orderData.totalAmount === 'string' ? orderData.totalAmount : orderData.totalAmount.toString(),
       discountCode: orderData.discountCode ?? null,
       notes: null,
       estimatedDelivery: null,
