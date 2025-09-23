@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { Search, Edit2, Users } from "lucide-react";
+import { Search, Edit2, Users, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,6 +38,7 @@ export default function AdminUsers() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const { toast } = useToast();
   const limit = 20;
 
@@ -79,6 +81,28 @@ export default function AdminUsers() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+      setDeletingUser(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setIsEditDialogOpen(true);
@@ -87,6 +111,16 @@ export default function AdminUsers() {
   const handleUpdateUser = (data: Partial<User>) => {
     if (editingUser) {
       updateUserMutation.mutate({ userId: editingUser.id, data });
+    }
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setDeletingUser(user);
+  };
+
+  const confirmDeleteUser = () => {
+    if (deletingUser) {
+      deleteUserMutation.mutate(deletingUser.id);
     }
   };
 
@@ -212,6 +246,39 @@ export default function AdminUsers() {
                       <Edit2 className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user)}
+                          data-testid={`button-delete-user-${user.id}`}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent data-testid="dialog-delete-user">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {user.firstName} {user.lastName}? This action cannot be undone and will permanently remove their account and all associated data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={confirmDeleteUser}
+                            disabled={deleteUserMutation.isPending}
+                            data-testid="button-confirm-delete"
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}

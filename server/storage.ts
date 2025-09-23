@@ -85,6 +85,7 @@ export interface IStorage {
     profileImage?: string;
   }): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   verifyEmail(token: string): Promise<boolean>;
   
   // Password reset operations
@@ -293,6 +294,23 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return user;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      // Delete all user-related data first (cascading delete)
+      await db.delete(sessions).where(eq(sessions.userId, id));
+      await db.delete(savedConfigurations).where(eq(savedConfigurations.userId, id));
+      await db.delete(addresses).where(eq(addresses.userId, id));
+      await db.delete(wishlist).where(eq(wishlist.userId, id));
+      
+      // Finally delete the user
+      const result = await db.delete(users).where(eq(users.id, id));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
   }
 
   async verifyEmail(token: string): Promise<boolean> {

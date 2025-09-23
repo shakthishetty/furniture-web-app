@@ -157,6 +157,36 @@ router.patch("/users/:id", requireAdmin, async (req, res) => {
   }
 });
 
+router.delete("/users/:id", requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    // Check if user exists
+    const user = await storage.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Prevent deletion of current admin user
+    if (req.user?.userId === userId) {
+      return res.status(400).json({ error: "Cannot delete your own account" });
+    }
+
+    const deleted = await storage.deleteUser(userId);
+    if (!deleted) {
+      return res.status(500).json({ error: "Failed to delete user" });
+    }
+
+    // Log admin action
+    console.log(`Admin ${req.user?.userId} deleted user ${userId}: ${user.email}`);
+
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
 // Get manufacturers for assignment dropdown
 router.get("/users/manufacturers", requireAdmin, async (req, res) => {
   try {
