@@ -84,7 +84,12 @@ export default function AdminUsers() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       const response = await apiRequest("DELETE", `/api/admin/users/${userId}`);
-      return response.json();
+      // Handle empty response or check content type before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      }
+      return { success: true }; // Default success response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });

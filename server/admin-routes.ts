@@ -160,30 +160,39 @@ router.patch("/users/:id", requireAdmin, async (req, res) => {
 router.delete("/users/:id", requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
+    console.log(`Delete user request for ID: ${userId}`);
     
     // Check if user exists
     const user = await storage.getUserById(userId);
     if (!user) {
+      console.log(`User not found: ${userId}`);
       return res.status(404).json({ error: "User not found" });
     }
 
     // Prevent deletion of current admin user
     if (req.user?.userId === userId) {
+      console.log(`Admin tried to delete own account: ${userId}`);
       return res.status(400).json({ error: "Cannot delete your own account" });
     }
 
+    console.log(`Attempting to delete user: ${user.email}`);
     const deleted = await storage.deleteUser(userId);
+    console.log(`Delete result: ${deleted}`);
+    
     if (!deleted) {
+      console.log(`Failed to delete user: ${userId}`);
       return res.status(500).json({ error: "Failed to delete user" });
     }
 
     // Log admin action
     console.log(`Admin ${req.user?.userId} deleted user ${userId}: ${user.email}`);
 
-    res.json({ message: "User deleted successfully" });
+    const response = { success: true, message: "User deleted successfully" };
+    console.log(`Sending response:`, response);
+    res.status(200).json(response);
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ error: "Failed to delete user" });
+    res.status(500).json({ error: "Failed to delete user", details: error.message });
   }
 });
 
