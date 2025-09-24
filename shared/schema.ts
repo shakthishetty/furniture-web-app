@@ -608,7 +608,10 @@ export const createStageUpdateSchema = createInsertSchema(stageUpdates).omit({
   id: true,
   createdAt: true,
 }).extend({
-  photos: z.array(z.string().url()).optional(), // Photo URLs array
+  photos: z.array(z.union([
+    z.string().url(), 
+    z.string().trim().regex(/^\/(uploads|assets)\//, { message: "Must be a URL or /uploads path" })
+  ])).optional(), // Photo URLs or file paths array
 });
 
 export const createStageUpdateReplySchema = createInsertSchema(stageUpdateReplies).omit({
