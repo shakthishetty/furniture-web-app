@@ -121,6 +121,8 @@ export default function AdminManufacturing() {
   const [newStageName, setNewStageName] = useState("");
   const [newStageDescription, setNewStageDescription] = useState("");
   const [newStageEstimatedDuration, setNewStageEstimatedDuration] = useState("");
+  const [stageToReject, setStageToReject] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const { toast } = useToast();
   const limit = 20;
 
@@ -129,6 +131,22 @@ export default function AdminManufacturing() {
     showToastNotifications: true,
     onMessage: (message) => {
       console.log('SSE message received:', message);
+      
+      // Trigger real-time UI updates for manufacturing events
+      if (message.type === 'manufacturing/stage-submitted' || 
+          message.type === 'manufacturing/stage-approved' || 
+          message.type === 'manufacturing/stage-rejected' ||
+          message.type === 'manufacturing/process-updated') {
+        
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
+        
+        // Refresh selected process details if currently viewing a process
+        if (selectedProcess && message.data?.processId === selectedProcess.id) {
+          handleViewProcess(selectedProcess.id);
+        }
+      }
     }
   });
 
@@ -333,6 +351,62 @@ export default function AdminManufacturing() {
     },
   });
 
+  const approveStageMutation = useMutation({
+    mutationFn: async (stageId: string) => {
+      const response = await apiRequest("POST", `/api/admin/manufacturing/stages/${stageId}/approve`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
+      toast({
+        title: "Success",
+        description: "Stage approved successfully",
+      });
+      // Refresh selected process details if currently viewing a process
+      if (selectedProcess) {
+        handleViewProcess(selectedProcess.id);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve stage",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectStageMutation = useMutation({
+    mutationFn: async ({ stageId, reason }: { stageId: string; reason: string }) => {
+      const response = await apiRequest("POST", `/api/admin/manufacturing/stages/${stageId}/reject`, {
+        reason
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/processes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/manufacturing/stats"] });
+      toast({
+        title: "Success",
+        description: "Stage rejected successfully",
+      });
+      setStageToReject(null);
+      setRejectionReason("");
+      // Refresh selected process details if currently viewing a process
+      if (selectedProcess) {
+        handleViewProcess(selectedProcess.id);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject stage",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Event handlers
   const handleViewProcess = async (processId: string) => {
     try {
@@ -368,6 +442,27 @@ export default function AdminManufacturing() {
     bulkAssignMutation.mutate({ processIds, manufacturerId });
   };
 
+  const handleApproveStage = (stageId: string) => {
+    approveStageMutation.mutate(stageId);
+  };
+
+  const handleRejectStage = (stageId: string) => {
+    setStageToReject(stageId);
+    setRejectionReason("");
+  };
+
+  const confirmRejectStage = () => {
+    if (!stageToReject || !rejectionReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a rejection reason",
+        variant: "destructive",
+      });
+      return;
+    }
+    rejectStageMutation.mutate({ stageId: stageToReject, reason: rejectionReason.trim() });
+  };
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       const allProcessIds = new Set(processesData?.processes.map(p => p.id) || []);
@@ -392,7 +487,7 @@ export default function AdminManufacturing() {
     
     try {
       await apiRequest("POST", `/api/admin/manufacturing/updates/${updateId}/replies`, {
-        content
+        message: content
       });
       
       // Refresh the process details
@@ -966,9 +1061,10 @@ export default function AdminManufacturing() {
           
           {selectedProcess && (
             <Tabs defaultValue="timeline" className="h-full overflow-hidden">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline & Progress</TabsTrigger>
                 <TabsTrigger value="updates" data-testid="tab-updates">Updates & Communication</TabsTrigger>
+                <TabsTrigger value="approvals" data-testid="tab-approvals">Approvals</TabsTrigger>
                 <TabsTrigger value="management" data-testid="tab-management">Management</TabsTrigger>
               </TabsList>
               
@@ -1029,6 +1125,93 @@ export default function AdminManufacturing() {
                     <div className="text-center py-8 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No updates posted for this process yet</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="approvals" className="overflow-auto h-[60vh] mt-4">
+                <div className="space-y-4">
+                  {selectedProcess.stages?.filter(stage => stage.status === 'awaiting_approval').length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <CheckCircle className="h-5 w-5 text-yellow-600" />
+                        <h3 className="text-lg font-semibold">Stages Awaiting Approval</h3>
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                          {selectedProcess.stages?.filter(stage => stage.status === 'awaiting_approval').length} pending
+                        </Badge>
+                      </div>
+                      
+                      {selectedProcess.stages
+                        ?.filter(stage => stage.status === 'awaiting_approval')
+                        .sort((a, b) => a.position - b.position)
+                        .map((stage) => (
+                          <Card key={stage.id} className="border-2 border-yellow-200 bg-yellow-50/50">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-700 font-semibold text-sm">
+                                    {stage.position}
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-base font-semibold">{stage.name}</CardTitle>
+                                    {stage.notes && (
+                                      <CardDescription className="text-xs mt-1">{stage.notes}</CardDescription>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge variant="default" className="bg-yellow-100 text-yellow-800">
+                                  Awaiting Approval
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-0">
+                              {/* Stage Timeline */}
+                              {stage.startedAt && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>Started: {new Date(stage.startedAt).toLocaleDateString()}</span>
+                                  {stage.completedAt && (
+                                    <>
+                                      <span>•</span>
+                                      <CheckCircle className="h-3 w-3 text-green-600" />
+                                      <span>Completed: {new Date(stage.completedAt).toLocaleDateString()}</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Approval Actions */}
+                              <div className="flex items-center gap-2 pt-2 border-t">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApproveStage(stage.id)}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  data-testid={`button-approve-stage-${stage.id}`}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Approve Stage
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRejectStage(stage.id)}
+                                  className="border-red-200 text-red-700 hover:bg-red-50"
+                                  data-testid={`button-reject-stage-${stage.id}`}
+                                >
+                                  <X className="h-4 w-4 mr-2" />
+                                  Reject Stage
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No stages awaiting approval</p>
+                      <p className="text-sm">All stages are either pending, in progress, or already approved.</p>
                     </div>
                   )}
                 </div>
@@ -1291,6 +1474,46 @@ export default function AdminManufacturing() {
               data-testid="button-create-stage"
             >
               {createStageMutation.isPending ? "Creating..." : "Add Stage"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stage Rejection Dialog */}
+      <Dialog open={!!stageToReject} onOpenChange={() => setStageToReject(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Manufacturing Stage</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this stage. This will help the manufacturer understand what needs to be corrected.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="rejection-reason">Rejection Reason</Label>
+              <Textarea
+                id="rejection-reason"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Explain what needs to be corrected or improved..."
+                className="min-h-[100px]"
+                data-testid="textarea-rejection-reason"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStageToReject(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmRejectStage}
+              disabled={rejectStageMutation.isPending || !rejectionReason.trim()}
+              variant="destructive"
+              data-testid="button-confirm-reject"
+            >
+              {rejectStageMutation.isPending ? "Rejecting..." : "Reject Stage"}
             </Button>
           </DialogFooter>
         </DialogContent>
