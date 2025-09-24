@@ -180,10 +180,25 @@ export default function ManufacturerProcessDetail() {
       setStageStatusUpdate(null);
     },
     onError: (error: any) => {
+      // Extract meaningful error message from validation errors
+      let errorMessage = "Failed to update stage status";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle specific validation errors for completion requirements
+      if (errorMessage.includes("No photos have been uploaded")) {
+        errorMessage = "📸 Photos Required: Please upload at least one photo showing your progress before marking this stage as completed.";
+      } else if (errorMessage.includes("No meaningful progress updates")) {
+        errorMessage = "📝 Update Required: Please add a detailed progress update describing the work completed before marking as completed.";
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to update stage status",
+        title: "Cannot Complete Stage",
+        description: errorMessage,
         variant: "destructive",
+        duration: 6000, // Show longer for validation errors
       });
     },
   });

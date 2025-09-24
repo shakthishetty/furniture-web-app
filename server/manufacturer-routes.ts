@@ -346,6 +346,36 @@ router.put("/processes/:id/stages/:stageId/status", requireManufacturer, verifyP
 
     const updateData = validation.data;
 
+    // VALIDATION: If trying to mark as completed, ensure there are photos and updates
+    if (updateData.status === 'completed') {
+      // Get all updates for this stage (including internal updates)
+      const stageUpdates = await storage.getStageUpdates(stage.id, true);
+      
+      // Check if there are any updates with photos
+      const updatesWithPhotos = stageUpdates.filter(update => 
+        update.photos && update.photos.length > 0
+      );
+      
+      // Check if there are any meaningful progress updates (not just empty messages)
+      const meaningfulUpdates = stageUpdates.filter(update => 
+        update.message && update.message.trim().length > 10
+      );
+      
+      if (updatesWithPhotos.length === 0) {
+        return res.status(400).json({ 
+          error: "Cannot mark stage as completed: No photos have been uploaded for this stage. Please upload at least one photo showing the progress before marking as completed." 
+        });
+      }
+      
+      if (meaningfulUpdates.length === 0) {
+        return res.status(400).json({ 
+          error: "Cannot mark stage as completed: No meaningful progress updates have been posted. Please add a detailed update describing the work completed before marking as completed." 
+        });
+      }
+      
+      console.log(`Stage completion validation passed: ${updatesWithPhotos.length} updates with photos, ${meaningfulUpdates.length} meaningful updates`);
+    }
+
     // Auto-set timestamps based on status
     if (updateData.status === 'in_progress' && !updateData.startedAt) {
       updateData.startedAt = new Date().toISOString();
