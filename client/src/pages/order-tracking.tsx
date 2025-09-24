@@ -501,7 +501,7 @@ export default function OrderTracking() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => markReadMutation.mutate()}
+                  onClick={() => markReadMutation.mutate(undefined)}
                   disabled={markReadMutation.isPending}
                   data-testid="button-mark-all-read"
                 >
@@ -545,7 +545,7 @@ export default function OrderTracking() {
                             />
                           )}
                           <p className="text-xs text-gray-500 mt-2">
-                            {new Date(notification.createdAt).toLocaleString()}
+                            {notification.createdAt ? new Date(notification.createdAt).toLocaleString() : "No date"}
                           </p>
                         </div>
                         {!notification.isRead && (
