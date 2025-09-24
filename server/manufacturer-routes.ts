@@ -549,6 +549,52 @@ router.post("/processes/:id/stages/:stageId/photos", requireManufacturer, verify
   }
 });
 
+// 7. POST /api/manufacturer/processes/:id/stages/:stageId/submit-for-approval - Submit stage for approval
+router.post("/processes/:id/stages/:stageId/submit-for-approval", requireManufacturer, verifyProcessAccess, verifyStageAccess, async (req, res) => {
+  try {
+    const stage = req.manufacturingStage;
+    const manufacturerId = req.user?.userId;
+
+    if (!manufacturerId) {
+      return res.status(401).json({ error: "Manufacturer ID is required" });
+    }
+
+    // Call the storage method to submit stage for approval
+    const updatedStage = await storage.submitStageForApproval(stage.id, manufacturerId);
+
+    if (!updatedStage) {
+      return res.status(500).json({ error: "Failed to submit stage for approval" });
+    }
+
+    // Broadcast stage submission via SSE
+    if ((global as any).broadcastStageSubmitted) {
+      (global as any).broadcastStageSubmitted(req.manufacturingProcess.id, updatedStage);
+    }
+
+    console.log(`Manufacturer ${manufacturerId} submitted stage ${stage.id} for approval`);
+    res.status(200).json({
+      message: "Stage submitted for approval successfully",
+      stage: updatedStage
+    });
+  } catch (error) {
+    console.error("Error submitting stage for approval:", error);
+    
+    // Handle specific workflow errors with appropriate status codes
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("Status must be in_progress")) {
+      return res.status(400).json({ error: errorMessage });
+    }
+    if (errorMessage.includes("Not authorized")) {
+      return res.status(403).json({ error: errorMessage });
+    }
+    if (errorMessage.includes("not found")) {
+      return res.status(404).json({ error: errorMessage });
+    }
+    
+    res.status(500).json({ error: "Failed to submit stage for approval" });
+  }
+});
+
 // Additional utility route: Get assigned manufacturer's dashboard stats
 router.get("/dashboard/stats", requireManufacturer, async (req, res) => {
   try {
