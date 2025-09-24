@@ -28,10 +28,7 @@ import { SimpleUploader } from "@/components/SimpleUploader";
 const stageUpdateSchema = z.object({
   message: z.string().min(1, "Update message is required").max(1000, "Message too long"),
   isInternal: z.boolean().default(false),
-  photos: z.array(z.union([
-    z.string().url(), 
-    z.string().trim().regex(/^\/(uploads|assets)\//, { message: "Must be a URL or /uploads path" })
-  ])).optional().default([])
+  photos: z.array(z.string()).optional().default([])
 });
 
 type StageUpdateFormData = z.infer<typeof stageUpdateSchema>;
