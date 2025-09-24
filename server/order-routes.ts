@@ -342,11 +342,13 @@ export function registerOrderRoutes(app: Express): void {
 
       // Check if user is trying to access orders with non-customer account
       if (userRole && userRole !== 'customer') {
+        const user = await storage.getUserById(userId);
         return res.json({
           orders: [],
-          message: `You are logged in as ${userRole}. To view customer orders, please log in with your customer account.`,
+          message: `You are logged in as ${userRole} with email: ${user?.email}. To view customer orders, please log in with your customer account.`,
           isWrongRole: true,
-          currentRole: userRole
+          currentRole: userRole,
+          currentEmail: user?.email
         });
       }
 

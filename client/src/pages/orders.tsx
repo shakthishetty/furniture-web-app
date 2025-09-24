@@ -58,6 +58,7 @@ interface OrdersResponse {
   message?: string;
   isWrongRole?: boolean;
   currentRole?: string;
+  currentEmail?: string;
 }
 
 function getStatusColor(status: string) {
@@ -388,6 +389,7 @@ export default function Orders() {
   const isWrongRole = ordersResponse?.isWrongRole || false;
   const roleMessage = ordersResponse?.message;
   const currentRole = ordersResponse?.currentRole;
+  const currentEmail = ordersResponse?.currentEmail;
 
   useEffect(() => {
     // Wait for auth to finish loading before redirecting
@@ -463,6 +465,7 @@ export default function Orders() {
               <div className="space-y-3">
                 <p className="text-sm text-gray-500">
                   Current account: <Badge variant="outline">{currentRole}</Badge>
+                  {currentEmail && <span className="block mt-1">Email: {currentEmail}</span>}
                 </p>
                 <Button onClick={() => setLocation("/login")} data-testid="button-switch-to-customer">
                   Log in as Customer
