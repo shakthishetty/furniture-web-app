@@ -690,3 +690,27 @@ export const updateManufacturerSchema = createManufacturerSchema.partial();
 export type Manufacturer = typeof manufacturers.$inferSelect;
 export type CreateManufacturerRequest = z.infer<typeof createManufacturerSchema>;
 export type UpdateManufacturerRequest = z.infer<typeof updateManufacturerSchema>;
+
+// Customer Notifications Table
+export const customerNotifications = pgTable("customer_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // Customer user ID
+  orderId: varchar("order_id").notNull(), // Related order
+  processId: varchar("process_id"), // Related manufacturing process (optional)
+  stageId: varchar("stage_id"), // Related stage (optional)
+  type: varchar("type").notNull(), // 'stage_started', 'stage_completed', 'stage_approved', 'message_received'
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  imageUrl: varchar("image_url"), // Optional progress photo
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCustomerNotificationSchema = createInsertSchema(customerNotifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type CustomerNotification = typeof customerNotifications.$inferSelect;
+export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;

@@ -45,6 +45,8 @@ import {
   type Manufacturer,
   type CreateManufacturerRequest,
   type UpdateManufacturerRequest,
+  type CustomerNotification,
+  type InsertCustomerNotification,
   users, 
   sessions,
   products,
@@ -65,7 +67,8 @@ import {
   stageUpdatePhotos,
   stageUpdateReplies,
   manufacturerProfiles,
-  manufacturers
+  manufacturers,
+  customerNotifications
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
@@ -238,6 +241,13 @@ export interface IStorage {
   getDirectManufacturer(id: string): Promise<Manufacturer | undefined>;
   updateDirectManufacturer(id: string, updates: UpdateManufacturerRequest): Promise<Manufacturer | undefined>;
   deleteDirectManufacturer(id: string): Promise<boolean>;
+
+  // Customer Notifications operations
+  createNotification(notificationData: InsertCustomerNotification): Promise<CustomerNotification>;
+  getNotifications(userId: string, isRead?: boolean): Promise<CustomerNotification[]>;
+  markNotificationAsRead(notificationId: string, userId: string): Promise<boolean>;
+  markAllNotificationsAsRead(userId: string): Promise<boolean>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2109,6 +2119,75 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return !!updatedManufacturer;
+  }
+
+  // Customer Notifications implementation
+  async createNotification(notificationData: InsertCustomerNotification): Promise<CustomerNotification> {
+    const [notification] = await db
+      .insert(customerNotifications)
+      .values(notificationData)
+      .returning();
+    
+    return notification;
+  }
+
+  async getNotifications(userId: string, isRead?: boolean): Promise<CustomerNotification[]> {
+    const conditions = [eq(customerNotifications.userId, userId)];
+    
+    if (isRead !== undefined) {
+      conditions.push(eq(customerNotifications.isRead, isRead));
+    }
+    
+    const notifications = await db
+      .select()
+      .from(customerNotifications)
+      .where(and(...conditions))
+      .orderBy(desc(customerNotifications.createdAt));
+    
+    return notifications;
+  }
+
+  async markNotificationAsRead(notificationId: string, userId: string): Promise<boolean> {
+    const [updated] = await db
+      .update(customerNotifications)
+      .set({
+        isRead: true,
+        readAt: new Date(),
+      })
+      .where(and(
+        eq(customerNotifications.id, notificationId),
+        eq(customerNotifications.userId, userId)
+      ))
+      .returning();
+    
+    return !!updated;
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<boolean> {
+    const result = await db
+      .update(customerNotifications)
+      .set({
+        isRead: true,
+        readAt: new Date(),
+      })
+      .where(and(
+        eq(customerNotifications.userId, userId),
+        eq(customerNotifications.isRead, false)
+      ));
+    
+    return true;
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(customerNotifications)
+      .where(and(
+        eq(customerNotifications.userId, userId),
+        eq(customerNotifications.isRead, false)
+      ));
+    
+    return result?.count || 0;
   }
 }
 

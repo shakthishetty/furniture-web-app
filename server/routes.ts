@@ -7,6 +7,7 @@ import configuratorRoutes from "./configurator-routes";
 import { registerOrderRoutes } from "./order-routes";
 import adminRoutes from "./admin-routes";
 import manufacturerRoutes from "./manufacturer-routes";
+import notificationRoutes from "./notification-routes";
 import { initializeSampleData } from "./seed-data";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { verifyAuth, requireAdmin } from "./utils/auth";
@@ -33,6 +34,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Manufacturer routes
   app.use('/api/manufacturer', manufacturerRoutes);
+  
+  // Customer notification routes
+  app.use('/api/notifications', notificationRoutes);
   
   // Serve uploaded files statically (for local development)
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

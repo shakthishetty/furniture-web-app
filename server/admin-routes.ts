@@ -1271,6 +1271,19 @@ router.post("/manufacturing/stages/:stageId/approve", requireAdmin, async (req, 
                 `Your ${stage.name} stage has been approved and completed!`,
                 latestUpdateWithPhoto?.photos?.[0]?.url // Use first photo URL
               );
+
+              // Create notification record in database
+              await storage.createNotification({
+                userId: customer.id,
+                orderId: order.id,
+                processId: stage.processId,
+                stageId: stage.id,
+                type: 'stage_approved',
+                title: `${stage.name} Approved`,
+                message: `Your ${stage.name} stage has been approved and completed!`,
+                imageUrl: latestUpdateWithPhoto?.photos?.[0]?.url,
+                isRead: false
+              });
               
               console.log(`Sent stage approval email to customer ${customer.email} for order ${order.orderNumber}, stage: ${stage.name}`);
             }

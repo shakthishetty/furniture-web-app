@@ -431,6 +431,19 @@ router.put("/processes/:id/stages/:stageId/status", requireManufacturer, verifyP
               latestUpdateWithPhoto?.message,
               latestUpdateWithPhoto?.photos?.[0]?.url // Use first photo URL
             );
+
+            // Create notification record in database
+            await storage.createNotification({
+              userId: customer.id,
+              orderId: order.id,
+              processId: req.manufacturingProcess.id,
+              stageId: stage.id,
+              type: 'stage_completed',
+              title: `${stage.name} Completed`,
+              message: latestUpdateWithPhoto?.message || `Your ${stage.name} stage has been completed successfully!`,
+              imageUrl: latestUpdateWithPhoto?.photos?.[0]?.url,
+              isRead: false
+            });
             
             console.log(`Sent stage completion email to customer ${customer.email} for order ${order.orderNumber}, stage: ${stage.name}`);
           }
