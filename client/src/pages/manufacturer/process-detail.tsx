@@ -493,41 +493,66 @@ export default function ManufacturerProcessDetail() {
                   <TabsTrigger value="address" data-testid="tab-address" className="data-[state=active]:bg-background">Address</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="summary" className="mt-4 space-y-4" data-testid="content-order-summary">
-                  <div className="space-y-4">
-                    {/* Basic Order Information */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Order Number:</span>
-                          <span className="text-sm font-mono">#{process.order.orderNumber}</span>
+                <TabsContent value="summary" className="mt-4 space-y-6" data-testid="content-order-summary">
+                  <div className="space-y-6">
+                    {/* Enhanced Order Information Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Left Column */}
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center py-3 border-b border-muted">
+                          <span className="text-muted-foreground font-medium">Order Number:</span>
+                          <span className="text-sm font-mono font-semibold bg-muted px-2 py-1 rounded">#{process.order.orderNumber}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Order Date:</span>
-                          <span className="text-sm" data-testid="text-order-date">
-                            {new Date(process.order.createdAt).toLocaleDateString()}
+                        <div className="flex justify-between items-center py-3 border-b border-muted">
+                          <span className="text-muted-foreground font-medium">Order Date:</span>
+                          <span className="text-sm font-semibold" data-testid="text-order-date">
+                            {new Date(process.order.createdAt).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Order Status:</span>
-                          <Badge variant="outline" data-testid="badge-order-status">{process.order.status}</Badge>
+                        <div className="flex justify-between items-center py-3">
+                          <span className="text-muted-foreground font-medium">Order Status:</span>
+                          <Badge 
+                            variant={process.order.status === 'completed' ? 'default' : 'secondary'} 
+                            data-testid="badge-order-status"
+                            className="capitalize"
+                          >
+                            {process.order.status}
+                          </Badge>
                         </div>
                       </div>
                       
-                      <div className="space-y-3">
+                      {/* Right Column */}
+                      <div className="space-y-4">
                         {process.order.customer && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Customer:</span>
-                            <span className="text-sm font-medium" data-testid="text-customer-name">
+                          <div className="flex justify-between items-center py-3 border-b border-muted">
+                            <span className="text-muted-foreground font-medium">Customer:</span>
+                            <span className="text-sm font-semibold" data-testid="text-customer-name">
                               {process.order.customer.firstName} {process.order.customer.lastName}
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Payment Status:</span>
-                          <Badge variant={process.order.paymentStatus === 'paid' ? 'default' : 'destructive'} data-testid="badge-payment-status">
+                        <div className="flex justify-between items-center py-3 border-b border-muted">
+                          <span className="text-muted-foreground font-medium">Payment Status:</span>
+                          <Badge 
+                            variant={process.order.paymentStatus === 'paid' ? 'default' : 'destructive'} 
+                            data-testid="badge-payment-status"
+                            className="capitalize"
+                          >
                             {process.order.paymentStatus}
                           </Badge>
+                        </div>
+                        <div className="flex justify-between items-center py-3">
+                          <span className="text-muted-foreground font-medium">Total Amount:</span>
+                          <span className="text-sm font-semibold">
+                            ${typeof process.order.totalAmount === 'number' 
+                              ? process.order.totalAmount.toFixed(2) 
+                              : process.order.totalAmount || '0.00'
+                            }
+                          </span>
                         </div>
                       </div>
                     </div>
