@@ -426,6 +426,12 @@ router.post("/processes/:id/stages/:stageId/updates", requireManufacturer, verif
   try {
     const stage = req.manufacturingStage;
     
+    console.log("=== STAGE UPDATE DEBUG ===");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("Photos type:", typeof req.body.photos);
+    console.log("Photos value:", req.body.photos);
+    console.log("Photos array check:", Array.isArray(req.body.photos));
+    
     const validation = createStageUpdateSchema.safeParse({
       ...req.body,
       stageId: stage.id,

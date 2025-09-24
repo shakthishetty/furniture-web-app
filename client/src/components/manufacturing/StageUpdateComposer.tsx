@@ -114,6 +114,13 @@ export function StageUpdateComposer({
   });
 
   const onSubmit = (data: StageUpdateFormData) => {
+    console.log("Form data:", data);
+    console.log("Uploaded photos:", uploadedPhotos);
+    console.log("Final data being sent:", {
+      ...data,
+      photos: uploadedPhotos
+    });
+    
     createUpdateMutation.mutate({
       ...data,
       photos: uploadedPhotos
