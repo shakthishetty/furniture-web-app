@@ -462,16 +462,18 @@ export default function AdminManufacturing() {
   // Utility functions
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "not_started":
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Not Started</Badge>;
-      case "in_progress":
-        return <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">In Progress</Badge>;
-      case "completed":
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Completed</Badge>;
-      case "paused":
-        return <Badge variant="destructive" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Paused</Badge>;
       case "pending":
         return <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">Pending</Badge>;
+      case "in_progress":
+        return <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">In Progress</Badge>;
+      case "awaiting_approval":
+        return <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Awaiting Approval</Badge>;
+      case "completed":
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Completed</Badge>;
+      case "rejected":
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Rejected</Badge>;
+      case "paused":
+        return <Badge variant="destructive" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Paused</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -479,16 +481,18 @@ export default function AdminManufacturing() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "not_started":
-        return <Clock className="h-3 w-3 text-muted-foreground" />;
-      case "in_progress":
-        return <Settings className="h-3 w-3 text-blue-600 animate-spin" />;
-      case "completed":
-        return <CheckCircle className="h-3 w-3 text-green-600" />;
-      case "paused":
-        return <AlertCircle className="h-3 w-3 text-yellow-600" />;
       case "pending":
         return <Clock className="h-3 w-3 text-orange-600" />;
+      case "in_progress":
+        return <Settings className="h-3 w-3 text-blue-600 animate-spin" />;
+      case "awaiting_approval":
+        return <Clock className="h-3 w-3 text-yellow-600" />;
+      case "completed":
+        return <CheckCircle className="h-3 w-3 text-green-600" />;
+      case "rejected":
+        return <AlertCircle className="h-3 w-3 text-red-600" />;
+      case "paused":
+        return <AlertCircle className="h-3 w-3 text-yellow-600" />;
       default:
         return <Package className="h-3 w-3 text-muted-foreground" />;
     }
@@ -648,11 +652,12 @@ export default function AdminManufacturing() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
               </SelectContent>
             </Select>
           </div>

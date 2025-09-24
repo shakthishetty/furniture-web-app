@@ -205,14 +205,16 @@ export default function ManufacturerProcessDetail() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "not_started":
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Not Started</Badge>;
+      case "pending":
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Pending</Badge>;
       case "in_progress":
         return <Badge variant="default" className="bg-blue-100 text-blue-800">In Progress</Badge>;
-      case "blocked":
-        return <Badge variant="destructive" className="bg-red-100 text-red-800">Blocked</Badge>;
+      case "awaiting_approval":
+        return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Awaiting Approval</Badge>;
       case "completed":
         return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
+      case "rejected":
+        return <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -220,14 +222,16 @@ export default function ManufacturerProcessDetail() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "not_started":
+      case "pending":
         return <Clock className="h-4 w-4" />;
       case "in_progress":
         return <Play className="h-4 w-4 text-blue-600" />;
-      case "blocked":
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case "awaiting_approval":
+        return <Clock className="h-4 w-4 text-yellow-600" />;
       case "completed":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "rejected":
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Package className="h-4 w-4" />;
     }

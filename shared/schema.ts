@@ -539,13 +539,22 @@ export const manufacturingStages = pgTable("manufacturing_stages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   processId: varchar("process_id").notNull(),
   name: varchar("name").notNull(), // Wood Cutting, Assembly, Finishing, Quality Check, Packaging
-  status: varchar("status").notNull().default("not_started"), // not_started, in_progress, blocked, completed
-  position: integer("position").notNull(), // Order of stages
+  status: varchar("status").notNull().default("pending"), // pending, in_progress, awaiting_approval, completed, rejected
+  position: integer("position").notNull(), // Order of stages (1-4)
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   estimatedDuration: integer("estimated_duration_hours"),
   notes: text("notes"),
   assignedToUserId: varchar("assigned_to_user_id"),
+  // Approval workflow fields
+  submittedAt: timestamp("submitted_at"),
+  submittedBy: varchar("submitted_by"),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: varchar("approved_by"),
+  approvalComment: text("approval_comment"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectedBy: varchar("rejected_by"),
+  rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -627,11 +636,24 @@ export const manufacturingStatusUpdateSchema = z.object({
 });
 
 export const stageStatusUpdateSchema = z.object({
-  status: z.enum(["not_started", "in_progress", "blocked", "completed"]),
+  status: z.enum(["pending", "in_progress", "awaiting_approval", "completed", "rejected"]),
   startedAt: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
   notes: z.string().optional(),
   assignedToUserId: z.string().optional(),
+});
+
+// New schemas for approval workflow
+export const stageSubmissionSchema = z.object({
+  message: z.string().min(10, "Submission message must be at least 10 characters"),
+});
+
+export const stageApprovalSchema = z.object({
+  comment: z.string().optional(),
+});
+
+export const stageRejectionSchema = z.object({
+  reason: z.string().min(5, "Rejection reason is required"),
 });
 
 export const manufacturerAssignmentSchema = z.object({
@@ -648,6 +670,11 @@ export type CreateStageUpdateReplyRequest = z.infer<typeof createStageUpdateRepl
 export type ManufacturingStatusUpdateRequest = z.infer<typeof manufacturingStatusUpdateSchema>;
 export type StageStatusUpdateRequest = z.infer<typeof stageStatusUpdateSchema>;
 export type ManufacturerAssignmentRequest = z.infer<typeof manufacturerAssignmentSchema>;
+
+// Approval workflow types
+export type StageSubmissionRequest = z.infer<typeof stageSubmissionSchema>;
+export type StageApprovalRequest = z.infer<typeof stageApprovalSchema>;
+export type StageRejectionRequest = z.infer<typeof stageRejectionSchema>;
 
 // Simple Manufacturer Schemas (for direct admin creation)
 export const createManufacturerSchema = createInsertSchema(manufacturers).omit({

@@ -43,13 +43,15 @@ export function Timeline({
 }: TimelineProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "not_started":
+      case "pending":
         return <Clock className="h-4 w-4 text-muted-foreground" />;
       case "in_progress":
         return <Settings className="h-4 w-4 text-blue-600 animate-spin" />;
+      case "awaiting_approval":
+        return <Clock className="h-4 w-4 text-yellow-600" />;
       case "completed":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "blocked":
+      case "rejected":
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
@@ -58,14 +60,16 @@ export function Timeline({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "not_started":
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Not Started</Badge>;
+      case "pending":
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">Pending</Badge>;
       case "in_progress":
         return <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">In Progress</Badge>;
+      case "awaiting_approval":
+        return <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Awaiting Approval</Badge>;
       case "completed":
         return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Completed</Badge>;
-      case "blocked":
-        return <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Blocked</Badge>;
+      case "rejected":
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Rejected</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
