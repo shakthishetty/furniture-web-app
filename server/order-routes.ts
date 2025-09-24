@@ -364,7 +364,12 @@ export function registerOrderRoutes(app: Express): void {
         })
       );
       
-      res.json(ordersWithTracking);
+      // Return consistent format
+      res.json({
+        orders: ordersWithTracking,
+        isWrongRole: false,
+        currentRole: userRole
+      });
     } catch (error) {
       console.error("Error fetching orders:", error);
       res.status(500).json({ message: "Failed to fetch orders" });
