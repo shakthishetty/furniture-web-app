@@ -106,3 +106,77 @@ export const sendPasswordResetEmail = async (email: string, token: string): Prom
 
   return await sendEmail(email, 'Reset Your Password', html);
 };
+
+// Manufacturing Stage Notification Email
+export const sendStageUpdateEmail = async (
+  customerEmail: string, 
+  customerName: string,
+  orderNumber: string,
+  stageName: string,
+  stageStatus: string,
+  updateMessage?: string,
+  imageUrl?: string
+): Promise<boolean> => {
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+  const trackingUrl = `${baseUrl}/orders/tracking`;
+  
+  const html = `
+    <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+      <div style="background-color: #254127; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Teak Theory</h1>
+        <p style="color: #a0c4a7; margin: 5px 0 0 0;">Manufacturing Update</p>
+      </div>
+      
+      <div style="padding: 30px 20px;">
+        <h2 style="color: #254127; margin-top: 0;">Hello ${customerName}!</h2>
+        
+        <p>We have an exciting update on your order <strong>#${orderNumber}</strong>!</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #254127; margin-top: 0;">
+            📍 Stage: ${stageName}
+          </h3>
+          <p style="margin: 10px 0;">
+            <strong>Status:</strong> 
+            <span style="background-color: ${stageStatus === 'completed' ? '#d4edda' : '#fff3cd'}; 
+                         color: ${stageStatus === 'completed' ? '#155724' : '#856404'}; 
+                         padding: 4px 12px; border-radius: 4px; font-size: 14px;">
+              ${stageStatus === 'completed' ? '✅ Completed' : '🔄 In Progress'}
+            </span>
+          </p>
+          ${updateMessage ? `<p style="margin: 15px 0; font-style: italic;">"${updateMessage}"</p>` : ''}
+        </div>
+        
+        ${imageUrl ? `
+          <div style="text-align: center; margin: 20px 0;">
+            <p style="margin-bottom: 10px;"><strong>Progress Photo:</strong></p>
+            <img src="${imageUrl}" alt="Manufacturing Progress" 
+                 style="max-width: 100%; height: auto; border-radius: 8px; border: 2px solid #e9ecef;" />
+          </div>
+        ` : ''}
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${trackingUrl}" 
+             style="background-color: #254127; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Full Progress
+          </a>
+        </div>
+        
+        <div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p style="margin: 0; font-size: 14px;">
+            <strong>💬 Have questions?</strong> You can communicate directly with your manufacturer through your order tracking page.
+          </p>
+        </div>
+      </div>
+      
+      <hr style="margin: 30px 20px; border: none; border-top: 1px solid #eee;">
+      <div style="padding: 0 20px 20px;">
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          This email was sent from Teak Theory regarding your order #${orderNumber}
+        </p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail(customerEmail, `Manufacturing Update: ${stageName} - Order #${orderNumber}`, html);
+};
