@@ -4,6 +4,7 @@ import { requireAdmin, verifyAuth } from "./utils/auth";
 import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
+import { sendStageUpdateEmail } from "./utils/email";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -1245,6 +1246,40 @@ router.post("/manufacturing/stages/:stageId/approve", requireAdmin, async (req, 
 
     if (!approvedStage) {
       return res.status(500).json({ error: "Failed to approve stage" });
+    }
+
+    // Send customer notification email when stage is approved
+    try {
+      const stage = await storage.getManufacturingStage(req.params.stageId);
+      if (stage) {
+        const process = await storage.getManufacturingProcess(stage.processId);
+        if (process) {
+          const order = await storage.getOrder(process.orderId);
+          if (order) {
+            const customer = await storage.getUser(order.userId);
+            if (customer) {
+              // Get the most recent update with photo for this stage
+              const stageUpdates = await storage.getStageUpdates(stage.id, false); // Only public updates for customer
+              const latestUpdateWithPhoto = stageUpdates.find(update => update.photos && update.photos.length > 0);
+              
+              await sendStageUpdateEmail(
+                customer.email,
+                customer.firstName || 'Customer',
+                order.orderNumber,
+                stage.name,
+                'completed', // Admin approval means stage is completed
+                `Your ${stage.name} stage has been approved and completed!`,
+                latestUpdateWithPhoto?.photos?.[0]?.url // Use first photo URL
+              );
+              
+              console.log(`Sent stage approval email to customer ${customer.email} for order ${order.orderNumber}, stage: ${stage.name}`);
+            }
+          }
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send stage approval email:', emailError);
+      // Don't fail the request if email fails
     }
 
     // Broadcast stage approval via SSE

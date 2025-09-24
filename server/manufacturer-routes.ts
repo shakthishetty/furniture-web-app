@@ -11,6 +11,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
+import { sendStageUpdateEmail } from "./utils/email";
 
 const router = express.Router();
 
@@ -407,6 +408,37 @@ router.put("/processes/:id/stages/:stageId/status", requireManufacturer, verifyP
       await storage.updateManufacturingProcess(req.manufacturingProcess.id, {
         status: 'completed'
       });
+    }
+
+    // Send customer notification email when stage is completed
+    if (updateData.status === 'completed') {
+      try {
+        // Get order and customer information for email notification
+        const order = await storage.getOrder(req.manufacturingProcess.orderId);
+        if (order) {
+          const customer = await storage.getUser(order.userId);
+          if (customer) {
+            // Get the most recent update with photo for this stage
+            const stageUpdates = await storage.getStageUpdates(stage.id, false); // Only public updates for customer
+            const latestUpdateWithPhoto = stageUpdates.find(update => update.photos && update.photos.length > 0);
+            
+            await sendStageUpdateEmail(
+              customer.email,
+              customer.firstName || 'Customer',
+              order.orderNumber,
+              stage.name,
+              'completed',
+              latestUpdateWithPhoto?.message,
+              latestUpdateWithPhoto?.photos?.[0]?.url // Use first photo URL
+            );
+            
+            console.log(`Sent stage completion email to customer ${customer.email} for order ${order.orderNumber}, stage: ${stage.name}`);
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send stage completion email:', emailError);
+        // Don't fail the request if email fails
+      }
     }
 
     // Broadcast stage status update via SSE
