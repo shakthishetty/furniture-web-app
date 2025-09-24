@@ -198,6 +198,13 @@ export interface IStorage {
   updateManufacturingStage(id: string, updates: StageStatusUpdateRequest): Promise<ManufacturingStage | undefined>;
   deleteManufacturingStage(id: string): Promise<boolean>;
 
+  // Stage Approval Workflow operations
+  submitStageForApproval(stageId: string, manufacturerId: string): Promise<ManufacturingStage | undefined>;
+  approveStage(stageId: string, adminUserId: string, approvalComment?: string): Promise<ManufacturingStage | undefined>;
+  rejectStage(stageId: string, adminUserId: string, rejectionReason: string): Promise<ManufacturingStage | undefined>;
+  getStagesAwaitingApproval(): Promise<(ManufacturingStage & { process: ManufacturingProcess; assignedManufacturer?: User | null })[]>;
+  getNextPendingStage(processId: string): Promise<ManufacturingStage | undefined>;
+
   // Stage Updates operations
   createStageUpdate(updateData: CreateStageUpdateRequest): Promise<StageUpdate>;
   getStageUpdates(stageId: string, includeInternal?: boolean): Promise<(StageUpdate & { photos: StageUpdatePhoto[]; replies: StageUpdateReply[] })[]>;
@@ -1436,6 +1443,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateManufacturingStage(id: string, updates: StageStatusUpdateRequest): Promise<ManufacturingStage | undefined> {
+    // Enforce workflow rules - prevent bypassing approval process
+    if (updates.status) {
+      if (updates.status === "awaiting_approval") {
+        throw new Error("Cannot set status to 'awaiting_approval' directly. Use submitStageForApproval method.");
+      }
+      if (updates.status === "completed") {
+        throw new Error("Cannot set status to 'completed' directly. Stage must be approved through approval workflow.");
+      }
+      if (updates.status === "rejected") {
+        throw new Error("Cannot set status to 'rejected' directly. Use rejectStage method.");
+      }
+    }
+
     const updateData = {
       ...updates,
       startedAt: updates.startedAt ? new Date(updates.startedAt) : undefined,
@@ -1465,6 +1485,205 @@ export class DatabaseStorage implements IStorage {
       .where(eq(manufacturingStages.id, id));
     
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Stage Approval Workflow Methods
+  async submitStageForApproval(stageId: string, manufacturerId: string): Promise<ManufacturingStage | undefined> {
+    // Verify stage is in progress and manufacturer is authorized
+    const currentStage = await db
+      .select({
+        stage: manufacturingStages,
+        process: manufacturingProcesses
+      })
+      .from(manufacturingStages)
+      .leftJoin(manufacturingProcesses, eq(manufacturingStages.processId, manufacturingProcesses.id))
+      .where(eq(manufacturingStages.id, stageId))
+      .limit(1);
+
+    if (!currentStage[0]) {
+      throw new Error("Stage not found");
+    }
+
+    const { stage, process } = currentStage[0];
+    
+    // Validate current status
+    if (stage.status !== "in_progress") {
+      throw new Error(`Cannot submit stage with status "${stage.status}". Stage must be in_progress.`);
+    }
+
+    // Validate manufacturer authorization
+    const isAuthorized = stage.assignedToUserId === manufacturerId || 
+                        process?.assignedManufacturerId === manufacturerId;
+    if (!isAuthorized) {
+      throw new Error("Manufacturer not authorized for this stage");
+    }
+
+    const [updatedStage] = await db
+      .update(manufacturingStages)
+      .set({
+        status: "awaiting_approval",
+        submittedAt: new Date(),
+        submittedBy: manufacturerId,
+        updatedAt: new Date()
+      })
+      .where(eq(manufacturingStages.id, stageId))
+      .returning();
+    
+    return updatedStage;
+  }
+
+  async approveStage(stageId: string, adminUserId: string, approvalComment?: string): Promise<ManufacturingStage | undefined> {
+    return await db.transaction(async (tx) => {
+      // Verify stage is awaiting approval
+      const [currentStage] = await tx
+        .select()
+        .from(manufacturingStages)
+        .where(eq(manufacturingStages.id, stageId))
+        .limit(1);
+
+      if (!currentStage) {
+        throw new Error("Stage not found");
+      }
+
+      if (currentStage.status !== "awaiting_approval") {
+        throw new Error(`Cannot approve stage with status "${currentStage.status}". Stage must be awaiting_approval.`);
+      }
+
+      // Update stage to completed
+      const [approvedStage] = await tx
+        .update(manufacturingStages)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          approvedAt: new Date(),
+          approvedBy: adminUserId,
+          approvalComment: approvalComment || null,
+          updatedAt: new Date()
+        })
+        .where(eq(manufacturingStages.id, stageId))
+        .returning();
+
+      // Check for next pending stage in sequence
+      const [nextStage] = await tx
+        .select()
+        .from(manufacturingStages)
+        .where(
+          and(
+            eq(manufacturingStages.processId, currentStage.processId),
+            eq(manufacturingStages.status, "pending")
+          )
+        )
+        .orderBy(manufacturingStages.position)
+        .limit(1);
+
+      if (nextStage) {
+        // Start next stage
+        await tx
+          .update(manufacturingStages)
+          .set({
+            status: "in_progress",
+            startedAt: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(manufacturingStages.id, nextStage.id));
+
+        // Update process current stage
+        await tx
+          .update(manufacturingProcesses)
+          .set({
+            currentStageId: nextStage.id,
+            updatedAt: new Date()
+          })
+          .where(eq(manufacturingProcesses.id, currentStage.processId));
+      } else {
+        // No more stages - complete the process
+        await tx
+          .update(manufacturingProcesses)
+          .set({
+            status: "completed",
+            completedAt: new Date(),
+            currentStageId: null,
+            updatedAt: new Date()
+          })
+          .where(eq(manufacturingProcesses.id, currentStage.processId));
+      }
+
+      return approvedStage;
+    });
+  }
+
+  async rejectStage(stageId: string, adminUserId: string, rejectionReason: string): Promise<ManufacturingStage | undefined> {
+    // Verify stage is awaiting approval
+    const [currentStage] = await db
+      .select()
+      .from(manufacturingStages)
+      .where(eq(manufacturingStages.id, stageId))
+      .limit(1);
+
+    if (!currentStage) {
+      throw new Error("Stage not found");
+    }
+
+    if (currentStage.status !== "awaiting_approval") {
+      throw new Error(`Cannot reject stage with status "${currentStage.status}". Stage must be awaiting_approval.`);
+    }
+
+    const [rejectedStage] = await db
+      .update(manufacturingStages)
+      .set({
+        status: "in_progress", // Return to in_progress for rework
+        rejectedAt: new Date(),
+        rejectedBy: adminUserId,
+        rejectionReason,
+        // Clear approval submission fields for fresh submission
+        submittedAt: null,
+        submittedBy: null,
+        updatedAt: new Date()
+      })
+      .where(eq(manufacturingStages.id, stageId))
+      .returning();
+
+    // Update process timestamp
+    await db
+      .update(manufacturingProcesses)
+      .set({
+        updatedAt: new Date()
+      })
+      .where(eq(manufacturingProcesses.id, currentStage.processId));
+
+    return rejectedStage;
+  }
+
+  async getStagesAwaitingApproval(): Promise<(ManufacturingStage & { process: ManufacturingProcess; assignedManufacturer?: User | null })[]> {
+    const stagesWithDetails = await db
+      .select()
+      .from(manufacturingStages)
+      .leftJoin(manufacturingProcesses, eq(manufacturingStages.processId, manufacturingProcesses.id))
+      .leftJoin(users, eq(manufacturingProcesses.assignedManufacturerId, users.id))
+      .where(eq(manufacturingStages.status, "awaiting_approval"))
+      .orderBy(manufacturingStages.submittedAt);
+
+    return stagesWithDetails.map(row => ({
+      ...row.manufacturing_stages,
+      process: row.manufacturing_processes!,
+      assignedManufacturer: row.users || null
+    }));
+  }
+
+  async getNextPendingStage(processId: string): Promise<ManufacturingStage | undefined> {
+    const [stage] = await db
+      .select()
+      .from(manufacturingStages)
+      .where(
+        and(
+          eq(manufacturingStages.processId, processId),
+          eq(manufacturingStages.status, "pending")
+        )
+      )
+      .orderBy(manufacturingStages.position)
+      .limit(1);
+
+    return stage;
   }
 
   async createStageUpdate(updateData: CreateStageUpdateRequest): Promise<StageUpdate> {
