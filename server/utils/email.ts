@@ -180,3 +180,60 @@ export const sendStageUpdateEmail = async (
 
   return await sendEmail(customerEmail, `Manufacturing Update: ${stageName} - Order #${orderNumber}`, html);
 };
+
+export async function sendManufacturerNotificationEmail(
+  manufacturerEmail: string,
+  manufacturerName: string,
+  orderNumber: string,
+  message: string,
+  type: 'customer_question' | 'stage_assigned'
+): Promise<boolean> {
+  const title = type === 'customer_question' 
+    ? 'New Customer Question'
+    : 'New Manufacturing Stage Assigned';
+    
+  const actionText = type === 'customer_question'
+    ? 'Reply to Customer'
+    : 'View Stage Details';
+
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/manufacturer`;
+
+  const html = `
+    <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #fff;">
+      <div style="background-color: #254127; color: white; padding: 30px 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">🔔 ${title}</h1>
+      </div>
+      
+      <div style="padding: 40px 20px;">
+        <p style="margin: 0 0 20px 0; font-size: 16px;">
+          Hi ${manufacturerName},
+        </p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <p style="margin: 0 0 10px 0;"><strong>Order Number:</strong> ${orderNumber}</p>
+          <p style="margin: 0;"><strong>Message:</strong> ${message}</p>
+        </div>
+        
+        <p style="margin: 20px 0;">
+          Please check your manufacturer dashboard to ${type === 'customer_question' ? 'respond to the customer' : 'view the stage details'}.
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${dashboardUrl}" 
+             style="background-color: #254127; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            ${actionText}
+          </a>
+        </div>
+      </div>
+      
+      <hr style="margin: 30px 20px; border: none; border-top: 1px solid #eee;">
+      <div style="padding: 0 20px 20px;">
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          This email was sent from Teak Theory regarding order #${orderNumber}
+        </p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail(manufacturerEmail, `${title} - Order #${orderNumber}`, html);
+};

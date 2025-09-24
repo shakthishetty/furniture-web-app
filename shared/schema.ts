@@ -626,6 +626,8 @@ export const createStageUpdateSchema = createInsertSchema(stageUpdates).omit({
 export const createStageUpdateReplySchema = createInsertSchema(stageUpdateReplies).omit({
   id: true,
   createdAt: true,
+}).extend({
+  isCustomerQuestion: z.boolean().optional(),
 });
 
 export const manufacturingStatusUpdateSchema = z.object({

@@ -1,6 +1,8 @@
 import express from "express";
 import { storage } from "./storage";
 import { verifyAuth } from "./utils/auth";
+import { sendManufacturerNotificationEmail } from "./utils/email";
+import { createStageUpdateReplySchema } from "@shared/schema";
 import { z } from "zod";
 
 const router = express.Router();
@@ -8,6 +10,13 @@ const router = express.Router();
 // Schema for marking notifications as read
 const markAsReadSchema = z.object({
   notificationId: z.string().optional() // If not provided, mark all as read
+});
+
+// Schema for customer questions
+const customerQuestionSchema = z.object({
+  orderId: z.string(),
+  stageId: z.string().optional(),
+  message: z.string().min(1, "Message cannot be empty")
 });
 
 // GET /api/notifications - Get customer notifications
@@ -89,6 +98,78 @@ router.post("/mark-read", verifyAuth, async (req, res) => {
   } catch (error) {
     console.error("Error marking notification as read:", error);
     res.status(500).json({ error: "Failed to mark notification as read" });
+  }
+});
+
+// POST /api/notifications/ask-question - Customer asks question about order/stage
+router.post("/ask-question", verifyAuth, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const validation = customerQuestionSchema.safeParse(req.body);
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: validation.error.errors,
+      });
+    }
+
+    const { orderId, stageId, message } = validation.data;
+
+    // Verify customer owns this order
+    const order = await storage.getOrder(orderId);
+    if (!order || order.customerId !== userId) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    // Get manufacturing process for this order
+    const manufacturingProcess = await storage.getManufacturingProcessByOrderId(orderId);
+    if (!manufacturingProcess) {
+      return res.status(404).json({ error: "Manufacturing process not found" });
+    }
+
+    // Create customer question as a stage update reply
+    const updateData = {
+      stageId: stageId || manufacturingProcess.stages?.[0]?.id, // Use first stage if no specific stage
+      message: message,
+      authorUserId: userId,
+      authorName: req.user?.firstName || 'Customer',
+      isManufacturerReply: false,
+      isCustomerQuestion: true // New field to distinguish customer questions
+    };
+
+    const reply = await storage.createStageUpdateReply(updateData);
+
+    // Notify manufacturer about new customer question
+    if (manufacturingProcess.assignedManufacturerId) {
+      const manufacturer = await storage.getUser(manufacturingProcess.assignedManufacturerId);
+      if (manufacturer?.email) {
+        try {
+          await sendManufacturerNotificationEmail(
+            manufacturer.email,
+            manufacturer.firstName || 'Manufacturer',
+            order.orderNumber,
+            `Customer Question: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
+            'customer_question'
+          );
+        } catch (emailError) {
+          console.error('Failed to send customer question email to manufacturer:', emailError);
+        }
+      }
+    }
+
+    res.json({ 
+      message: "Question sent successfully",
+      reply,
+      success: true 
+    });
+  } catch (error) {
+    console.error("Error sending customer question:", error);
+    res.status(500).json({ error: "Failed to send question" });
   }
 });
 

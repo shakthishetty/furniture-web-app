@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Timeline, 
   UpdateCard, 
@@ -18,7 +19,7 @@ import {
   useManufacturingSSE,
   type ManufacturingProcess
 } from "@/components/manufacturing";
-import type { StageUpdate } from "@shared/schema";
+import type { StageUpdate, CustomerNotification } from "@shared/schema";
 import { 
   ArrowLeft, 
   Package, 
@@ -31,7 +32,11 @@ import {
   DollarSign,
   User,
   MessageSquare,
-  RefreshCw
+  RefreshCw,
+  Bell,
+  BellOff,
+  Send,
+  Mail
 } from "lucide-react";
 
 interface OrderWithTracking {
@@ -53,6 +58,8 @@ export default function OrderTracking() {
   const queryClient = useQueryClient();
   const [selectedStage, setSelectedStage] = useState<any>(null);
   const [expandedUpdates, setExpandedUpdates] = useState<Set<string>>(new Set());
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [questionText, setQuestionText] = useState("");
 
   // Fetch order details first to verify ownership
   const { 
@@ -94,6 +101,25 @@ export default function OrderTracking() {
     }
   });
 
+  // Fetch customer notifications
+  const { 
+    data: notifications, 
+    isLoading: notificationsLoading
+  } = useQuery<{ notifications: CustomerNotification[], total: number }>({
+    queryKey: ['/api/notifications'],
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch unread notification count
+  const { 
+    data: unreadCount,
+  } = useQuery<{ count: number }>({
+    queryKey: ['/api/notifications', 'unread-count'],
+    enabled: isAuthenticated,
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
   // Real-time SSE connection
   const {
     isConnected: sseConnected,
@@ -113,6 +139,9 @@ export default function OrderTracking() {
           queryClient.invalidateQueries({ 
             queryKey: ['/api/orders', orderId, 'tracking'] 
           });
+          queryClient.invalidateQueries({ 
+            queryKey: ['/api/notifications'] 
+          });
         } else if (message.type === 'new_reply' && message.data?.authorRole !== 'customer') {
           queryClient.invalidateQueries({ 
             queryKey: ['/api/orders', orderId, 'tracking'] 
@@ -120,6 +149,9 @@ export default function OrderTracking() {
         } else if (message.type === 'stage_status_update') {
           queryClient.invalidateQueries({ 
             queryKey: ['/api/orders', orderId, 'tracking'] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: ['/api/notifications'] 
           });
         }
       },
@@ -165,6 +197,56 @@ export default function OrderTracking() {
     }
   });
 
+  // Customer question mutation
+  const questionMutation = useMutation({
+    mutationFn: async ({ orderId, stageId, message }: { orderId: string; stageId?: string; message: string }) => {
+      const response = await apiRequest(
+        'POST', 
+        `/api/notifications/ask-question`,
+        { orderId, stageId, message }
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Question Sent",
+        description: "Your question has been sent to the manufacturer.",
+      });
+      setQuestionText("");
+      // Refresh tracking data
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/orders', orderId, 'tracking'] 
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Send Question",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mark notification as read mutation
+  const markReadMutation = useMutation({
+    mutationFn: async (notificationId?: string) => {
+      const response = await apiRequest(
+        'POST', 
+        `/api/notifications/mark-read`,
+        { notificationId }
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/notifications'] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/notifications', 'unread-count'] 
+      });
+    }
+  });
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -193,6 +275,17 @@ export default function OrderTracking() {
   // Handle reply submission
   const handleReply = (updateId: string, content: string) => {
     replyMutation.mutate({ updateId, content });
+  };
+
+  // Handle customer question submission
+  const handleQuestionSubmit = () => {
+    if (!questionText.trim() || !order?.id) return;
+    
+    questionMutation.mutate({
+      orderId: order.id,
+      stageId: selectedStage?.id,
+      message: questionText.trim()
+    });
   };
 
   const getProcessStatusBadge = (status: string) => {
@@ -354,8 +447,8 @@ export default function OrderTracking() {
               </div>
             </div>
             
-            {/* Connection status */}
-            <div className="flex items-center gap-2">
+            {/* Connection status and Notifications */}
+            <div className="flex items-center gap-4">
               {sseConnected ? (
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm" data-testid="connection-status-connected">
                   <Wifi className="h-4 w-4" />
@@ -375,9 +468,143 @@ export default function OrderTracking() {
                   </Button>
                 </div>
               )}
+
+              {/* Notifications button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative"
+                data-testid="button-toggle-notifications"
+              >
+                {showNotifications ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+                {unreadCount && unreadCount.count > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs"
+                    data-testid="notification-count-badge"
+                  >
+                    {unreadCount.count}
+                  </Badge>
+                )}
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Notifications Panel */}
+        {showNotifications && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Your Notifications</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => markReadMutation.mutate()}
+                  disabled={markReadMutation.isPending}
+                  data-testid="button-mark-all-read"
+                >
+                  Mark All Read
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notificationsLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : notifications && notifications.notifications.length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {notifications.notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-3 rounded-lg border ${
+                        notification.isRead ? 'bg-gray-50 dark:bg-gray-800' : 'bg-blue-50 dark:bg-blue-900/20'
+                      }`}
+                      data-testid={`notification-${notification.id}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Mail className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-sm">{notification.title}</span>
+                            {!notification.isRead && (
+                              <Badge variant="secondary" className="h-5 text-xs">New</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {notification.message}
+                          </p>
+                          {notification.imageUrl && (
+                            <img 
+                              src={notification.imageUrl} 
+                              alt="Update" 
+                              className="mt-2 rounded max-w-32 h-auto"
+                            />
+                          )}
+                          <p className="text-xs text-gray-500 mt-2">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        {!notification.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markReadMutation.mutate(notification.id)}
+                            data-testid={`button-mark-read-${notification.id}`}
+                          >
+                            Mark Read
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-8">No notifications yet</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ask Question Panel */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Ask a Question
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Textarea
+                placeholder="Ask your manufacturer a question about your order or manufacturing progress..."
+                value={questionText}
+                onChange={(e) => setQuestionText(e.target.value)}
+                className="min-h-[100px]"
+                data-testid="textarea-customer-question"
+              />
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">
+                  {selectedStage 
+                    ? `Question will be about: ${selectedStage.name}` 
+                    : "General question about your order"
+                  }
+                </p>
+                <Button
+                  onClick={handleQuestionSubmit}
+                  disabled={!questionText.trim() || questionMutation.isPending}
+                  data-testid="button-send-question"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {questionMutation.isPending ? "Sending..." : "Send Question"}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {processLoading ? (
           <div className="space-y-4">
