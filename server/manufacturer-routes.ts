@@ -324,6 +324,7 @@ router.get("/processes/:id", requireManufacturer, verifyProcessAccess, async (re
       order: comprehensiveOrderDetails
     };
 
+
     res.json(processWithOrderDetails);
   } catch (error) {
     console.error("Error fetching process details:", error);
