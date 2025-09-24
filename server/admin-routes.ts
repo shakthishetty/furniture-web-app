@@ -24,6 +24,15 @@ const adminDiscountUpdateSchema = z.object({
   expiresAt: z.string().optional()
 });
 
+// Stage approval workflow validation schemas
+const stageApprovalSchema = z.object({
+  approvalComment: z.string().max(500).optional()
+});
+
+const stageRejectionSchema = z.object({
+  rejectionReason: z.string().min(1, "Rejection reason is required").max(500, "Rejection reason too long")
+});
+
 // Helper to validate URLs, object storage paths, and local upload paths
 const urlOrPathSchema = z.string().refine(
   (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/objects/') || val.startsWith('/uploads/'),
@@ -192,7 +201,8 @@ router.delete("/users/:id", requireAdmin, async (req, res) => {
     res.status(200).json(response);
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ error: "Failed to delete user", details: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: "Failed to delete user", details: errorMessage });
   }
 });
 
@@ -1043,6 +1053,18 @@ router.post("/manufacturing/processes/:processId/stages", requireAdmin, async (r
   }
 });
 
+// Stage Approval Workflow Routes (Must come before /:id routes to avoid collision)
+// Get all stages awaiting approval
+router.get("/manufacturing/stages/awaiting-approval", requireAdmin, async (req, res) => {
+  try {
+    const stagesAwaitingApproval = await storage.getStagesAwaitingApproval();
+    res.json(stagesAwaitingApproval);
+  } catch (error) {
+    console.error("Error fetching stages awaiting approval:", error);
+    res.status(500).json({ error: "Failed to fetch stages awaiting approval" });
+  }
+});
+
 router.get("/manufacturing/stages/:id", requireAdmin, async (req, res) => {
   try {
     const stage = await storage.getManufacturingStage(req.params.id);
@@ -1191,6 +1213,110 @@ router.post("/manufacturing/updates/:updateId/replies", requireAdmin, async (req
       return res.status(400).json({ error: "Invalid request data", details: error.errors });
     }
     res.status(500).json({ error: "Failed to create stage update reply" });
+  }
+});
+
+// Approve a manufacturing stage
+router.post("/manufacturing/stages/:stageId/approve", requireAdmin, async (req, res) => {
+  try {
+    const validation = stageApprovalSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Invalid approval data",
+        details: validation.error.errors,
+      });
+    }
+
+    const { approvalComment } = validation.data;
+    const adminUserId = req.user?.userId;
+
+    if (!adminUserId) {
+      return res.status(401).json({ error: "Admin user ID is required" });
+    }
+
+    // Approve the stage using workflow storage method
+    const approvedStage = await storage.approveStage(req.params.stageId, adminUserId, approvalComment);
+
+    if (!approvedStage) {
+      return res.status(500).json({ error: "Failed to approve stage" });
+    }
+
+    // Broadcast stage approval via SSE
+    const stage = await storage.getManufacturingStage(req.params.stageId);
+    if (stage && (global as any).broadcastStageApproved) {
+      (global as any).broadcastStageApproved(stage.processId, approvedStage);
+    }
+
+    console.log(`Admin ${adminUserId} approved stage ${req.params.stageId}`);
+    res.status(200).json({
+      message: "Stage approved successfully",
+      stage: approvedStage
+    });
+  } catch (error) {
+    console.error("Error approving stage:", error);
+    
+    // Handle specific workflow errors with appropriate status codes
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("not found")) {
+      return res.status(404).json({ error: errorMessage });
+    }
+    if (errorMessage.includes("awaiting_approval")) {
+      return res.status(400).json({ error: errorMessage });
+    }
+    
+    res.status(500).json({ error: "Failed to approve stage" });
+  }
+});
+
+// Reject a manufacturing stage
+router.post("/manufacturing/stages/:stageId/reject", requireAdmin, async (req, res) => {
+  try {
+    const validation = stageRejectionSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Invalid rejection data",
+        details: validation.error.errors,
+      });
+    }
+
+    const { rejectionReason } = validation.data;
+    const adminUserId = req.user?.userId;
+
+    if (!adminUserId) {
+      return res.status(401).json({ error: "Admin user ID is required" });
+    }
+
+    // Reject the stage using workflow storage method
+    const rejectedStage = await storage.rejectStage(req.params.stageId, adminUserId, rejectionReason.trim());
+
+    if (!rejectedStage) {
+      return res.status(500).json({ error: "Failed to reject stage" });
+    }
+
+    // Broadcast stage rejection via SSE
+    const stage = await storage.getManufacturingStage(req.params.stageId);
+    if (stage && (global as any).broadcastStageRejected) {
+      (global as any).broadcastStageRejected(stage.processId, rejectedStage);
+    }
+
+    console.log(`Admin ${adminUserId} rejected stage ${req.params.stageId}: ${rejectionReason}`);
+    res.status(200).json({
+      message: "Stage rejected successfully",
+      stage: rejectedStage
+    });
+  } catch (error) {
+    console.error("Error rejecting stage:", error);
+    
+    // Handle specific workflow errors with appropriate status codes
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("not found")) {
+      return res.status(404).json({ error: errorMessage });
+    }
+    if (errorMessage.includes("awaiting_approval")) {
+      return res.status(400).json({ error: errorMessage });
+    }
+    
+    res.status(500).json({ error: "Failed to reject stage" });
   }
 });
 
