@@ -53,6 +53,13 @@ interface OrderWithTracking extends Order {
   trackingStatus: string | null;
 }
 
+interface OrdersResponse {
+  orders?: OrderWithTracking[];
+  message?: string;
+  isWrongRole?: boolean;
+  currentRole?: string;
+}
+
 function getStatusColor(status: string) {
   switch (status) {
     case "pending":
@@ -371,10 +378,16 @@ export default function Orders() {
   const [, setLocation] = useLocation();
 
   // Fetch user orders with tracking status
-  const { data: orders = [], isLoading } = useQuery<OrderWithTracking[]>({
+  const { data: ordersResponse, isLoading } = useQuery<OrdersResponse>({
     queryKey: ["/api/orders"],
     enabled: isAuthenticated,
   });
+
+  // Extract orders and role information from response
+  const orders = ordersResponse?.orders || [];
+  const isWrongRole = ordersResponse?.isWrongRole || false;
+  const roleMessage = ordersResponse?.message;
+  const currentRole = ordersResponse?.currentRole;
 
   useEffect(() => {
     // Wait for auth to finish loading before redirecting
@@ -439,7 +452,25 @@ export default function Orders() {
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
         
-        {orders.length === 0 ? (
+        {isWrongRole ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Activity className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Wrong Account Type</h3>
+              <p className="text-gray-600 mb-6">
+                {roleMessage}
+              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">
+                  Current account: <Badge variant="outline">{currentRole}</Badge>
+                </p>
+                <Button onClick={() => setLocation("/login")} data-testid="button-switch-to-customer">
+                  Log in as Customer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : orders.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
