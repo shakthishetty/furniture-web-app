@@ -203,6 +203,37 @@ export default function ManufacturerProcessDetail() {
     },
   });
 
+  const submitForApprovalMutation = useMutation({
+    mutationFn: async (stageId: string) => {
+      const response = await apiRequest(
+        "POST", 
+        `/api/manufacturer/processes/${processId}/stages/${stageId}/submit-for-approval`
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/manufacturer/processes", processId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manufacturer/processes"] });
+      toast({
+        title: "Success",
+        description: "Stage submitted for approval successfully",
+      });
+    },
+    onError: (error: any) => {
+      let errorMessage = "Failed to submit stage for approval";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Submission Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
@@ -213,6 +244,8 @@ export default function ManufacturerProcessDetail() {
         return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Awaiting Approval</Badge>;
       case "completed":
         return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
+      case "approved":
+        return <Badge variant="default" className="bg-emerald-100 text-emerald-800">Approved</Badge>;
       case "rejected":
         return <Badge variant="destructive" className="bg-red-100 text-red-800">Rejected</Badge>;
       default:
@@ -230,11 +263,67 @@ export default function ManufacturerProcessDetail() {
         return <Clock className="h-4 w-4 text-yellow-600" />;
       case "completed":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "approved":
+        return <CheckCircle className="h-4 w-4 text-emerald-600" />;
       case "rejected":
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Package className="h-4 w-4" />;
     }
+  };
+
+  const canSubmitForApproval = (stage: any) => {
+    // Stage must be completed to submit for approval
+    if (stage.status !== 'completed') return false;
+    
+    // Check if stage has required photos and updates
+    const hasPhotos = stage.updates?.some((update: any) => 
+      update.photos && update.photos.length > 0
+    );
+    const hasUpdates = stage.updates?.some((update: any) => 
+      update.message && update.message.trim().length > 0 && !update.isInternal
+    );
+    
+    return hasPhotos && hasUpdates;
+  };
+
+  const getNextSubmittableStage = () => {
+    if (!process?.stages) return null;
+    
+    const sortedStages = [...process.stages].sort((a, b) => a.position - b.position);
+    
+    // Find the first stage that can be submitted sequentially
+    for (const stage of sortedStages) {
+      if (stage.status === 'completed' && canSubmitForApproval(stage) && isSequentialSubmissionAllowed(stage)) {
+        return stage;
+      }
+      // If we hit a stage that's not approved, stop sequential search
+      if (stage.status !== 'approved') {
+        break;
+      }
+    }
+    return null;
+  };
+
+  const isSequentialSubmissionAllowed = (stage: any) => {
+    if (!process?.stages) return false;
+    
+    const sortedStages = [...process.stages].sort((a, b) => a.position - b.position);
+    const currentStageIndex = sortedStages.findIndex(s => s.id === stage.id);
+    
+    // First stage can always be submitted if ready
+    if (currentStageIndex === 0) return canSubmitForApproval(stage);
+    
+    // Check that all previous stages are fully approved
+    for (let i = 0; i < currentStageIndex; i++) {
+      const prevStage = sortedStages[i];
+      // Only allow submission if ALL previous stages are approved
+      if (prevStage.status !== 'approved') {
+        return false;
+      }
+    }
+    
+    return canSubmitForApproval(stage);
   };
 
   const handleStageStatusChange = (stageId: string, newStatus: string) => {
@@ -246,6 +335,10 @@ export default function ManufacturerProcessDetail() {
       status: newStatus,
       notes: ""
     });
+  };
+
+  const handleSubmitForApproval = (stageId: string) => {
+    submitForApprovalMutation.mutate(stageId);
   };
 
   const confirmStageStatusUpdate = () => {
@@ -695,7 +788,7 @@ export default function ManufacturerProcessDetail() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid gap-6">
-            {process.stages
+            {[...process.stages]
               .sort((a, b) => a.position - b.position)
               .map((stage) => (
                 <Card key={stage.id} className="border-2 border-muted hover:border-muted-foreground/20 transition-colors" data-testid={`stage-${stage.id}`}>
@@ -717,6 +810,43 @@ export default function ManufacturerProcessDetail() {
                       <div className="flex items-center gap-2">
                         {getStatusIcon(stage.status)}
                         {getStatusBadge(stage.status)}
+                        
+                        {/* Submission Button for Completed Stages */}
+                        {stage.status === 'completed' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleSubmitForApproval(stage.id)}
+                            disabled={submitForApprovalMutation.isPending || !isSequentialSubmissionAllowed(stage)}
+                            className={`ml-2 ${
+                              isSequentialSubmissionAllowed(stage) 
+                                ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
+                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            }`}
+                            title={
+                              !isSequentialSubmissionAllowed(stage) 
+                                ? !canSubmitForApproval(stage)
+                                  ? "Please add photos and progress updates before submitting"
+                                  : "Previous stages must be approved first"
+                                : "Submit this stage for admin approval"
+                            }
+                            data-testid={`button-submit-approval-${stage.id}`}
+                          >
+                            {submitForApprovalMutation.isPending ? "Submitting..." : "Submit for Approval"}
+                          </Button>
+                        )}
+                        
+                        {/* Rejection Notice */}
+                        {stage.status === 'rejected' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectedStageId(stage.id)}
+                            className="ml-2 border-red-200 text-red-700 hover:bg-red-50"
+                            data-testid={`button-view-rejection-${stage.id}`}
+                          >
+                            View Rejection Details
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -733,6 +863,79 @@ export default function ManufacturerProcessDetail() {
                             <span>Completed: {new Date(stage.completedAt).toLocaleDateString()}</span>
                           </>
                         )}
+                      </div>
+                    )}
+
+                    {/* Rejection Details */}
+                    {stage.status === 'rejected' && stage.rejectionReason && (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-red-900 dark:text-red-100">Stage Rejected</h4>
+                              <p className="text-sm text-red-800 dark:text-red-200">{stage.rejectionReason}</p>
+                              {stage.rejectedAt && (
+                                <div className="flex items-center gap-2 text-xs text-red-700 dark:text-red-300">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>Rejected on {new Date(stage.rejectedAt).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                              <div className="pt-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleStageStatusChange(stage.id, 'in_progress')}
+                                  className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900"
+                                  data-testid={`button-restart-stage-${stage.id}`}
+                                >
+                                  Restart Stage
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Submission Requirements for Completed Stages */}
+                    {stage.status === 'completed' && !canSubmitForApproval(stage) && (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-yellow-900 dark:text-yellow-100">Submission Requirements</h4>
+                              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                Before submitting for approval, please ensure:
+                              </p>
+                              <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 ml-4">
+                                <li>• At least one photo showing progress</li>
+                                <li>• Detailed progress update describing work completed</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sequential Workflow Notice */}
+                    {stage.status === 'completed' && canSubmitForApproval(stage) && !isSequentialSubmissionAllowed(stage) && (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <div className="flex items-start gap-3">
+                            <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-blue-900 dark:text-blue-100">Awaiting Previous Stages</h4>
+                              <p className="text-sm text-blue-800 dark:text-blue-200">
+                                This stage must wait for all previous stages to be approved before submission.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 
