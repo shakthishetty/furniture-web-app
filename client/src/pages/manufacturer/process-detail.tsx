@@ -811,6 +811,20 @@ export default function ManufacturerProcessDetail() {
                         {getStatusIcon(stage.status)}
                         {getStatusBadge(stage.status)}
                         
+                        {/* Start Stage Button for Pending Stages */}
+                        {stage.status === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleStageStatusChange(stage.id, 'in_progress')}
+                            disabled={updateStageMutation.isPending}
+                            className="ml-2 bg-blue-600 hover:bg-blue-700 text-white"
+                            title="Start working on this stage"
+                            data-testid={`button-start-stage-${stage.id}`}
+                          >
+                            {updateStageMutation.isPending ? "Starting..." : "Start Stage"}
+                          </Button>
+                        )}
+
                         {/* Submission Button for Completed Stages */}
                         {stage.status === 'completed' && (
                           <Button 
