@@ -1166,15 +1166,78 @@ export class DatabaseStorage implements IStorage {
 
   // Manufacturing Tracking implementations
   async createManufacturingProcess(processData: CreateManufacturingProcessRequest): Promise<ManufacturingProcess> {
-    const [process] = await db
-      .insert(manufacturingProcesses)
-      .values({
-        ...processData,
-        updatedAt: new Date(),
-      })
-      .returning();
-    
-    return process;
+    // Use transaction to ensure atomicity
+    return await db.transaction(async (tx) => {
+      // Create the manufacturing process first
+      const [process] = await tx
+        .insert(manufacturingProcesses)
+        .values({
+          ...processData,
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      // Define the 4 standard furniture manufacturing stages
+      const standardStages = [
+        {
+          processId: process.id,
+          name: "Wooden Frame Construction",
+          position: 1,
+          estimatedDuration: 24, // 24 hours
+          notes: "Build and assemble the wooden frame structure"
+        },
+        {
+          processId: process.id,
+          name: "Padding and Cushioning",
+          position: 2,
+          estimatedDuration: 16, // 16 hours
+          notes: "Add padding, foam, and cushioning materials"
+        },
+        {
+          processId: process.id,
+          name: "Upholstery",
+          position: 3,
+          estimatedDuration: 20, // 20 hours
+          notes: "Apply fabric covering and upholstery work"
+        },
+        {
+          processId: process.id,
+          name: "Finishing",
+          position: 4,
+          estimatedDuration: 12, // 12 hours
+          notes: "Final touches, quality check, and finishing work"
+        }
+      ];
+
+      // Create all 4 stages
+      const createdStages = await tx
+        .insert(manufacturingStages)
+        .values(standardStages)
+        .returning();
+
+      // Verify all 4 stages were created successfully
+      if (createdStages.length !== 4) {
+        throw new Error(`Expected 4 stages to be created, but only ${createdStages.length} were created`);
+      }
+
+      // Update the process to set the first stage as current
+      const firstStage = createdStages.find(stage => stage.position === 1);
+      if (!firstStage) {
+        throw new Error("Could not find the first stage (position 1) among created stages");
+      }
+
+      // Update and return the updated process with currentStageId
+      const [updatedProcess] = await tx
+        .update(manufacturingProcesses)
+        .set({
+          currentStageId: firstStage.id,
+          updatedAt: new Date()
+        })
+        .where(eq(manufacturingProcesses.id, process.id))
+        .returning();
+
+      return updatedProcess;
+    });
   }
 
   async getManufacturingProcesses(options: { page: number; limit: number; status?: string; orderId?: string; manufacturerId?: string }): Promise<{ processes: (ManufacturingProcess & { assignedManufacturer?: User | null })[]; total: number }> {
