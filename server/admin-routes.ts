@@ -920,6 +920,12 @@ router.get("/manufacturing/processes/:id", requireAdmin, async (req, res) => {
 router.post("/manufacturing/processes", requireAdmin, async (req, res) => {
   try {
     const validatedData = createManufacturingProcessSchema.parse(req.body);
+    
+    // Strip any # prefix from orderId to ensure clean database references
+    if (validatedData.orderId.startsWith('#')) {
+      validatedData.orderId = validatedData.orderId.substring(1);
+    }
+    
     const process = await storage.createManufacturingProcess(validatedData);
     
     console.log(`Admin ${req.user?.userId} created manufacturing process ${process.id} for order ${process.orderId}`);
