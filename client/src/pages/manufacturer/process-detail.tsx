@@ -548,10 +548,7 @@ export default function ManufacturerProcessDetail() {
                         <div className="flex justify-between items-center py-3">
                           <span className="text-muted-foreground font-medium">Total Amount:</span>
                           <span className="text-sm font-semibold">
-                            ${typeof process.order.totalAmount === 'number' 
-                              ? process.order.totalAmount.toFixed(2) 
-                              : process.order.totalAmount || '0.00'
-                            }
+                            ${process.order.totalAmount || '0.00'}
                           </span>
                         </div>
                       </div>
