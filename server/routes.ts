@@ -462,6 +462,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (updateData.type === 'new_reply' && updateData.reply?.authorRole === 'admin') {
             return; // Don't send admin replies to customers
           }
+
+          // Filter out internal approval workflow events from customers
+          if (['stage_submitted', 'stage_approved', 'stage_rejected'].includes(updateData.type)) {
+            return; // Don't send approval workflow events to customers
+          }
           
           // Filter replies in update data
           if (filteredData.update?.replies) {
@@ -533,6 +538,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       global.broadcastManufacturingUpdate(processId, {
         type: 'photo_upload',
         photo
+      });
+    }
+  };
+
+  // Function to broadcast stage submission for approval
+  global.broadcastStageSubmitted = (processId: string, stage: any) => {
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'stage_submitted',
+        stage
+      });
+    }
+  };
+
+  // Function to broadcast stage approval
+  global.broadcastStageApproved = (processId: string, stage: any) => {
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'stage_approved',
+        stage
+      });
+    }
+  };
+
+  // Function to broadcast stage rejection
+  global.broadcastStageRejected = (processId: string, stage: any) => {
+    if (global.broadcastManufacturingUpdate) {
+      global.broadcastManufacturingUpdate(processId, {
+        type: 'stage_rejected',
+        stage
       });
     }
   };
