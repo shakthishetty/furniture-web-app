@@ -443,6 +443,24 @@ router.post("/processes/:id/stages/:stageId/updates", requireManufacturer, verif
     const updateData = validation.data;
     const stageUpdate = await storage.createStageUpdate(updateData);
 
+    // Auto-submit stage for approval if photos are uploaded and stage is currently in progress
+    if (updateData.photos && updateData.photos.length > 0 && stage.status === 'in_progress') {
+      try {
+        const submittedStage = await storage.submitStageForApproval(stage.id, req.user!.userId);
+        if (submittedStage) {
+          console.log(`Stage ${stage.id} automatically submitted for approval after photo upload`);
+          
+          // Broadcast stage submission for approval
+          if ((global as any).broadcastStageSubmitted) {
+            (global as any).broadcastStageSubmitted(req.manufacturingProcess.id, submittedStage);
+          }
+        }
+      } catch (error) {
+        // Log but don't fail the request if stage submission fails
+        console.error(`Failed to auto-submit stage ${stage.id} for approval:`, error);
+      }
+    }
+
     // Broadcast new update via SSE
     if ((global as any).broadcastNewUpdate) {
       (global as any).broadcastNewUpdate(req.manufacturingProcess.id, stageUpdate);
@@ -531,6 +549,24 @@ router.post("/processes/:id/stages/:stageId/photos", requireManufacturer, verify
     };
 
     const stageUpdate = await storage.createStageUpdate(updateData);
+
+    // Auto-submit stage for approval if stage is currently in progress
+    if (req.manufacturingStage.status === 'in_progress') {
+      try {
+        const submittedStage = await storage.submitStageForApproval(req.manufacturingStage.id, req.user!.userId);
+        if (submittedStage) {
+          console.log(`Stage ${req.manufacturingStage.id} automatically submitted for approval after photo upload`);
+          
+          // Broadcast stage submission for approval
+          if ((global as any).broadcastStageSubmitted) {
+            (global as any).broadcastStageSubmitted(req.manufacturingProcess.id, submittedStage);
+          }
+        }
+      } catch (error) {
+        // Log but don't fail the request if stage submission fails
+        console.error(`Failed to auto-submit stage ${req.manufacturingStage.id} for approval:`, error);
+      }
+    }
 
     // Broadcast new photo update via SSE
     if ((global as any).broadcastNewUpdate) {
