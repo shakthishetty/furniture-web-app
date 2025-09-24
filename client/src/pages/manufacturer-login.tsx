@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { apiRequest } from "@/lib/queryClient";
+import { resetAuthState } from "@/lib/authUtils";
 import { Wrench, LogIn } from "lucide-react";
 
 export default function ManufacturerLogin() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("manufacturer@test.com");
   const [password, setPassword] = useState("password");
 
@@ -19,10 +21,17 @@ export default function ManufacturerLogin() {
       const response = await apiRequest("POST", "/api/auth/login", credentials);
       return response.json();
     },
-    onSuccess: (data) => {
-      // Store tokens in localStorage
+    onSuccess: async (data) => {
+      // First, completely reset any existing authentication state
+      await resetAuthState(queryClient);
+      
+      // Store new tokens in localStorage
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
+      
+      // Invalidate auth cache to force fresh data fetch with new token
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/manufacturer/auth/me'] });
       
       // Redirect to manufacturer dashboard
       setLocation("/manufacturer");

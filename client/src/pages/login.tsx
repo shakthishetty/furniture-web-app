@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { resetAuthState } from "@/lib/authUtils";
 import { loginSchema, type LoginRequest } from "@shared/schema";
 import loginBackgroundImage from "@assets/Rectangle 2 (1)_1757499759264.jpg";
 import Logo from "@/components/Logo";
@@ -35,12 +36,16 @@ export default function Login() {
       return await response.json();
     },
     onSuccess: async (response) => {
+      // First, completely reset any existing authentication state
+      await resetAuthState(queryClient);
+      
+      // Set new authentication data
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.user));
       
-      // Immediately set user data in cache to prevent login loops
-      queryClient.setQueryData(["/api/auth/me"], response.user);
+      // Invalidate auth cache to force fresh data fetch with new token
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       toast({
         title: 'Login successful',
