@@ -825,6 +825,20 @@ export default function ManufacturerProcessDetail() {
                           </Button>
                         )}
 
+                        {/* Complete Stage Button for In Progress Stages */}
+                        {stage.status === 'in_progress' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleStageStatusChange(stage.id, 'completed')}
+                            disabled={updateStageMutation.isPending}
+                            className="ml-2 bg-green-600 hover:bg-green-700 text-white"
+                            title="Mark this stage as completed"
+                            data-testid={`button-complete-stage-${stage.id}`}
+                          >
+                            {updateStageMutation.isPending ? "Completing..." : "Complete Stage"}
+                          </Button>
+                        )}
+
                         {/* Submission Button for Completed Stages */}
                         {stage.status === 'completed' && (
                           <Button 
