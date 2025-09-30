@@ -15,11 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface DiscountCode {
   id: string;
-  code: string;
+  discountCode: string;
   description: string;
-  type: "percentage" | "fixed";
-  value: number;
-  minimumOrderValue?: number;
+  discountType: "percentage" | "flat";
+  percentageValue?: string;
+  flatValue?: string;
+  minOrderValue?: string;
   maxUses?: number;
   usedCount: number;
   isActive: boolean;
@@ -31,17 +32,15 @@ interface DiscountCode {
 interface DiscountsResponse {
   discounts: DiscountCode[];
   total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 }
 
 interface NewDiscountData {
-  code: string;
+  discountCode: string;
   description: string;
-  type: "percentage" | "fixed";
-  value: number;
-  minimumOrderValue?: number;
+  discountType: "percentage" | "flat";
+  percentageValue?: string;
+  flatValue?: string;
+  minOrderValue?: string;
   maxUses?: number;
   isActive: boolean;
   validFrom: string;
@@ -54,11 +53,12 @@ export default function AdminDiscounts() {
   const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newDiscount, setNewDiscount] = useState<NewDiscountData>({
-    code: "",
+    discountCode: "",
     description: "",
-    type: "percentage",
-    value: 0,
-    minimumOrderValue: undefined,
+    discountType: "percentage",
+    percentageValue: "",
+    flatValue: "",
+    minOrderValue: "",
     maxUses: undefined,
     isActive: true,
     validFrom: new Date().toISOString().split('T')[0],
@@ -93,11 +93,12 @@ export default function AdminDiscounts() {
       });
       setIsCreateDialogOpen(false);
       setNewDiscount({
-        code: "",
+        discountCode: "",
         description: "",
-        type: "percentage",
-        value: 0,
-        minimumOrderValue: undefined,
+        discountType: "percentage",
+        percentageValue: "",
+        flatValue: "",
+        minOrderValue: "",
         maxUses: undefined,
         isActive: true,
         validFrom: new Date().toISOString().split('T')[0],
@@ -202,14 +203,11 @@ export default function AdminDiscounts() {
     return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
   };
 
-  const formatValue = (type: string, value: number) => {
-    if (type === "percentage") {
-      return `${value}%`;
+  const formatValue = (discount: DiscountCode) => {
+    if (discount.discountType === "percentage") {
+      return `${discount.percentageValue}%`;
     }
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD' 
-    }).format(value);
+    return `$${discount.flatValue}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -258,21 +256,21 @@ export default function AdminDiscounts() {
                     <Input
                       id="new-code"
                       placeholder="SAVE20"
-                      value={newDiscount.code}
-                      onChange={(e) => setNewDiscount({ ...newDiscount, code: e.target.value.toUpperCase() })}
+                      value={newDiscount.discountCode}
+                      onChange={(e) => setNewDiscount({ ...newDiscount, discountCode: e.target.value.toUpperCase() })}
                       data-testid="input-new-code"
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="new-type">Discount Type</Label>
-                    <Select value={newDiscount.type} onValueChange={(value: "percentage" | "fixed") => setNewDiscount({ ...newDiscount, type: value })}>
+                    <Select value={newDiscount.discountType} onValueChange={(value: "percentage" | "flat") => setNewDiscount({ ...newDiscount, discountType: value })}>
                       <SelectTrigger data-testid="select-new-type">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="percentage">Percentage</SelectItem>
-                        <SelectItem value="fixed">Fixed Amount</SelectItem>
+                        <SelectItem value="flat">Fixed Amount</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -292,15 +290,20 @@ export default function AdminDiscounts() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="new-value">
-                      {newDiscount.type === "percentage" ? "Percentage" : "Amount ($)"}
+                      {newDiscount.discountType === "percentage" ? "Percentage" : "Amount ($)"}
                     </Label>
                     <Input
                       id="new-value"
                       type="number"
                       min="0"
-                      max={newDiscount.type === "percentage" ? "100" : undefined}
-                      value={newDiscount.value}
-                      onChange={(e) => setNewDiscount({ ...newDiscount, value: parseFloat(e.target.value) })}
+                      max={newDiscount.discountType === "percentage" ? "100" : undefined}
+                      value={newDiscount.discountType === "percentage" ? newDiscount.percentageValue : newDiscount.flatValue}
+                      onChange={(e) => setNewDiscount({ 
+                        ...newDiscount, 
+                        ...(newDiscount.discountType === "percentage" 
+                          ? { percentageValue: e.target.value } 
+                          : { flatValue: e.target.value })
+                      })}
                       data-testid="input-new-value"
                     />
                   </div>
@@ -312,8 +315,8 @@ export default function AdminDiscounts() {
                       type="number"
                       min="0"
                       placeholder="Optional"
-                      value={newDiscount.minimumOrderValue || ""}
-                      onChange={(e) => setNewDiscount({ ...newDiscount, minimumOrderValue: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={newDiscount.minOrderValue || ""}
+                      onChange={(e) => setNewDiscount({ ...newDiscount, minOrderValue: e.target.value })}
                       data-testid="input-new-min-order"
                     />
                   </div>
@@ -375,7 +378,9 @@ export default function AdminDiscounts() {
                 </Button>
                 <Button 
                   onClick={handleCreateDiscount}
-                  disabled={createDiscountMutation.isPending || !newDiscount.code || !newDiscount.value}
+                  disabled={createDiscountMutation.isPending || !newDiscount.discountCode || 
+                    (newDiscount.discountType === "percentage" && !newDiscount.percentageValue) ||
+                    (newDiscount.discountType === "flat" && !newDiscount.flatValue)}
                   data-testid="button-save-discount"
                 >
                   {createDiscountMutation.isPending ? "Creating..." : "Create Discount"}
@@ -418,10 +423,10 @@ export default function AdminDiscounts() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium font-mono text-lg" data-testid={`text-discount-code-${discount.id}`}>
-                        {discount.code}
+                        {discount.discountCode}
                       </span>
                       <span className="font-bold text-primary" data-testid={`text-discount-value-${discount.id}`}>
-                        {formatValue(discount.type, discount.value)} off
+                        {formatValue(discount)} off
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground" data-testid={`text-discount-description-${discount.id}`}>
@@ -437,8 +442,8 @@ export default function AdminDiscounts() {
                       <span>
                         Used: {discount.usedCount}{discount.maxUses ? ` / ${discount.maxUses}` : ""}
                       </span>
-                      {discount.minimumOrderValue && (
-                        <span>Min: ${discount.minimumOrderValue}</span>
+                      {discount.minOrderValue && (
+                        <span>Min: ${discount.minOrderValue}</span>
                       )}
                     </div>
                     <div className="flex gap-2">
@@ -470,7 +475,7 @@ export default function AdminDiscounts() {
               ))}
 
               {/* Pagination */}
-              {discountsData.totalPages > 1 && (
+              {discountsData.total > limit && (
                 <div className="flex justify-center gap-2 mt-6">
                   <Button
                     variant="outline"
@@ -481,12 +486,12 @@ export default function AdminDiscounts() {
                     Previous
                   </Button>
                   <span className="flex items-center px-4" data-testid="text-page-info">
-                    Page {page} of {discountsData.totalPages}
+                    Page {page} of {Math.ceil(discountsData.total / limit)}
                   </span>
                   <Button
                     variant="outline"
                     onClick={() => setPage(page + 1)}
-                    disabled={page === discountsData.totalPages}
+                    disabled={page >= Math.ceil(discountsData.total / limit)}
                     data-testid="button-next-page"
                   >
                     Next
@@ -519,21 +524,21 @@ export default function AdminDiscounts() {
                   <Label htmlFor="edit-code">Discount Code</Label>
                   <Input
                     id="edit-code"
-                    value={editingDiscount.code}
-                    onChange={(e) => setEditingDiscount({ ...editingDiscount, code: e.target.value.toUpperCase() })}
+                    value={editingDiscount.discountCode}
+                    onChange={(e) => setEditingDiscount({ ...editingDiscount, discountCode: e.target.value.toUpperCase() })}
                     data-testid="input-edit-code"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-type">Discount Type</Label>
-                  <Select value={editingDiscount.type} onValueChange={(value: "percentage" | "fixed") => setEditingDiscount({ ...editingDiscount, type: value })}>
+                  <Select value={editingDiscount.discountType} onValueChange={(value: "percentage" | "flat") => setEditingDiscount({ ...editingDiscount, discountType: value })}>
                     <SelectTrigger data-testid="select-edit-type">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                      <SelectItem value="flat">Fixed Amount</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -552,13 +557,18 @@ export default function AdminDiscounts() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-value">
-                    {editingDiscount.type === "percentage" ? "Percentage" : "Amount ($)"}
+                    {editingDiscount.discountType === "percentage" ? "Percentage" : "Amount ($)"}
                   </Label>
                   <Input
                     id="edit-value"
                     type="number"
-                    value={editingDiscount.value}
-                    onChange={(e) => setEditingDiscount({ ...editingDiscount, value: parseFloat(e.target.value) })}
+                    value={editingDiscount.discountType === "percentage" ? editingDiscount.percentageValue : editingDiscount.flatValue}
+                    onChange={(e) => setEditingDiscount({ 
+                      ...editingDiscount, 
+                      ...(editingDiscount.discountType === "percentage" 
+                        ? { percentageValue: e.target.value } 
+                        : { flatValue: e.target.value })
+                    })}
                     data-testid="input-edit-value"
                   />
                 </div>
@@ -568,8 +578,8 @@ export default function AdminDiscounts() {
                   <Input
                     id="edit-min-order"
                     type="number"
-                    value={editingDiscount.minimumOrderValue || ""}
-                    onChange={(e) => setEditingDiscount({ ...editingDiscount, minimumOrderValue: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    value={editingDiscount.minOrderValue || ""}
+                    onChange={(e) => setEditingDiscount({ ...editingDiscount, minOrderValue: e.target.value })}
                     data-testid="input-edit-min-order"
                   />
                 </div>
