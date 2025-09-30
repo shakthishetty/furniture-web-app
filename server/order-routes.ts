@@ -29,10 +29,12 @@ function generateOrderNumber(): string {
 
 function calculateDiscount(subtotal: number, discount: any): number {
   if (discount.discountType === "percentage") {
-    return (subtotal * parseFloat(discount.discountValue)) / 100;
-  } else {
-    return parseFloat(discount.discountValue);
+    const percentage = parseFloat(discount.percentageValue || "0");
+    return Math.min((subtotal * percentage) / 100, subtotal);
+  } else if (discount.discountType === "flat") {
+    return Math.min(parseFloat(discount.flatValue || "0"), subtotal);
   }
+  return 0;
 }
 
 function calculateTax(subtotal: number): number {
@@ -164,19 +166,18 @@ export function registerOrderRoutes(app: Express): void {
       }
 
       const { code, subtotal } = validation.data;
-      const result = await storage.validateDiscountCode(code, subtotal);
+      const result = await storage.validateDiscount(code, subtotal);
       
       if (!result.valid) {
         return res.status(400).json({ message: result.error });
       }
-
-      const discountAmount = calculateDiscount(subtotal, result.discount);
       
       res.json({
         valid: true,
         discount: result.discount,
-        discountAmount,
-        newSubtotal: subtotal - discountAmount
+        discountAmount: result.discountAmount,
+        finalTotal: result.finalTotal,
+        newSubtotal: result.finalTotal // Backward compatibility
       });
     } catch (error) {
       console.error("Error applying discount:", error);
@@ -235,10 +236,12 @@ export function registerOrderRoutes(app: Express): void {
 
       // Apply discount if provided
       let discountAmount = 0;
+      let discountId: string | null = null;
       if (orderData.discountCode) {
-        const discountResult = await storage.validateDiscountCode(orderData.discountCode, subtotal);
-        if (discountResult.valid && discountResult.discount) {
-          discountAmount = calculateDiscount(subtotal, discountResult.discount);
+        const discountResult = await storage.validateDiscount(orderData.discountCode, subtotal);
+        if (discountResult.valid && discountResult.discount && discountResult.discountAmount) {
+          discountAmount = discountResult.discountAmount;
+          discountId = discountResult.discount.id;
         }
       }
 
@@ -255,6 +258,8 @@ export function registerOrderRoutes(app: Express): void {
         orderNumber,
         subtotal: discountedSubtotal,
         totalAmount,
+        discountAmount,
+        discountId,
       });
 
       let paymentResponse;
@@ -268,6 +273,11 @@ export function registerOrderRoutes(app: Express): void {
         
         // Update order status
         await storage.updateOrderStatus(order.id, "paid");
+        
+        // Increment discount usage count for successful payment
+        if (discountId) {
+          await storage.incrementDiscountUsage(discountId);
+        }
         
         paymentResponse = {
           success: true,
@@ -309,10 +319,8 @@ export function registerOrderRoutes(app: Express): void {
         });
       }
 
-      // Mark discount code as used if applicable
-      if (orderData.discountCode) {
-        await storage.useDiscountCode(orderData.discountCode);
-      }
+      // Note: For Stripe/PayPal payments, discount usage should be incremented
+      // only after payment confirmation via webhook. Dummy payments increment immediately above.
 
       res.status(201).json({
         ...paymentResponse,

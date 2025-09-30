@@ -157,7 +157,14 @@ export interface IStorage {
   incrementDiscountUsage(discountId: string): Promise<void>;
 
   // Order operations
-  createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order>;
+  createOrder(orderData: CreateOrderRequest & { 
+    userId: string; 
+    orderNumber: string; 
+    subtotal: number; 
+    totalAmount: number;
+    discountAmount?: number;
+    discountId?: string | null;
+  }): Promise<Order>;
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
   getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined>;
@@ -792,7 +799,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Order operations
-  async createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order> {
+  async createOrder(orderData: CreateOrderRequest & { 
+    userId: string; 
+    orderNumber: string; 
+    subtotal: number; 
+    totalAmount: number;
+    discountAmount?: number;
+    discountId?: string | null;
+  }): Promise<Order> {
     const [order] = await db
       .insert(orders)
       .values({
@@ -805,6 +819,8 @@ export class DatabaseStorage implements IStorage {
         shippingAddressId: orderData.shippingAddressId,
         billingAddressId: orderData.billingAddressId || orderData.shippingAddressId,
         discountCodeUsed: orderData.discountCode,
+        discountAmount: orderData.discountAmount ? orderData.discountAmount.toString() : null,
+        discountId: orderData.discountId || null,
       })
       .returning();
     

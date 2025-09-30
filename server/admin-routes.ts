@@ -15,15 +15,7 @@ const orderStatusUpdateSchema = z.object({
   comment: z.string().optional()
 });
 
-const adminDiscountUpdateSchema = z.object({
-  code: z.string().min(1).max(50).optional(),
-  type: z.enum(["percentage", "fixed"]).optional(),
-  value: z.string().refine(val => !val || (parseFloat(val) >= 0), "Value must be a positive number").optional(),
-  minimumOrderAmount: z.string().refine(val => !val || (parseFloat(val) >= 0), "Minimum order amount must be positive").optional(),
-  maxUsageCount: z.number().int().min(1).optional(),
-  isActive: z.boolean().optional(),
-  expiresAt: z.string().optional()
-});
+// Note: adminDiscountUpdateSchema removed - using updateDiscountSchema from shared/schema.ts instead
 
 // Stage approval workflow validation schemas
 const stageApprovalSchema = z.object({
@@ -587,17 +579,12 @@ router.post("/discounts", requireAdmin, async (req, res) => {
 
 router.patch("/discounts/:id", requireAdmin, async (req, res) => {
   try {
-    const validation = adminDiscountUpdateSchema.safeParse(req.body);
+    const validation = updateDiscountSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: "Invalid update data", details: validation.error.flatten() });
     }
 
-    const { expiresAt, ...restData } = validation.data;
-    const updateData = {
-      ...restData,
-      ...(expiresAt ? { expiresAt: new Date(expiresAt) } : {})
-    };
-    const updatedDiscount = await storage.updateDiscount(req.params.id, updateData);
+    const updatedDiscount = await storage.updateDiscount(req.params.id, validation.data);
     if (!updatedDiscount) {
       return res.status(404).json({ error: "Discount code not found" });
     }
