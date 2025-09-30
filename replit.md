@@ -6,6 +6,46 @@ Teak Theory is a premium furniture e-commerce website built with React and Expre
 
 Preferred communication style: Simple, everyday language.
 
+# Discount Feature System (September 2025)
+
+## Complete Discount Management
+The application features a comprehensive discount system with both admin management and customer application capabilities:
+
+### Discount Types
+- **Percentage Discounts**: Apply percentage-based discounts (e.g., 20% off)
+- **Flat Discounts**: Apply fixed dollar amount discounts (e.g., $50 off)
+
+### Key Features
+- **Admin Management**: Full CRUD operations for creating and managing discount codes
+- **Validation Rules**: Comprehensive validation including:
+  - Minimum order value requirements
+  - Usage limits (max uses)
+  - Validity periods (validFrom/validUntil dates)
+  - Active/inactive status
+- **Checkout Integration**: Customers can apply discount codes during checkout
+- **Real-time Validation**: Instant feedback on discount code validity
+- **Usage Tracking**: Automatic increment of usage count on successful payment
+- **Order Integration**: Discounts are stored with orders for reporting and analytics
+
+### Database Schema
+- **discounts table**: Stores all discount codes with configuration
+- **orders.discountId**: Foreign key linking orders to applied discounts
+- **orders.discountAmount**: Stores the actual discount amount applied
+
+### API Endpoints
+- **POST /api/admin/discounts**: Create new discount codes (admin only)
+- **GET /api/admin/discounts**: List all discount codes with pagination (admin only)
+- **GET /api/admin/discounts/:id**: Get specific discount details (admin only)
+- **PATCH /api/admin/discounts/:id**: Update discount configuration (admin only)
+- **DELETE /api/admin/discounts/:id**: Delete discount code (admin only)
+- **POST /api/discount/apply**: Validate and calculate discount for checkout
+
+### Security & Validation
+- Admin-only access for discount management
+- Server-side validation for all discount operations
+- Protection against over-applying discounts (capped at order subtotal)
+- Payment confirmation required before incrementing usage count
+
 # Manufacturing Tracking System (December 2025)
 
 ## Three-Portal Architecture

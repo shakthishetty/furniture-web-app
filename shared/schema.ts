@@ -403,6 +403,9 @@ export const createDiscountSchema = createInsertSchema(discounts).omit({
   usedCount: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  validFrom: z.coerce.date(),
+  validUntil: z.coerce.date(),
 });
 
 export const updateDiscountSchema = createDiscountSchema.partial();
