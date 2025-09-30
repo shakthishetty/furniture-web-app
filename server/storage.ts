@@ -15,8 +15,6 @@ import {
   type Address,
   type CreateAddressRequest,
   type UpdateAddressRequest,
-  type DiscountCode,
-  type CreateDiscountCodeRequest,
   type Order,
   type OrderItem,
   type CreateOrderRequest,
@@ -25,6 +23,9 @@ import {
   type CreateWishlistItemRequest,
   type Refund,
   type OrderStatusHistory,
+  type Discount,
+  type CreateDiscountRequest,
+  type UpdateDiscountRequest,
   type ManufacturingProcess,
   type ManufacturingStage,
   type StageUpdate,
@@ -55,7 +56,7 @@ import {
   savedConfigurations,
   categories,
   addresses,
-  discountCodes,
+  discounts,
   orders,
   orderItems,
   orderStatusHistory,
@@ -139,15 +140,21 @@ export interface IStorage {
   deleteAddress(id: string): Promise<void>;
   setDefaultAddress(userId: string, addressId: string): Promise<void>;
 
-  // Discount Code operations  
-  createDiscountCode(codeData: CreateDiscountCodeRequest): Promise<DiscountCode>;
-  getDiscountCode(code: string): Promise<DiscountCode | undefined>;
-  getDiscountCodes(options: { page: number; limit: number }): Promise<{ discounts: DiscountCode[]; total: number }>;
-  getDiscountCodeById(id: string): Promise<DiscountCode | undefined>;
-  updateDiscountCode(id: string, updates: Partial<DiscountCode>): Promise<DiscountCode | undefined>;
-  deleteDiscountCode(id: string): Promise<boolean>;
-  validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }>;
-  useDiscountCode(code: string): Promise<void>;
+  // Discount operations  
+  createDiscount(discountData: CreateDiscountRequest): Promise<Discount>;
+  getDiscount(discountCode: string): Promise<Discount | undefined>;
+  getDiscounts(options: { page: number; limit: number; isActive?: boolean }): Promise<{ discounts: Discount[]; total: number }>;
+  getDiscountById(id: string): Promise<Discount | undefined>;
+  updateDiscount(id: string, updates: UpdateDiscountRequest): Promise<Discount | undefined>;
+  deleteDiscount(id: string): Promise<boolean>;
+  validateDiscount(discountCode: string, subtotal: number): Promise<{ 
+    valid: boolean; 
+    discount?: Discount; 
+    discountAmount?: number;
+    finalTotal?: number;
+    error?: string;
+  }>;
+  incrementDiscountUsage(discountId: string): Promise<void>;
 
   // Order operations
   createOrder(orderData: CreateOrderRequest & { userId: string; orderNumber: string; subtotal: number; totalAmount: number }): Promise<Order>;
@@ -640,24 +647,89 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(addresses.id, addressId), eq(addresses.userId, userId)));
   }
 
-  // Discount Code operations  
-  async createDiscountCode(codeData: CreateDiscountCodeRequest): Promise<DiscountCode> {
-    const [discountCode] = await db
-      .insert(discountCodes)
-      .values(codeData)
+  // Discount operations  
+  async createDiscount(discountData: CreateDiscountRequest): Promise<Discount> {
+    const [discount] = await db
+      .insert(discounts)
+      .values(discountData)
       .returning();
     
-    return discountCode;
+    return discount;
   }
 
-  async getDiscountCode(code: string): Promise<DiscountCode | undefined> {
-    const [discountCode] = await db.select().from(discountCodes)
-      .where(eq(discountCodes.code, code));
-    return discountCode;
+  async getDiscount(discountCode: string): Promise<Discount | undefined> {
+    const [discount] = await db.select().from(discounts)
+      .where(eq(discounts.discountCode, discountCode));
+    return discount;
   }
 
-  async validateDiscountCode(code: string, subtotal: number): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }> {
-    const discount = await this.getDiscountCode(code);
+  async getDiscounts(options: { page: number; limit: number; isActive?: boolean }): Promise<{ discounts: Discount[]; total: number }> {
+    const { page, limit, isActive } = options;
+    const offset = (page - 1) * limit;
+
+    let query = db.select().from(discounts);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(discounts);
+
+    // Filter by active status if provided
+    if (isActive !== undefined) {
+      query = query.where(eq(discounts.isActive, isActive)) as any;
+      countQuery = countQuery.where(eq(discounts.isActive, isActive)) as any;
+    }
+
+    const [discountsResult, totalResult] = await Promise.all([
+      query.orderBy(desc(discounts.createdAt)).limit(limit).offset(offset),
+      countQuery
+    ]);
+
+    return {
+      discounts: discountsResult,
+      total: Number(totalResult[0]?.count) || 0
+    };
+  }
+
+  async getDiscountById(id: string): Promise<Discount | undefined> {
+    const [discount] = await db.select().from(discounts)
+      .where(eq(discounts.id, id));
+    return discount;
+  }
+
+  async updateDiscount(id: string, updates: UpdateDiscountRequest): Promise<Discount | undefined> {
+    const processedUpdates: any = { ...updates, updatedAt: new Date() };
+    
+    // Convert date strings to Date objects if provided
+    if (updates.validFrom && typeof updates.validFrom === 'string') {
+      processedUpdates.validFrom = new Date(updates.validFrom);
+    }
+    if (updates.validUntil && typeof updates.validUntil === 'string') {
+      processedUpdates.validUntil = new Date(updates.validUntil);
+    }
+    
+    const [discount] = await db
+      .update(discounts)
+      .set(processedUpdates)
+      .where(eq(discounts.id, id))
+      .returning();
+    
+    return discount;
+  }
+
+  async deleteDiscount(id: string): Promise<boolean> {
+    const result = await db
+      .delete(discounts)
+      .where(eq(discounts.id, id))
+      .returning({ id: discounts.id });
+    
+    return result.length > 0;
+  }
+
+  async validateDiscount(discountCode: string, subtotal: number): Promise<{ 
+    valid: boolean; 
+    discount?: Discount; 
+    discountAmount?: number;
+    finalTotal?: number;
+    error?: string;
+  }> {
+    const discount = await this.getDiscount(discountCode);
     
     if (!discount) {
       return { valid: false, error: "Discount code not found" };
@@ -667,81 +739,56 @@ export class DatabaseStorage implements IStorage {
       return { valid: false, error: "Discount code is no longer active" };
     }
 
-    if (discount.expiresAt && new Date() > discount.expiresAt) {
+    // Check validity period
+    const now = new Date();
+    if (discount.validFrom && now < discount.validFrom) {
+      return { valid: false, error: "Discount code is not yet valid" };
+    }
+    if (discount.validUntil && now > discount.validUntil) {
       return { valid: false, error: "Discount code has expired" };
     }
 
-    const currentUsage = discount.currentUsageCount || 0;
-    if (discount.maxUsageCount && currentUsage >= discount.maxUsageCount) {
+    // Check usage limit
+    const currentUsage = discount.usedCount || 0;
+    if (discount.maxUses && currentUsage >= discount.maxUses) {
       return { valid: false, error: "Discount code has reached its usage limit" };
     }
 
-    const minOrderAmount = parseFloat(discount.minimumOrderAmount || "0");
-    if (subtotal < minOrderAmount) {
-      return { valid: false, error: `Minimum order amount of $${minOrderAmount} required` };
+    // Check minimum order value
+    const minOrderValue = parseFloat(discount.minOrderValue || "0");
+    if (subtotal < minOrderValue) {
+      return { valid: false, error: `Minimum order amount of $${minOrderValue.toFixed(2)} required` };
     }
 
-    return { valid: true, discount };
-  }
+    // Calculate discount amount
+    let discountAmount = 0;
+    if (discount.discountType === 'percentage') {
+      const percentage = parseFloat(discount.percentageValue || "0");
+      discountAmount = (subtotal * percentage) / 100;
+    } else if (discount.discountType === 'flat') {
+      discountAmount = parseFloat(discount.flatValue || "0");
+    }
 
-  async getDiscountCodes(options: { page: number; limit: number }): Promise<{ discounts: DiscountCode[]; total: number }> {
-    const { page, limit } = options;
-    const offset = (page - 1) * limit;
+    // Ensure discount doesn't exceed subtotal
+    discountAmount = Math.min(discountAmount, subtotal);
+    const finalTotal = subtotal - discountAmount;
 
-    const base = db.select().from(discountCodes);
-    const baseCount = db.select({ count: sql<number>`count(*)` }).from(discountCodes);
-
-    const [discountsResult, totalResult] = await Promise.all([
-      base.orderBy(discountCodes.createdAt).limit(limit).offset(offset),
-      baseCount
-    ]);
-
-    return {
-      discounts: discountsResult,
-      total: Number(totalResult[0]?.count) || 0
+    return { 
+      valid: true, 
+      discount,
+      discountAmount,
+      finalTotal
     };
   }
 
-  async getDiscountCodeById(id: string): Promise<DiscountCode | undefined> {
-    const [discount] = await db.select().from(discountCodes)
-      .where(eq(discountCodes.id, id));
-    return discount;
-  }
-
-  async updateDiscountCode(id: string, updates: Partial<DiscountCode>): Promise<DiscountCode | undefined> {
-    const processedUpdates: any = { ...updates, updatedAt: new Date() };
-    
-    // Convert expiresAt string to Date if provided
-    if (updates.expiresAt && typeof updates.expiresAt === 'string') {
-      processedUpdates.expiresAt = new Date(updates.expiresAt);
-    }
-    
-    const [discount] = await db
-      .update(discountCodes)
-      .set(processedUpdates)
-      .where(eq(discountCodes.id, id))
-      .returning();
-    
-    return discount;
-  }
-
-  async deleteDiscountCode(id: string): Promise<boolean> {
-    const result = await db
-      .delete(discountCodes)
-      .where(eq(discountCodes.id, id))
-      .returning({ id: discountCodes.id });
-    
-    return result.length > 0;
-  }
-
-  async useDiscountCode(code: string): Promise<void> {
+  async incrementDiscountUsage(discountId: string): Promise<void> {
     await db
-      .update(discountCodes)
+      .update(discounts)
       .set({ 
-        currentUsageCount: sql`${discountCodes.currentUsageCount} + 1`,
+        usedCount: sql`${discounts.usedCount} + 1`,
         updatedAt: new Date()
       })
-      .where(eq(discountCodes.code, code));
+      .where(eq(discounts.id, discountId));
   }
 
   // Order operations

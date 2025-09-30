@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountCodeSchema, type CreateDiscountCodeRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
 import { sendStageUpdateEmail } from "./utils/email";
@@ -548,7 +548,7 @@ router.get("/discounts", requireAdmin, async (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100); // Cap at 100
     
-    const discounts = await storage.getDiscountCodes({ page, limit });
+    const discounts = await storage.getDiscounts({ page, limit });
     res.json(discounts);
   } catch (error) {
     console.error("Error fetching discount codes:", error);
@@ -558,7 +558,7 @@ router.get("/discounts", requireAdmin, async (req, res) => {
 
 router.get("/discounts/:id", requireAdmin, async (req, res) => {
   try {
-    const discount = await storage.getDiscountCodeById(req.params.id);
+    const discount = await storage.getDiscountById(req.params.id);
     if (!discount) {
       return res.status(404).json({ error: "Discount code not found" });
     }
@@ -571,13 +571,13 @@ router.get("/discounts/:id", requireAdmin, async (req, res) => {
 
 router.post("/discounts", requireAdmin, async (req, res) => {
   try {
-    const validation = createDiscountCodeSchema.safeParse(req.body);
+    const validation = createDiscountSchema.safeParse(req.body);
     if (!validation.success) {
-      return res.status(400).json({ error: "Invalid discount code data", details: validation.error.flatten() });
+      return res.status(400).json({ error: "Invalid discount data", details: validation.error.flatten() });
     }
 
-    const discount = await storage.createDiscountCode(validation.data);
-    console.log(`Admin ${req.user?.userId} created discount code ${discount.code}`);
+    const discount = await storage.createDiscount(validation.data);
+    console.log(`Admin ${req.user?.userId} created discount code ${discount.discountCode}`);
     res.status(201).json(discount);
   } catch (error) {
     console.error("Error creating discount code:", error);
@@ -597,7 +597,7 @@ router.patch("/discounts/:id", requireAdmin, async (req, res) => {
       ...restData,
       ...(expiresAt ? { expiresAt: new Date(expiresAt) } : {})
     };
-    const updatedDiscount = await storage.updateDiscountCode(req.params.id, updateData);
+    const updatedDiscount = await storage.updateDiscount(req.params.id, updateData);
     if (!updatedDiscount) {
       return res.status(404).json({ error: "Discount code not found" });
     }
@@ -612,7 +612,7 @@ router.patch("/discounts/:id", requireAdmin, async (req, res) => {
 
 router.delete("/discounts/:id", requireAdmin, async (req, res) => {
   try {
-    const deleted = await storage.deleteDiscountCode(req.params.id);
+    const deleted = await storage.deleteDiscount(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: "Discount code not found" });
     }
