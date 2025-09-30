@@ -257,17 +257,20 @@ export const addresses = pgTable("addresses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const discountCodes = pgTable("discount_codes", {
+// Discounts Table
+export const discounts = pgTable("discounts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code").notNull().unique(),
+  discountCode: varchar("discount_code").notNull().unique(),
+  discountType: varchar("discount_type").notNull(), // "percentage" or "flat"
   description: text("description"),
-  discountType: varchar("discount_type").notNull(), // "percentage" or "fixed"
-  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
-  minimumOrderAmount: decimal("minimum_order_amount", { precision: 10, scale: 2 }).default("0"),
-  maxUsageCount: integer("max_usage_count"), // null for unlimited
-  currentUsageCount: integer("current_usage_count").default(0),
-  expiresAt: timestamp("expires_at"),
+  percentageValue: decimal("percentage_value", { precision: 5, scale: 2 }), // for percentage type
+  flatValue: decimal("flat_value", { precision: 10, scale: 2 }), // for flat type
+  minOrderValue: decimal("min_order_value", { precision: 10, scale: 2 }),
+  maxUses: integer("max_uses"), // null for unlimited
+  usedCount: integer("used_count").default(0),
   isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").notNull(),
+  validUntil: timestamp("valid_until").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -298,6 +301,7 @@ export const orders = pgTable("orders", {
   billingAddressId: varchar("billing_address_id"),
   
   // Discount tracking
+  discountId: varchar("discount_id"), // references discounts table
   discountCodeUsed: varchar("discount_code_used"),
   
   // Tracking
@@ -393,11 +397,19 @@ export const createAddressSchema = createInsertSchema(addresses).omit({
 
 export const updateAddressSchema = createAddressSchema.partial();
 
-export const createDiscountCodeSchema = createInsertSchema(discountCodes).omit({
+// Discount validation schemas
+export const createDiscountSchema = createInsertSchema(discounts).omit({
   id: true,
-  currentUsageCount: true,
+  usedCount: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const updateDiscountSchema = createDiscountSchema.partial();
+
+export const validateDiscountSchema = z.object({
+  discountCode: z.string(),
+  subtotal: z.number().min(0),
 });
 
 export const createOrderSchema = z.object({
@@ -433,8 +445,10 @@ export type Address = typeof addresses.$inferSelect;
 export type CreateAddressRequest = z.infer<typeof createAddressSchema>;
 export type UpdateAddressRequest = z.infer<typeof updateAddressSchema>;
 
-export type DiscountCode = typeof discountCodes.$inferSelect;
-export type CreateDiscountCodeRequest = z.infer<typeof createDiscountCodeSchema>;
+export type Discount = typeof discounts.$inferSelect;
+export type CreateDiscountRequest = z.infer<typeof createDiscountSchema>;
+export type UpdateDiscountRequest = z.infer<typeof updateDiscountSchema>;
+export type ValidateDiscountRequest = z.infer<typeof validateDiscountSchema>;
 
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
