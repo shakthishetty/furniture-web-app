@@ -40,7 +40,7 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
     
     // Initialize Three.js scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f5);
+    scene.background = null;
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
@@ -50,10 +50,15 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
 
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvasRef.current, 
-      antialias: true 
+      antialias: true,
+      alpha: true
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearAlpha(0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
@@ -61,6 +66,9 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
+
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 0.6);
+    scene.add(hemisphereLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 5, 5);
@@ -191,7 +199,7 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
   };
 
   return (
-    <div className={`relative border rounded ${className}`} style={{ width, height }}>
+    <div className={`relative border rounded bg-[hsl(36,33%,96%)] dark:bg-[hsl(30,6%,10%)] ${className}`} style={{ width, height }}>
       {/* Canvas is always rendered */}
       <canvas 
         ref={canvasRef} 
