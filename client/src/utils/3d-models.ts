@@ -1,9 +1,15 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // Load actual GLB file
 export async function loadFurnitureModel(model3dUrl: string): Promise<THREE.Group> {
   const loader = new GLTFLoader();
+  
+  // Set up Draco decoder for compressed models
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+  loader.setDRACOLoader(dracoLoader);
   
   try {
     const gltf = await new Promise<any>((resolve, reject) => {
@@ -24,6 +30,9 @@ export async function loadFurnitureModel(model3dUrl: string): Promise<THREE.Grou
         child.receiveShadow = true;
       }
     });
+    
+    // Clean up Draco loader
+    dracoLoader.dispose();
     
     return model;
   } catch (error) {

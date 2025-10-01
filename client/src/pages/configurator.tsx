@@ -123,7 +123,7 @@ export default function Configurator() {
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f5);
+    scene.background = null;
     sceneRef.current = scene;
 
     // Camera setup
@@ -135,8 +135,13 @@ export default function Configurator() {
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvas, 
-      antialias: true 
+      antialias: true,
+      alpha: true
     });
+    renderer.setClearAlpha(0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
@@ -158,6 +163,9 @@ export default function Configurator() {
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
+
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 0.6);
+    scene.add(hemisphereLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 10, 5);
@@ -448,7 +456,7 @@ export default function Configurator() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                <div className="bg-[hsl(36,33%,96%)] dark:bg-[hsl(30,6%,10%)] rounded-lg overflow-hidden">
                   <canvas
                     ref={canvasRef}
                     className="w-full h-96 cursor-move"
