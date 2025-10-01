@@ -890,10 +890,11 @@ router.get("/manufacturing/processes", requireAdmin, async (req, res) => {
     const processesWithProgress = await Promise.all(
       result.processes.map(async (process) => {
         const stages = await storage.getManufacturingStages(process.id);
+        const completedCount = stages.filter(s => s.status === 'completed').length;
         return {
           ...process,
           totalStages: stages.length,
-          completedStages: stages.filter(s => s.status === 'completed' || s.status === 'approved').length
+          completedStages: completedCount
         };
       })
     );
