@@ -159,7 +159,30 @@ export default function AdminDiscounts() {
   });
 
   const handleCreateDiscount = () => {
-    createDiscountMutation.mutate(newDiscount);
+    const payload: any = {
+      discountCode: newDiscount.discountCode,
+      description: newDiscount.description,
+      discountType: newDiscount.discountType,
+      isActive: newDiscount.isActive,
+      validFrom: newDiscount.validFrom,
+      validUntil: newDiscount.validUntil,
+    };
+
+    if (newDiscount.discountType === "percentage") {
+      payload.percentageValue = newDiscount.percentageValue;
+    } else {
+      payload.flatValue = newDiscount.flatValue;
+    }
+
+    if (newDiscount.minOrderValue) {
+      payload.minOrderValue = newDiscount.minOrderValue;
+    }
+
+    if (newDiscount.maxUses !== undefined) {
+      payload.maxUses = newDiscount.maxUses;
+    }
+
+    createDiscountMutation.mutate(payload);
   };
 
   const handleEditDiscount = (discount: DiscountCode) => {
@@ -167,10 +190,33 @@ export default function AdminDiscounts() {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateDiscount = (data: Partial<DiscountCode>) => {
-    if (editingDiscount) {
-      updateDiscountMutation.mutate({ discountId: editingDiscount.id, data });
+  const handleUpdateDiscount = () => {
+    if (!editingDiscount) return;
+
+    const payload: any = {
+      discountCode: editingDiscount.discountCode,
+      description: editingDiscount.description,
+      discountType: editingDiscount.discountType,
+      isActive: editingDiscount.isActive,
+      validFrom: editingDiscount.validFrom,
+      validUntil: editingDiscount.validUntil,
+    };
+
+    if (editingDiscount.discountType === "percentage") {
+      payload.percentageValue = editingDiscount.percentageValue;
+    } else {
+      payload.flatValue = editingDiscount.flatValue;
     }
+
+    if (editingDiscount.minOrderValue) {
+      payload.minOrderValue = editingDiscount.minOrderValue;
+    }
+
+    if (editingDiscount.maxUses !== undefined) {
+      payload.maxUses = editingDiscount.maxUses;
+    }
+
+    updateDiscountMutation.mutate({ discountId: editingDiscount.id, data: payload });
   };
 
   const handleDeleteDiscount = (discountId: string) => {
@@ -639,7 +685,7 @@ export default function AdminDiscounts() {
               Cancel
             </Button>
             <Button 
-              onClick={() => handleUpdateDiscount(editingDiscount!)}
+              onClick={handleUpdateDiscount}
               disabled={updateDiscountMutation.isPending}
               data-testid="button-save-discount-edit"
             >
