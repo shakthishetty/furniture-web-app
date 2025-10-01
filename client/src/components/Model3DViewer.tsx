@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Model3DViewerProps {
@@ -68,6 +69,11 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
 
     // Load the 3D model
     const loader = new GLTFLoader();
+    
+    // Set up Draco decoder for compressed models
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    loader.setDRACOLoader(dracoLoader);
     
     // Add timeout to detect stuck loading
     const loadTimeout = setTimeout(() => {
@@ -162,6 +168,7 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
 
     return () => {
       clearTimeout(loadTimeout);
+      dracoLoader.dispose();
       cleanup();
       canvasRef.current?.removeEventListener('mousedown', handleMouseDown);
       canvasRef.current?.removeEventListener('mouseup', handleMouseUp);
