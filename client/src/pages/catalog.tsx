@@ -10,6 +10,7 @@ import { User, Search, Heart, ShoppingBag, Filter, Grid, List, Plus } from "luci
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
+import { Model3DViewer } from "@/components/Model3DViewer";
 
 export default function Catalog() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -203,7 +204,14 @@ export default function Catalog() {
             {filteredProducts.map((product: any) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`product-card-${product.id}`}>
                 <div className="aspect-square bg-gray-100 relative">
-                  {product.imageUrl ? (
+                  {product.model3dUrl ? (
+                    <Model3DViewer 
+                      modelUrl={product.model3dUrl}
+                      width={400}
+                      height={400}
+                      className="w-full h-full"
+                    />
+                  ) : product.imageUrl ? (
                     <img 
                       src={product.imageUrl} 
                       alt={product.name}
@@ -271,7 +279,14 @@ export default function Catalog() {
               <Card key={product.id} className="overflow-hidden" data-testid={`product-list-${product.id}`}>
                 <div className="flex flex-col md:flex-row">
                   <div className="w-full md:w-1/3 aspect-square md:aspect-auto">
-                    {product.imageUrl ? (
+                    {product.model3dUrl ? (
+                      <Model3DViewer 
+                        modelUrl={product.model3dUrl}
+                        width={400}
+                        height={400}
+                        className="w-full h-full"
+                      />
+                    ) : product.imageUrl ? (
                       <img 
                         src={product.imageUrl} 
                         alt={product.name}
