@@ -64,6 +64,8 @@ interface ProcessesResponse {
     assignedManufacturerId?: string | null;
     assignedManufacturer?: Manufacturer | null;
     stages?: ManufacturingStage[];
+    totalStages?: number;
+    completedStages?: number;
     order?: {
       orderNumber: string;
       userId: string;
@@ -871,10 +873,10 @@ export default function AdminManufacturing() {
                   </thead>
                   <tbody>
                     {filteredProcesses.map((process) => {
-                      const stageProgress = process.stages ? {
-                        total: process.stages.length,
-                        completed: process.stages.filter(s => s.status === 'completed').length
-                      } : { total: 0, completed: 0 };
+                      const stageProgress = {
+                        total: process.totalStages || 0,
+                        completed: process.completedStages || 0
+                      };
                       const progressPercentage = stageProgress.total > 0 
                         ? Math.round((stageProgress.completed / stageProgress.total) * 100) 
                         : 0;

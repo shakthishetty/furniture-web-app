@@ -885,7 +885,23 @@ router.get("/manufacturing/processes", requireAdmin, async (req, res) => {
     const manufacturerId = req.query.manufacturerId as string;
 
     const result = await storage.getManufacturingProcesses({ page, limit, status, orderId, manufacturerId });
-    res.json(result);
+    
+    // Calculate totalStages and completedStages for each process
+    const processesWithProgress = await Promise.all(
+      result.processes.map(async (process) => {
+        const stages = await storage.getManufacturingStages(process.id);
+        return {
+          ...process,
+          totalStages: stages.length,
+          completedStages: stages.filter(s => s.status === 'completed' || s.status === 'approved').length
+        };
+      })
+    );
+    
+    res.json({
+      ...result,
+      processes: processesWithProgress
+    });
   } catch (error) {
     console.error("Error fetching manufacturing processes:", error);
     res.status(500).json({ error: "Failed to fetch manufacturing processes" });
