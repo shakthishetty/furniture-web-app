@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface Model3DViewerProps {
   modelUrl: string;
@@ -22,23 +21,18 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('[Model3DViewer] Component rendering with:', { modelUrl, width, height, loading, error });
-
   useEffect(() => {
-    console.log('[Model3DViewer] useEffect triggered with modelUrl:', modelUrl);
-    if (!canvasRef.current) {
-      console.log('[Model3DViewer] Canvas ref not ready yet');
-      return;
-    }
-    
     if (!modelUrl) {
-      console.error('[Model3DViewer] No model URL provided');
       setError('No model URL provided');
       setLoading(false);
       return;
     }
     
-    console.log('[Model3DViewer] Initializing Three.js scene...');
+    if (!canvasRef.current) {
+      setError('Canvas element not available');
+      setLoading(false);
+      return;
+    }
     
     // Clean up previous scene
     cleanup();
@@ -73,12 +67,10 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
     scene.add(directionalLight);
 
     // Load the 3D model
-    console.log('[Model3DViewer] Creating GLTFLoader and loading file:', modelUrl);
     const loader = new GLTFLoader();
     
     // Add timeout to detect stuck loading
     const loadTimeout = setTimeout(() => {
-      console.error('[Model3DViewer] Loading timeout after 30 seconds');
       setError('Model loading timeout - file may be too large or corrupted');
       setLoading(false);
     }, 30000);
@@ -87,7 +79,6 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
       modelUrl,
       (gltf) => {
         clearTimeout(loadTimeout);
-        console.log('[Model3DViewer] GLB loaded successfully!', gltf);
         const model = gltf.scene;
         
         // Add shadows to the model
@@ -116,23 +107,14 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
         setLoading(false);
         setError(null);
       },
-      (progress) => {
-        // Loading progress
-        const percent = progress.total > 0 ? (progress.loaded / progress.total * 100).toFixed(0) : '?';
-        console.log(`[Model3DViewer] Loading progress: ${percent}% (${progress.loaded}/${progress.total} bytes)`);
-      },
+      undefined,
       (error: unknown) => {
         clearTimeout(loadTimeout);
-        console.error('[Model3DViewer] Error loading 3D model:', error);
         if (error instanceof Error) {
-          console.error('[Model3DViewer] Error type:', error.constructor.name);
-          console.error('[Model3DViewer] Error message:', error.message);
           setError(`Failed to load 3D model: ${error.message}`);
         } else {
-          console.error('[Model3DViewer] Unknown error type:', typeof error);
-          setError('Failed to load 3D model: Unknown error');
+          setError('Failed to load 3D model');
         }
-        console.error('[Model3DViewer] Failed URL:', modelUrl);
         setLoading(false);
       }
     );
@@ -179,6 +161,7 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
     animate();
 
     return () => {
+      clearTimeout(loadTimeout);
       cleanup();
       canvasRef.current?.removeEventListener('mousedown', handleMouseDown);
       canvasRef.current?.removeEventListener('mouseup', handleMouseUp);
@@ -200,39 +183,39 @@ export function Model3DViewer({ modelUrl, width = 300, height = 200, className =
     }
   };
 
-  if (loading) {
-    return (
-      <div className={`relative ${className}`} style={{ width, height }}>
-        <Skeleton className="w-full h-full rounded" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-sm text-muted-foreground">Loading 3D model...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={className} style={{ width, height }}>
-        <Alert className="h-full flex items-center">
-          <AlertDescription className="text-center">
-            {error}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
     <div className={`relative border rounded ${className}`} style={{ width, height }}>
+      {/* Canvas is always rendered */}
       <canvas 
         ref={canvasRef} 
         className="cursor-grab active:cursor-grabbing rounded"
         style={{ width: '100%', height: '100%' }}
       />
-      <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
-        Drag to rotate
-      </div>
+      
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
+          <div className="text-sm text-muted-foreground">Loading 3D model...</div>
+        </div>
+      )}
+      
+      {/* Error overlay */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded p-4">
+          <Alert className="w-full">
+            <AlertDescription className="text-center">
+              {error}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
+      {/* Control hint */}
+      {!loading && !error && (
+        <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-white/80 px-2 py-1 rounded">
+          Drag to rotate
+        </div>
+      )}
     </div>
   );
 }
