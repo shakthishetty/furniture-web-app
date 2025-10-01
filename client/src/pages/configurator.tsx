@@ -128,7 +128,7 @@ export default function Configurator() {
 
     // Camera setup
     const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
-    camera.position.set(5, 5, 5);
+    camera.position.set(3, 2, 3);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -174,10 +174,10 @@ export default function Configurator() {
 
     // Add a ground plane
     const planeGeometry = new THREE.PlaneGeometry(20, 20);
-    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xf5f5f5, opacity: 0.5, transparent: true });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.rotation.x = -Math.PI / 2;
-    plane.position.y = -0.5;
+    plane.position.y = -1.5;
     plane.receiveShadow = true;
     scene.add(plane);
 
@@ -260,6 +260,20 @@ export default function Configurator() {
         console.log('No 3D model URL found, using fallback model');
         furnitureGroup = createFallbackModel();
       }
+
+      // Center and scale the model to fit nicely in the viewport
+      const box = new THREE.Box3().setFromObject(furnitureGroup);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxSize = Math.max(size.x, size.y, size.z);
+      
+      // Scale to fit in view (target size of ~2 units)
+      const targetSize = 2.5;
+      const scale = targetSize / maxSize;
+      furnitureGroup.scale.setScalar(scale);
+      
+      // Center the model
+      furnitureGroup.position.sub(center.multiplyScalar(scale));
 
       if (sceneRef.current) {
         sceneRef.current.add(furnitureGroup);
