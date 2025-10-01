@@ -181,34 +181,23 @@ export default function Configurator() {
     plane.receiveShadow = true;
     scene.add(plane);
 
-    // Controls (smooth rotation)
+    // Controls (basic rotation)
     let mouseX = 0;
     let mouseY = 0;
     let isMouseDown = false;
 
-    const handleMouseDown = (event: MouseEvent) => { 
-      isMouseDown = true;
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    };
-    
-    const handleMouseUp = () => { 
-      isMouseDown = false; 
-    };
-    
+    const handleMouseDown = () => { isMouseDown = true; };
+    const handleMouseUp = () => { isMouseDown = false; };
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isMouseDown || !furnitureRef.current) return;
+      if (!isMouseDown) return;
       
       const deltaX = event.clientX - mouseX;
       const deltaY = event.clientY - mouseY;
       
-      // Rotate primarily around Y axis (horizontal drag)
-      furnitureRef.current.rotation.y += deltaX * 0.005;
-      
-      // Slight tilt on vertical drag (constrained)
-      const newRotationX = furnitureRef.current.rotation.x + deltaY * 0.003;
-      // Limit vertical rotation to avoid flipping
-      furnitureRef.current.rotation.x = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, newRotationX));
+      if (furnitureRef.current) {
+        furnitureRef.current.rotation.y += deltaX * 0.01;
+        furnitureRef.current.rotation.x += deltaY * 0.01;
+      }
       
       mouseX = event.clientX;
       mouseY = event.clientY;
