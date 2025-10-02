@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, RotateCcw, Heart, MapPin, Check } from "lucide-react";
+import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye, ShoppingCart, Plus } from "lucide-react";
 import * as THREE from 'three';
 import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
@@ -41,14 +43,11 @@ export default function Configurator() {
   const furnitureRef = useRef<THREE.Group>();
   const animationIdRef = useRef<number>();
 
-  const [configuration, setConfiguration] = useState<Configuration>({
-    dimensions: { width: 24, height: 30, depth: 18 }
-  });
-  const [selectedThumbnail, setSelectedThumbnail] = useState(0);
-  const [sceneReady, setSceneReady] = useState(false);
-  const [isRotating, setIsRotating] = useState(false);
-  const [webglError, setWebglError] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [configuration, setConfiguration] = useState<Configuration>({});
+  const [configurationName, setConfigurationName] = useState("");
+  const [savedConfigurationId, setSavedConfigurationId] = useState<string | null>(null);
+  const [sceneReady, setSceneReady] = useState(false);
 
   // Fetch product details
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -86,161 +85,205 @@ export default function Configurator() {
   });
 
   const product = (productData as any)?.product;
+  const options = (optionsData as any)?.options || [];
   const materials = (materialsData as any)?.materials || [];
 
-  // Initialize 3D scene
+  // Save configuration mutation
+  const saveConfigurationMutation = useMutation({
+    mutationFn: async (data: { name?: string; configuration: Configuration }) => {
+      const response = await apiRequest('POST', '/api/configurator/configurations', {
+        productId,
+        name: data.name,
+        configuration: data.configuration,
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setSavedConfigurationId(data.configuration.id);
+      toast({
+        title: 'Configuration saved',
+        description: 'Your custom configuration has been saved successfully.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/configurator/configurations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Save failed',
+        description: error.message || 'Failed to save configuration.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Initialize 3D scene (run when loading completes and canvas exists)
   useEffect(() => {
     if (productLoading || optionsLoading) return;
     const canvas = canvasRef.current;
-    if (!canvas || sceneRef.current) return;
+    if (!canvas || sceneRef.current) return; // wait for canvas, avoid double init
 
-    try {
-      const scene = new THREE.Scene();
-      scene.background = null;
-      sceneRef.current = scene;
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = null;
+    sceneRef.current = scene;
 
-      const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-      camera.position.set(3, 2, 3);
-      camera.lookAt(0, 0, 0);
-      cameraRef.current = camera;
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
+    camera.position.set(3, 2, 3);
+    camera.lookAt(0, 0, 0);
+    cameraRef.current = camera;
 
-      const renderer = new THREE.WebGLRenderer({ 
-        canvas: canvas, 
-        antialias: true,
-        alpha: true,
-        failIfMajorPerformanceCaveat: false
-      });
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ 
+      canvas: canvas, 
+      antialias: true,
+      alpha: true
+    });
+    renderer.setClearAlpha(0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    rendererRef.current = renderer;
+
+    // Responsive sizing function
+    const resize = () => {
+      const width = canvas.clientWidth || 800;
+      const height = canvas.clientHeight || 600;
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+
+    // Initial sizing
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 0.6);
+    scene.add(hemisphereLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    // Add a ground plane
+    const planeGeometry = new THREE.PlaneGeometry(20, 20);
+    const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xf5f5f5, opacity: 0.5, transparent: true });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.y = -1.5;
+    plane.receiveShadow = true;
+    scene.add(plane);
+
+    // Controls (smooth rotation)
+    let mouseX = 0;
+    let mouseY = 0;
+    let isMouseDown = false;
+
+    const handleMouseDown = (event: MouseEvent) => { 
+      isMouseDown = true;
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    };
+    
+    const handleMouseUp = () => { 
+      isMouseDown = false; 
+    };
+    
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isMouseDown || !furnitureRef.current) return;
       
-      const gl = renderer.getContext();
-      if (!gl) {
-        throw new Error('WebGL not supported');
+      const deltaX = event.clientX - mouseX;
+      const deltaY = event.clientY - mouseY;
+      
+      // Rotate primarily around Y axis (horizontal drag)
+      furnitureRef.current.rotation.y += deltaX * 0.005;
+      
+      // Slight tilt on vertical drag (constrained)
+      const newRotationX = furnitureRef.current.rotation.x + deltaY * 0.003;
+      // Limit vertical rotation to avoid flipping
+      furnitureRef.current.rotation.x = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, newRotationX));
+      
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousemove', handleMouseMove);
+
+    // Animation loop
+    const animate = () => {
+      animationIdRef.current = requestAnimationFrame(animate);
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
-      
-      renderer.setClearAlpha(0);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.1;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      rendererRef.current = renderer;
+    };
+    animate();
 
-      const resize = () => {
-        const width = canvas.clientWidth || 600;
-        const height = canvas.clientHeight || 600;
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(width, height, false);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-      };
+    // Mark scene as ready
+    setSceneReady(true);
 
-      resize();
-      window.addEventListener('resize', resize);
+    return () => {
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [productLoading, optionsLoading]); // Wait for loading to complete
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-
-      const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 0.6);
-      scene.add(hemisphereLight);
-
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(10, 10, 5);
-      directionalLight.castShadow = true;
-      scene.add(directionalLight);
-
-      const planeGeometry = new THREE.PlaneGeometry(20, 20);
-      const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xf5f5f5, opacity: 0.5, transparent: true });
-      const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-      plane.rotation.x = -Math.PI / 2;
-      plane.position.y = -1.5;
-      plane.receiveShadow = true;
-      scene.add(plane);
-
-      let mouseX = 0;
-      let mouseY = 0;
-      let isMouseDown = false;
-
-      const handleMouseDown = (event: MouseEvent) => { 
-        isMouseDown = true;
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-      };
-      const handleMouseUp = () => { isMouseDown = false; };
-      const handleMouseMove = (event: MouseEvent) => {
-        if (!isMouseDown) return;
-        
-        const deltaX = event.clientX - mouseX;
-        
-        if (furnitureRef.current) {
-          furnitureRef.current.rotation.y += deltaX * 0.01;
-        }
-        
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-      };
-
-      canvas.addEventListener('mousedown', handleMouseDown);
-      canvas.addEventListener('mouseup', handleMouseUp);
-      canvas.addEventListener('mousemove', handleMouseMove);
-
-      const animate = () => {
-        animationIdRef.current = requestAnimationFrame(animate);
-        if (rendererRef.current && sceneRef.current && cameraRef.current) {
-          rendererRef.current.render(sceneRef.current, cameraRef.current);
-        }
-      };
-      animate();
-
-      setSceneReady(true);
-
-      return () => {
-        if (animationIdRef.current) {
-          cancelAnimationFrame(animationIdRef.current);
-        }
-        if (rendererRef.current) {
-          rendererRef.current.dispose();
-        }
-        window.removeEventListener('resize', resize);
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mouseup', handleMouseUp);
-        canvas.removeEventListener('mousemove', handleMouseMove);
-      };
-    } catch (error) {
-      console.error('WebGL initialization error:', error);
-      setWebglError(true);
-    }
-  }, [productLoading, optionsLoading]);
-
-  // Load furniture model
+  // Add furniture model when both scene and product are ready
   useEffect(() => {
     if (!sceneReady || !sceneRef.current || !product) return;
 
     const loadModel = async () => {
+      // Remove existing furniture if any
       if (furnitureRef.current && sceneRef.current) {
         sceneRef.current.remove(furnitureRef.current);
       }
 
       let furnitureGroup;
       
+      // Try to load the actual uploaded GLB file first
       if (product.model3dUrl) {
         try {
+          console.log('Loading 3D model from:', product.model3dUrl);
           furnitureGroup = await loadFurnitureModel(product.model3dUrl);
         } catch (error) {
           console.error('Failed to load GLB model, using fallback model:', error);
+          // Use fallback model if GLB loading fails
           furnitureGroup = createFallbackModel();
         }
       } else {
+        // No GLB file, use fallback model
+        console.log('No 3D model URL found, using fallback model');
         furnitureGroup = createFallbackModel();
       }
 
+      // Center and scale the model to fit nicely in the viewport
       const box = new THREE.Box3().setFromObject(furnitureGroup);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxSize = Math.max(size.x, size.y, size.z);
       
+      // Scale to fit in view (target size of ~2 units)
       const targetSize = 2.5;
       const scale = targetSize / maxSize;
       furnitureGroup.scale.setScalar(scale);
       
+      // Center the model
       furnitureGroup.position.sub(center.multiplyScalar(scale));
 
       if (sceneRef.current) {
@@ -256,10 +299,12 @@ export default function Configurator() {
   useEffect(() => {
     if (!furnitureRef.current || !product) return;
 
+    // Update dimensions
     if (configuration.dimensions) {
       updateFurnitureDimensions(furnitureRef.current, configuration.dimensions, product.name);
     }
 
+    // Update material/color
     if (configuration.material) {
       const selectedMaterial = materials.find((m: any) => m.id === configuration.material);
       if (selectedMaterial && selectedMaterial.color) {
@@ -267,6 +312,7 @@ export default function Configurator() {
       }
     }
 
+    // Update color directly
     if (configuration.color) {
       updateFurnitureMaterial(furnitureRef.current, configuration.color);
     }
@@ -280,27 +326,25 @@ export default function Configurator() {
     refetchPricing();
   };
 
+  const resetConfiguration = () => {
+    setConfiguration({});
+    setCurrentStep(0);
+  };
+
+  const saveConfiguration = () => {
+    const name = configurationName || `${product?.name} Custom Configuration`;
+    saveConfigurationMutation.mutate({ name, configuration });
+  };
+
   const addToCartWithConfiguration = () => {
-    if (!product) return;
-    
-    const price = pricingData 
-      ? parseFloat(pricingData.totalPrice) 
-      : (product.price ? parseFloat(product.price) : 0);
-    
-    if (isNaN(price) || price <= 0) {
-      toast({
-        title: "Error",
-        description: "Unable to add item to cart. Invalid price.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!product || !pricingData) return;
     
     addToCart({
       productId: product.id,
+      configurationId: savedConfigurationId || undefined,
       customConfiguration: configuration,
       name: `${product.name} (Custom)`,
-      price: price,
+      price: parseFloat(pricingData.totalPrice),
       imageUrl: product.imageUrl,
     });
     
@@ -308,24 +352,24 @@ export default function Configurator() {
       title: "Added to cart!",
       description: `${product.name} with custom configuration has been added to your cart.`,
     });
-    
+  };
+
+  const addToCartAndGoToCart = () => {
+    addToCartWithConfiguration();
     setLocation('/cart');
   };
 
-  // Thumbnail images (different rotation angles)
-  const thumbnailRotations = [
-    { angle: 0, label: 'Front' },
-    { angle: Math.PI / 2, label: 'Right' },
-    { angle: Math.PI, label: 'Back' },
-    { angle: -Math.PI / 2, label: 'Left' },
-  ];
-
-  const setViewAngle = (angle: number, index: number) => {
-    if (furnitureRef.current) {
-      furnitureRef.current.rotation.y = angle;
-    }
-    setSelectedThumbnail(index);
+  const addToCartAndContinueShopping = () => {
+    addToCartWithConfiguration();
+    setLocation('/catalog');
   };
+
+  const configurationSteps = [
+    { id: 'material', title: 'Material & Finish', icon: '🪵' },
+    { id: 'dimensions', title: 'Dimensions', icon: '📏' },
+    { id: 'hardware', title: 'Hardware', icon: '🔧' },
+    { id: 'review', title: 'Review & Save', icon: '✅' },
+  ];
 
   if (productLoading || optionsLoading) {
     return (
@@ -351,518 +395,434 @@ export default function Configurator() {
     );
   }
 
-  const basePrice = pricingData ? parseFloat(pricingData.totalPrice) : (product.price ? parseFloat(product.price) : 0);
-
-  const configurationSteps = [
-    { id: 'material', title: 'Material & Finish' },
-    { id: 'dimensions', title: 'Dimensions' },
-    { id: 'hardware', title: 'Hardware' },
-    { id: 'review', title: 'Review & Save' },
-  ];
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="border-b px-4 md:px-8 py-4">
-        <div className="max-w-7xl mx-auto">
-          <Link href="/catalog">
-            <Button variant="ghost" size="sm" data-testid="back-to-catalog">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Catalog
+      <div className="bg-white border-b px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link href="/catalog">
+              <Button variant="ghost" size="sm" data-testid="back-to-catalog">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Catalog
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold">{product.name}</h1>
+              <p className="text-gray-600">Customize your furniture</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            {pricingData && (
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#254127]">
+                  ${parseFloat(pricingData.totalPrice).toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-500">estimated price</div>
+              </div>
+            )}
+            <Button variant="outline" onClick={resetConfiguration} data-testid="reset-config">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
             </Button>
-          </Link>
+            <Button onClick={saveConfiguration} disabled={saveConfigurationMutation.isPending} data-testid="save-config">
+              <Save className="h-4 w-4 mr-2" />
+              Save Configuration
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="bg-white px-6 py-4 border-b">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            {configurationSteps.map((step, index) => (
+              <div
+                key={step.id}
+                className={`flex items-center space-x-2 cursor-pointer ${
+                  index <= currentStep ? 'text-[#254127]' : 'text-gray-400'
+                }`}
+                onClick={() => setCurrentStep(index)}
+                data-testid={`step-${step.id}`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  index <= currentStep ? 'bg-[#254127] text-white' : 'bg-gray-200'
+                }`}>
+                  {index + 1}
+                </div>
+                <span className="hidden md:inline font-medium">{step.title}</span>
+              </div>
+            ))}
+          </div>
+          <Progress value={(currentStep + 1) / configurationSteps.length * 100} className="h-2" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        {/* Step Navigation */}
-        <div className="mb-12">
-          <div className="flex items-center justify-start gap-8 mb-3">
-            {configurationSteps.map((step, index) => (
-              <button
-                key={step.id}
-                onClick={() => setCurrentStep(index)}
-                className={`flex items-center gap-2.5 ${
-                  index === currentStep ? 'text-[#254127]' : 'text-gray-400'
-                }`}
-                data-testid={`step-${step.id}`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  {index + 1}
-                </div>
-                <span className="text-sm font-medium whitespace-nowrap">{step.title}</span>
-              </button>
-            ))}
-          </div>
-          {/* Progress Bar */}
-          <div className="relative h-1 bg-gray-200 rounded-full mt-4">
-            <div 
-              className="absolute h-full bg-[#254127] rounded-full transition-all duration-300"
-              style={{ width: `${((currentStep + 1) / configurationSteps.length) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Side - 3D Viewer with Thumbnails */}
-          <div className="lg:col-span-7">
-            <div className="flex gap-4">
-              {/* Thumbnail Column */}
-              <div className="flex flex-col gap-3 w-20">
-                {/* Main Product Thumbnail */}
-                <div
-                  className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${
-                    selectedThumbnail === 0 ? 'border-gray-900 ring-2 ring-gray-900' : 'border-gray-200 hover:border-gray-400'
-                  }`}
-                  onClick={() => setViewAngle(0, 0)}
-                  data-testid="thumbnail-0"
-                >
-                  <img
-                    src={product.imageUrl || '/placeholder-furniture.jpg'}
-                    alt="Front view"
-                    className="w-full h-20 object-cover"
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 3D Preview */}
+          <div className="order-2 lg:order-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>3D Preview</span>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-[hsl(36,33%,96%)] dark:bg-[hsl(30,6%,10%)] rounded-lg overflow-hidden">
+                  <canvas
+                    ref={canvasRef}
+                    className="w-full h-96 cursor-move"
+                    data-testid="3d-preview"
                   />
                 </div>
-
-                {/* 360° Rotation Button */}
-                <div
-                  className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all flex items-center justify-center ${
-                    selectedThumbnail === -1 ? 'border-gray-900 ring-2 ring-gray-900 bg-gray-100' : 'border-gray-200 hover:border-gray-400 bg-white'
-                  }`}
-                  onClick={() => {
-                    setSelectedThumbnail(-1);
-                    setIsRotating(!isRotating);
-                  }}
-                  data-testid="rotate-360"
-                >
-                  <div className="p-2 text-center">
-                    <RotateCcw className="h-6 w-6 mx-auto mb-1" />
-                    <div className="text-[10px] font-medium">360°</div>
-                  </div>
+                <div className="mt-4 text-sm text-gray-600 text-center">
+                  Click and drag to rotate • Changes update in real-time
                 </div>
-
-                {/* Additional View Thumbnails */}
-                {thumbnailRotations.slice(1).map((rotation, idx) => (
-                  <div
-                    key={idx + 1}
-                    className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all flex items-center justify-center bg-gray-50 ${
-                      selectedThumbnail === idx + 1 ? 'border-gray-900 ring-2 ring-gray-900' : 'border-gray-200 hover:border-gray-400'
-                    }`}
-                    onClick={() => setViewAngle(rotation.angle, idx + 1)}
-                    data-testid={`thumbnail-${idx + 1}`}
-                  >
-                    <img
-                      src={product.imageUrl || '/placeholder-furniture.jpg'}
-                      alt={rotation.label}
-                      className="w-full h-20 object-cover"
-                    />
-                  </div>
-                ))}
-
-                {/* Dimension View */}
-                <div
-                  className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all flex items-center justify-center bg-white ${
-                    selectedThumbnail === 5 ? 'border-gray-900 ring-2 ring-gray-900' : 'border-gray-200 hover:border-gray-400'
-                  }`}
-                  onClick={() => setSelectedThumbnail(5)}
-                  data-testid="thumbnail-dimension"
-                >
-                  <div className="p-2 text-center">
-                    <svg className="h-6 w-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <rect x="3" y="3" width="18" height="18" strokeWidth="2" />
-                      <path d="M3 9h18M9 3v18" strokeWidth="2" />
-                    </svg>
-                    <div className="text-[10px] font-medium mt-1">Size</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main 3D Viewer */}
-              <div className="flex-1">
-                <div className="bg-gray-50 rounded-lg overflow-hidden relative">
-                  {webglError ? (
-                    <div className="w-full aspect-square flex items-center justify-center bg-gray-100">
-                      <div className="text-center p-8">
-                        <img
-                          src={product.imageUrl || '/placeholder-furniture.jpg'}
-                          alt={product.name}
-                          className="w-full h-auto max-w-md mx-auto mb-4 rounded-lg"
-                        />
-                        <p className="text-gray-600 text-sm">3D preview not available</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <canvas
-                        ref={canvasRef}
-                        className="w-full aspect-square cursor-move"
-                        data-testid="3d-preview"
-                      />
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow">
-                        Click and drag to rotate
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Side - Product Info & Configuration */}
-          <div className="lg:col-span-5">
-            <div className="space-y-6">
-              {/* Product Header */}
-              <div>
-                <h1 className="text-3xl font-normal mb-2" data-testid="product-name">{product.name}</h1>
-                <div className="text-sm text-gray-600 mb-3">
-                  Shop {product.manufacturer || 'Teak Theory'}
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-3xl font-normal" data-testid="product-price">
-                    ${basePrice.toFixed(2)}
-                  </div>
-                  <Button variant="ghost" size="icon" data-testid="wishlist-button">
-                    <Heart className="h-5 w-5" />
-                  </Button>
-                </div>
-                <div className="flex items-center text-sm mb-4">
-                  <div className="flex items-center mr-4">
-                    <span className="text-yellow-500">★★★★★</span>
-                    <span className="ml-2 underline">3 Reviews</span>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  SKU: {product.sku || 'E82427'}
-                </div>
-              </div>
+          {/* Configuration Panel */}
+          <div className="order-1 lg:order-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{configurationSteps[currentStep].title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Step 0: Material & Finish */}
+                {currentStep === 0 && (
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">Choose Material</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
+                          <div
+                            key={material.id}
+                            className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                              configuration.material === material.id
+                                ? 'border-[#254127] bg-green-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => updateConfiguration('material', material.id)}
+                            data-testid={`material-${material.id}`}
+                          >
+                            <div
+                              className="w-full h-16 rounded mb-2"
+                              style={{ backgroundColor: material.color || '#8B4513' }}
+                            />
+                            <div className="font-medium">{material.name}</div>
+                            <div className="text-sm text-gray-600">
+                              {material.priceMultiplier !== '1.0' && (
+                                <>+{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price</>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-              {/* Configuration Content */}
-              <div className="border-t pt-6">
-                <div className="space-y-6">
-                  {/* Step 0: Material & Finish */}
-                  {currentStep === 0 && (
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-semibold">Material & Finish</h3>
-                      
-                      {/* Fabric Selection */}
-                      <div className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-sm text-gray-600">2. Fabric</div>
-                          <span className="text-sm text-gray-500">3 options</span>
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">Custom Color</Label>
+                      <div className="flex items-center space-x-4">
+                        <Input
+                          type="color"
+                          value={configuration.color || '#8B4513'}
+                          onChange={(e) => updateConfiguration('color', e.target.value)}
+                          className="w-20 h-12"
+                          data-testid="color-picker"
+                        />
+                        <div className="text-sm text-gray-600">
+                          Or choose a custom color for your furniture
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                        {/* Fabric Details */}
-                        <div className="mb-4 pb-4 border-b">
-                          <div className="font-medium text-base mb-1">
-                            Luca Fabric in Turmeric
-                          </div>
-                          <div className="text-sm text-gray-600 mb-3">
-                            Cotton Blend Velvet
-                          </div>
-                          <div className="text-xl font-semibold mb-3">
-                            ${basePrice.toFixed(2)}
-                          </div>
-                          <button className="text-sm underline text-gray-700 hover:text-gray-900">
-                            Care & Material Details
-                          </button>
-                        </div>
-
-                        {/* Stocked Colors */}
+                {/* Step 1: Dimensions */}
+                {currentStep === 1 && (
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">
+                        Adjust Dimensions (inches)
+                      </Label>
+                      <div className="space-y-4">
                         <div>
-                          <div className="text-sm font-medium mb-3">Stocked: Fastest delivery</div>
-                          <div className="grid grid-cols-3 gap-4">
-                            {[
-                              { name: 'Turmeric', color: '#C17D3A', hex: '#C17D3A', fabric: 'Luca, Velvet' },
-                              { name: 'Snow', color: '#F5F5F5', hex: '#F5F5F5', fabric: 'Robusta, Chenille' },
-                              { name: 'Forest Green', color: '#2D4A2B', hex: '#2D4A2B', fabric: 'Logan, Velvet' },
-                            ].map((colorOption) => (
-                              <div key={colorOption.name} className="text-center">
-                                <div
-                                  className={`w-full aspect-square rounded border-2 cursor-pointer transition-all relative ${
-                                    configuration.color === colorOption.hex
-                                      ? 'border-gray-900 ring-2 ring-gray-900 ring-offset-2'
-                                      : 'border-gray-300 hover:border-gray-400'
-                                  }`}
-                                  style={{ backgroundColor: colorOption.color }}
-                                  onClick={() => updateConfiguration('color', colorOption.hex)}
-                                  data-testid={`color-${colorOption.name.toLowerCase().replace(' ', '-')}`}
-                                >
-                                  {configuration.color === colorOption.hex && (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                                        <Check className="h-5 w-5 text-gray-900" />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="text-sm font-medium mt-2">{colorOption.name}</div>
-                                <div className="text-xs text-gray-600">{colorOption.fabric}</div>
-                              </div>
-                            ))}
-                          </div>
+                          <Label className="text-sm">Width: {configuration.dimensions?.width || 24}"</Label>
+                          <Slider
+                            value={[configuration.dimensions?.width || 24]}
+                            onValueChange={([value]) => updateConfiguration('dimensions', {
+                              ...configuration.dimensions,
+                              width: value
+                            })}
+                            min={12}
+                            max={72}
+                            step={1}
+                            className="mt-2"
+                            data-testid="width-slider"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm">Height: {configuration.dimensions?.height || 30}"</Label>
+                          <Slider
+                            value={[configuration.dimensions?.height || 30]}
+                            onValueChange={([value]) => updateConfiguration('dimensions', {
+                              ...configuration.dimensions,
+                              height: value
+                            })}
+                            min={12}
+                            max={48}
+                            step={1}
+                            className="mt-2"
+                            data-testid="height-slider"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm">Depth: {configuration.dimensions?.depth || 18}"</Label>
+                          <Slider
+                            value={[configuration.dimensions?.depth || 18]}
+                            onValueChange={([value]) => updateConfiguration('dimensions', {
+                              ...configuration.dimensions,
+                              depth: value
+                            })}
+                            min={8}
+                            max={36}
+                            step={1}
+                            className="mt-2"
+                            data-testid="depth-slider"
+                          />
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Step 1: Dimensions */}
-                  {currentStep === 1 && (
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-semibold">Dimensions</h3>
-                      
-                      {/* Visual Dimension Preview */}
-                      <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                        <div className="relative w-full h-64 flex items-center justify-center">
-                          <div className="relative">
-                            {/* Simple chair illustration */}
-                            <div className="w-40 h-40 bg-gray-300 rounded-lg relative">
-                              {/* Width dimension line */}
-                              <div className="absolute -top-8 left-0 right-0 flex items-center justify-center">
-                                <div className="flex items-center text-xs">
-                                  <div className="h-px w-2 bg-gray-600"></div>
-                                  <span className="mx-2 font-medium">{configuration.dimensions?.width || 24}"</span>
-                                  <div className="h-px w-2 bg-gray-600"></div>
-                                </div>
-                              </div>
-                              {/* Height dimension line */}
-                              <div className="absolute -right-12 top-0 bottom-0 flex flex-col items-center justify-center">
-                                <div className="flex flex-col items-center text-xs">
-                                  <div className="w-px h-2 bg-gray-600"></div>
-                                  <span className="my-2 font-medium">{configuration.dimensions?.height || 30}"</span>
-                                  <div className="w-px h-2 bg-gray-600"></div>
-                                </div>
-                              </div>
-                              {/* Depth dimension line */}
-                              <div className="absolute -bottom-8 left-0 right-0 flex items-center justify-center">
-                                <div className="flex items-center text-xs">
-                                  <div className="h-px w-2 bg-gray-600"></div>
-                                  <span className="mx-2 font-medium">{configuration.dimensions?.depth || 18}"</span>
-                                  <div className="h-px w-2 bg-gray-600"></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Overall Dimensions */}
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-semibold text-base mb-4 uppercase tracking-wide">Overall Dimensions</h4>
-                        <div className="space-y-4">
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium">Width:</span>
-                              <span className="text-sm font-semibold">{configuration.dimensions?.width || 24}"</span>
-                            </div>
-                            <Slider
-                              value={[configuration.dimensions?.width || 24]}
-                              onValueChange={([value]) => updateConfiguration('dimensions', {
-                                ...configuration.dimensions,
-                                width: value
-                              })}
-                              min={12}
-                              max={72}
-                              step={0.25}
-                              className="mb-1"
-                              data-testid="width-slider"
-                            />
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>12"</span>
-                              <span>72"</span>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium">Depth:</span>
-                              <span className="text-sm font-semibold">{configuration.dimensions?.depth || 18}"</span>
-                            </div>
-                            <Slider
-                              value={[configuration.dimensions?.depth || 18]}
-                              onValueChange={([value]) => updateConfiguration('dimensions', {
-                                ...configuration.dimensions,
-                                depth: value
-                              })}
-                              min={8}
-                              max={36}
-                              step={0.25}
-                              className="mb-1"
-                              data-testid="depth-slider"
-                            />
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>8"</span>
-                              <span>36"</span>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium">Height:</span>
-                              <span className="text-sm font-semibold">{configuration.dimensions?.height || 30}"</span>
-                            </div>
-                            <Slider
-                              value={[configuration.dimensions?.height || 30]}
-                              onValueChange={([value]) => updateConfiguration('dimensions', {
-                                ...configuration.dimensions,
-                                height: value
-                              })}
-                              min={12}
-                              max={48}
-                              step={0.25}
-                              className="mb-1"
-                              data-testid="height-slider"
-                            />
-                            <div className="flex justify-between text-xs text-gray-500">
-                              <span>12"</span>
-                              <span>48"</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <button className="text-sm underline text-gray-600 hover:text-gray-900">
-                          HOW TO MEASURE FOR FURNITURE DELIVERY
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 2: Hardware */}
-                  {currentStep === 2 && (
-                    <div className="space-y-5">
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Hardware</h3>
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-base font-medium mb-4 block">Hardware Finish</Label>
-                            <Select
-                              value={configuration.hardware || ''}
-                              onValueChange={(value) => updateConfiguration('hardware', value)}
-                            >
-                              <SelectTrigger data-testid="hardware-select">
-                                <SelectValue placeholder="Choose hardware finish" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="brass">Brass</SelectItem>
-                                <SelectItem value="chrome">Chrome</SelectItem>
-                                <SelectItem value="black">Matte Black</SelectItem>
-                                <SelectItem value="nickel">Brushed Nickel</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label className="text-base font-medium mb-4 block">Surface Finish</Label>
-                            <Select
-                              value={configuration.finish || ''}
-                              onValueChange={(value) => updateConfiguration('finish', value)}
-                            >
-                              <SelectTrigger data-testid="finish-select">
-                                <SelectValue placeholder="Choose surface finish" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="natural">Natural Oil</SelectItem>
-                                <SelectItem value="satin">Satin Lacquer</SelectItem>
-                                <SelectItem value="gloss">High Gloss</SelectItem>
-                                <SelectItem value="matte">Matte Finish</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 3: Review & Save */}
-                  {currentStep === 3 && (
-                    <div className="space-y-5">
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Review & Save</h3>
-                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                          {configuration.material && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Material:</span>
-                              <span className="font-medium">
-                                {materials.find((m: any) => m.id === configuration.material)?.name}
-                              </span>
-                            </div>
-                          )}
-                          {configuration.color && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Color:</span>
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded border" style={{ backgroundColor: configuration.color }} />
-                                <span className="font-medium">{configuration.color}</span>
-                              </div>
-                            </div>
-                          )}
-                          {configuration.dimensions && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Dimensions:</span>
-                              <span className="font-medium">
-                                {configuration.dimensions.width}" × {configuration.dimensions.height}" × {configuration.dimensions.depth}"
-                              </span>
-                            </div>
-                          )}
-                          {configuration.hardware && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Hardware:</span>
-                              <span className="font-medium capitalize">{configuration.hardware}</span>
-                            </div>
-                          )}
-                          {configuration.finish && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Finish:</span>
-                              <span className="font-medium">{configuration.finish}</span>
-                            </div>
-                          )}
-                          <div className="border-t pt-3 mt-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-lg font-semibold">Total Price:</span>
-                              <span className="text-2xl font-bold text-[#254127]">${basePrice.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Navigation Buttons */}
-                  <div className="flex justify-between pt-6 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                      disabled={currentStep === 0}
-                      data-testid="prev-step"
-                    >
-                      Previous
-                    </Button>
-                    {currentStep < configurationSteps.length - 1 ? (
-                      <Button
-                        onClick={() => setCurrentStep(Math.min(configurationSteps.length - 1, currentStep + 1))}
-                        className="bg-[#254127] hover:bg-[#1a2f1b]"
-                        data-testid="next-step"
+                {/* Step 2: Hardware */}
+                {currentStep === 2 && (
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">Hardware Finish</Label>
+                      <Select
+                        value={configuration.hardware || ''}
+                        onValueChange={(value) => updateConfiguration('hardware', value)}
                       >
-                        Next
-                      </Button>
+                        <SelectTrigger data-testid="hardware-select">
+                          <SelectValue placeholder="Choose hardware finish" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="brass">Brass</SelectItem>
+                          <SelectItem value="chrome">Chrome</SelectItem>
+                          <SelectItem value="black">Matte Black</SelectItem>
+                          <SelectItem value="nickel">Brushed Nickel</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">Surface Finish</Label>
+                      <Select
+                        value={configuration.finish || ''}
+                        onValueChange={(value) => updateConfiguration('finish', value)}
+                      >
+                        <SelectTrigger data-testid="finish-select">
+                          <SelectValue placeholder="Choose surface finish" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="natural">Natural Oil</SelectItem>
+                          <SelectItem value="satin">Satin Lacquer</SelectItem>
+                          <SelectItem value="gloss">High Gloss</SelectItem>
+                          <SelectItem value="matte">Matte Finish</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Review & Save */}
+                {currentStep === 3 && (
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">Configuration Name</Label>
+                      <Input
+                        value={configurationName}
+                        onChange={(e) => setConfigurationName(e.target.value)}
+                        placeholder="My Custom Configuration"
+                        data-testid="config-name-input"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-base font-medium mb-4 block">Configuration Summary</Label>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                        {configuration.material && (
+                          <div className="flex justify-between">
+                            <span>Material:</span>
+                            <span className="font-medium">
+                              {materials.find((m: any) => m.id === configuration.material)?.name}
+                            </span>
+                          </div>
+                        )}
+                        {configuration.dimensions && (
+                          <div className="flex justify-between">
+                            <span>Dimensions:</span>
+                            <span className="font-medium">
+                              {configuration.dimensions.width}" × {configuration.dimensions.height}" × {configuration.dimensions.depth}"
+                            </span>
+                          </div>
+                        )}
+                        {configuration.hardware && (
+                          <div className="flex justify-between">
+                            <span>Hardware:</span>
+                            <span className="font-medium capitalize">{configuration.hardware}</span>
+                          </div>
+                        )}
+                        {configuration.finish && (
+                          <div className="flex justify-between">
+                            <span>Finish:</span>
+                            <span className="font-medium">{configuration.finish}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {pricingData && (
+                      <div>
+                        <Label className="text-base font-medium mb-4 block">Pricing Breakdown</Label>
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                          <div className="flex justify-between">
+                            <span>Base Price:</span>
+                            <span>${pricingData.breakdown.basePrice.toLocaleString()}</span>
+                          </div>
+                          {pricingData.breakdown.adjustments.map((adj: any, index: number) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span>{adj.name}:</span>
+                              <span>{adj.amount >= 0 ? '+' : ''}${adj.amount.toLocaleString()}</span>
+                            </div>
+                          ))}
+                          {pricingData.breakdown.materialCosts.map((cost: any, index: number) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span>{cost.name} (×{cost.multiplier}):</span>
+                              <span>+${cost.cost.toLocaleString()}</span>
+                            </div>
+                          ))}
+                          <hr className="my-2" />
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>Total:</span>
+                            <span className="text-[#254127]">${parseFloat(pricingData.totalPrice).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Save Configuration and Add to Cart Section */}
+                    {!savedConfigurationId ? (
+                      <div className="space-y-4">
+                        <Button
+                          onClick={saveConfiguration}
+                          disabled={saveConfigurationMutation.isPending}
+                          className="w-full bg-[#254127] hover:bg-[#1a2f1b]"
+                          size="lg"
+                          data-testid="save-configuration-final"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {saveConfigurationMutation.isPending ? 'Saving Configuration...' : 'Save Configuration'}
+                        </Button>
+                        <p className="text-sm text-gray-600 text-center">
+                          Save your configuration to add it to cart
+                        </p>
+                      </div>
                     ) : (
-                      <Button
-                        onClick={addToCartWithConfiguration}
-                        className="bg-[#254127] hover:bg-[#1a2f1b]"
-                        data-testid="add-to-cart"
-                      >
-                        Add to Cart
-                      </Button>
+                      <div className="space-y-4">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                          <div className="text-green-800 font-medium mb-2">
+                            ✅ Configuration saved successfully!
+                          </div>
+                          <div className="text-sm text-green-700">
+                            Your custom configuration is ready to add to cart.
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Button
+                            onClick={addToCartAndGoToCart}
+                            className="w-full bg-[#254127] hover:bg-[#1a2f1b] text-lg py-3"
+                            size="lg"
+                            data-testid="add-to-cart-go-to-cart"
+                          >
+                            <ShoppingCart className="h-5 w-5 mr-2" />
+                            Add to Cart & Review Order
+                          </Button>
+                          
+                          <Button
+                            onClick={addToCartAndContinueShopping}
+                            variant="outline"
+                            className="w-full border-[#254127] text-[#254127] hover:bg-[#254127] hover:text-white text-lg py-3"
+                            size="lg"
+                            data-testid="add-to-cart-continue-shopping"
+                          >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add to Cart & Continue Shopping
+                          </Button>
+                          
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setSavedConfigurationId(null);
+                                setCurrentStep(0);
+                              }}
+                              className="flex-1"
+                            >
+                              Start Over
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => setSavedConfigurationId(null)}
+                              className="flex-1"
+                            >
+                              Edit Configuration
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
+                )}
+
+                {/* Navigation */}
+                <div className="flex justify-between pt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                    disabled={currentStep === 0}
+                    data-testid="prev-step"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(Math.min(configurationSteps.length - 1, currentStep + 1))}
+                    disabled={currentStep === configurationSteps.length - 1}
+                    className="bg-[#254127] hover:bg-[#1a2f1b]"
+                    data-testid="next-step"
+                  >
+                    Next
+                  </Button>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
