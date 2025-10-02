@@ -366,18 +366,18 @@ export default function Configurator() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {/* Step Navigation */}
-        <div className="mb-8">
-          <div className="flex items-center justify-start gap-6 mb-2">
+        <div className="mb-12">
+          <div className="flex items-center justify-start gap-8 mb-3">
             {configurationSteps.map((step, index) => (
               <button
                 key={step.id}
                 onClick={() => setCurrentStep(index)}
-                className={`flex items-center gap-2 ${
+                className={`flex items-center gap-2.5 ${
                   index === currentStep ? 'text-[#254127]' : 'text-gray-400'
                 }`}
                 data-testid={`step-${step.id}`}
               >
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-300 text-gray-600'
                 }`}>
                   {index + 1}
@@ -387,7 +387,7 @@ export default function Configurator() {
             ))}
           </div>
           {/* Progress Bar */}
-          <div className="relative h-1 bg-gray-200 rounded-full">
+          <div className="relative h-1 bg-gray-200 rounded-full mt-4">
             <div 
               className="absolute h-full bg-[#254127] rounded-full transition-all duration-300"
               style={{ width: `${((currentStep + 1) / configurationSteps.length) * 100}%` }}
@@ -540,28 +540,19 @@ export default function Configurator() {
                       {/* Fabric Selection */}
                       <div className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <div className="text-sm text-gray-600 mb-1">2. Fabric</div>
-                            <div className="font-medium">
-                              {configuration.material 
-                                ? materials.find((m: any) => m.id === configuration.material)?.name || 'Luca Fabric in Turmeric'
-                                : 'Luca Fabric in Turmeric'}
-                            </div>
-                          </div>
+                          <div className="text-sm text-gray-600">2. Fabric</div>
                           <span className="text-sm text-gray-500">3 options</span>
                         </div>
 
                         {/* Fabric Details */}
                         <div className="mb-4 pb-4 border-b">
-                          <div className="font-medium mb-1">
-                            {configuration.material 
-                              ? materials.find((m: any) => m.id === configuration.material)?.name 
-                              : 'Luca Fabric in Turmeric'}
+                          <div className="font-medium text-base mb-1">
+                            Luca Fabric in Turmeric
                           </div>
-                          <div className="text-sm text-gray-600 mb-2">
+                          <div className="text-sm text-gray-600 mb-3">
                             Cotton Blend Velvet
                           </div>
-                          <div className="text-xl font-semibold mb-2">
+                          <div className="text-xl font-semibold mb-3">
                             ${basePrice.toFixed(2)}
                           </div>
                           <button className="text-sm underline text-gray-700 hover:text-gray-900">
