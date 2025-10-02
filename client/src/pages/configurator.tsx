@@ -41,11 +41,14 @@ export default function Configurator() {
   const furnitureRef = useRef<THREE.Group>();
   const animationIdRef = useRef<number>();
 
-  const [configuration, setConfiguration] = useState<Configuration>({});
+  const [configuration, setConfiguration] = useState<Configuration>({
+    dimensions: { width: 24, height: 30, depth: 18 }
+  });
   const [selectedThumbnail, setSelectedThumbnail] = useState(0);
   const [sceneReady, setSceneReady] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [webglError, setWebglError] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
   // Fetch product details
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -337,7 +340,14 @@ export default function Configurator() {
     );
   }
 
-  const basePrice = pricingData ? parseFloat(pricingData.totalPrice) : parseFloat(product.price);
+  const basePrice = pricingData ? parseFloat(pricingData.totalPrice) : (product.price ? parseFloat(product.price) : 0);
+
+  const configurationSteps = [
+    { id: 'material', title: 'Material & Finish' },
+    { id: 'dimensions', title: 'Dimensions' },
+    { id: 'hardware', title: 'Hardware' },
+    { id: 'review', title: 'Review & Save' },
+  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -489,147 +499,296 @@ export default function Configurator() {
                 </div>
               </div>
 
-              {/* Configuration Options */}
-              <div className="border-t pt-6 space-y-6">
-                {/* Material Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-medium">1. Type</Label>
-                    <span className="text-sm text-gray-500">2 options</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant={!configuration.material ? "default" : "outline"}
-                      className={`h-12 justify-start ${!configuration.material ? 'bg-gray-900 text-white' : ''}`}
-                      onClick={() => updateConfiguration('material', undefined)}
-                      data-testid="type-standard"
-                    >
-                      Standard Chair
-                    </Button>
-                    <Button
-                      variant={configuration.material ? "default" : "outline"}
-                      className={`h-12 justify-start ${configuration.material ? 'bg-gray-900 text-white' : ''}`}
-                      onClick={() => updateConfiguration('material', materials[0]?.id)}
-                      data-testid="type-armless"
-                    >
-                      Armless Chair
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Fabric/Material Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-medium">2. Fabric</Label>
-                    <span className="text-sm text-gray-500">{materials.length} options</span>
-                  </div>
-                  <div className="space-y-3">
-                    {materials.slice(0, 2).map((material: any) => (
-                      <div
-                        key={material.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                          configuration.material === material.id
-                            ? 'border-gray-900 bg-gray-50'
-                            : 'border-gray-200 hover:border-gray-400'
+              {/* Step Navigation */}
+              <div className="border-t pt-6">
+                <div className="flex items-center justify-between mb-6">
+                  {configurationSteps.map((step, index) => (
+                    <div key={step.id} className="flex items-center">
+                      <button
+                        onClick={() => setCurrentStep(index)}
+                        className={`flex items-center space-x-2 ${
+                          index === currentStep ? 'text-[#254127]' : 'text-gray-400'
                         }`}
-                        onClick={() => updateConfiguration('material', material.id)}
-                        data-testid={`material-${material.id}`}
+                        data-testid={`step-${step.id}`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{material.name}</div>
-                            {material.priceMultiplier !== '1.0' && (
-                              <div className="text-sm text-gray-600">
-                                +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
-                              </div>
-                            )}
-                          </div>
-                          {configuration.material === material.id && (
-                            <Check className="h-5 w-5 text-gray-900" />
-                          )}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                          index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-200'
+                        }`}>
+                          {index + 1}
                         </div>
-                      </div>
-                    ))}
-                    <button className="text-sm text-gray-600 underline">
-                      Care & Material Details
-                    </button>
-                  </div>
+                        <span className="hidden md:inline text-sm font-medium">{step.title}</span>
+                      </button>
+                      {index < configurationSteps.length - 1 && (
+                        <div className={`w-8 h-0.5 mx-2 ${
+                          index < currentStep ? 'bg-[#254127]' : 'bg-gray-200'
+                        }`} />
+                      )}
+                    </div>
+                  ))}
                 </div>
 
-                {/* Color Selection */}
-                <div>
-                  <div className="mb-3">
-                    <Label className="text-base font-medium">Stocked: Fastest delivery</Label>
-                  </div>
-                  <div className="flex gap-3">
-                    {[
-                      { name: 'Turmeric', color: '#C17D3A', hex: '#C17D3A' },
-                      { name: 'Snow', color: '#F5F5F5', hex: '#F5F5F5' },
-                      { name: 'Forest Green', color: '#2D4A2B', hex: '#2D4A2B' },
-                      { name: 'Charcoal', color: '#36454F', hex: '#36454F' },
-                    ].map((colorOption) => (
-                      <div key={colorOption.name} className="text-center">
-                        <div
-                          className={`w-16 h-16 rounded border-2 cursor-pointer transition-all ${
-                            configuration.color === colorOption.hex
-                              ? 'border-gray-900 ring-2 ring-gray-900 ring-offset-2'
-                              : 'border-gray-300 hover:border-gray-500'
-                          } ${colorOption.name === 'Turmeric' ? 'relative' : ''}`}
-                          style={{ backgroundColor: colorOption.color }}
-                          onClick={() => updateConfiguration('color', colorOption.hex)}
-                          data-testid={`color-${colorOption.name.toLowerCase().replace(' ', '-')}`}
-                        >
-                          {configuration.color === colorOption.hex && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <Check className="h-6 w-6 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-xs mt-2">{colorOption.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Dimensions Adjustment */}
-                {configuration.dimensions && (
-                  <div>
-                    <Label className="text-base font-medium mb-4 block">Dimensions</Label>
-                    <div className="space-y-4">
+                {/* Step Content */}
+                <div className="space-y-6">
+                  {/* Step 0: Material & Finish */}
+                  {currentStep === 0 && (
+                    <div className="space-y-6">
                       <div>
-                        <div className="flex justify-between text-sm mb-2">
-                          <span>Width</span>
-                          <span className="font-medium">{configuration.dimensions.width || 24}"</span>
+                        <h3 className="text-xl font-semibold mb-4">Material & Finish</h3>
+                        <Label className="text-base font-medium mb-4 block">Choose Material</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          {materials.slice(0, 4).map((material: any) => (
+                            <div
+                              key={material.id}
+                              className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                                configuration.material === material.id
+                                  ? 'border-[#254127] bg-green-50'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => updateConfiguration('material', material.id)}
+                              data-testid={`material-${material.id}`}
+                            >
+                              <div
+                                className="w-full h-20 rounded mb-2"
+                                style={{ backgroundColor: material.color || '#8B4513' }}
+                              />
+                              <div className="font-medium">{material.name}</div>
+                              <div className="text-sm text-gray-600">
+                                {material.priceMultiplier !== '1.0' && (
+                                  <>+{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price</>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <Slider
-                          value={[configuration.dimensions.width || 24]}
-                          onValueChange={([value]) => updateConfiguration('dimensions', {
-                            ...configuration.dimensions,
-                            width: value
-                          })}
-                          min={12}
-                          max={72}
-                          step={1}
-                          data-testid="width-slider"
-                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-base font-medium mb-4 block">Custom Color</Label>
+                        <div className="flex gap-3">
+                          {[
+                            { name: 'Turmeric', color: '#C17D3A', hex: '#C17D3A' },
+                            { name: 'Snow', color: '#F5F5F5', hex: '#F5F5F5' },
+                            { name: 'Forest Green', color: '#2D4A2B', hex: '#2D4A2B' },
+                            { name: 'Charcoal', color: '#36454F', hex: '#36454F' },
+                          ].map((colorOption) => (
+                            <div key={colorOption.name} className="text-center flex-1">
+                              <div
+                                className={`w-full aspect-square rounded border-2 cursor-pointer transition-all relative ${
+                                  configuration.color === colorOption.hex
+                                    ? 'border-[#254127] ring-2 ring-[#254127] ring-offset-2'
+                                    : 'border-gray-300 hover:border-gray-500'
+                                }`}
+                                style={{ backgroundColor: colorOption.color }}
+                                onClick={() => updateConfiguration('color', colorOption.hex)}
+                                data-testid={`color-${colorOption.name.toLowerCase().replace(' ', '-')}`}
+                              >
+                                {configuration.color === colorOption.hex && (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <Check className="h-6 w-6 text-white drop-shadow-lg" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-xs mt-2">{colorOption.name}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Add to Cart */}
-                <div className="border-t pt-6">
-                  <Button
-                    onClick={addToCartWithConfiguration}
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white h-14 text-lg"
-                    size="lg"
-                    data-testid="add-to-cart"
-                  >
-                    Add to Cart
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center mt-3">
-                    Free shipping on orders over $50
-                  </p>
+                  {/* Step 1: Dimensions */}
+                  {currentStep === 1 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-4">Dimensions</h3>
+                        <Label className="text-base font-medium mb-4 block">
+                          Adjust Dimensions (inches)
+                        </Label>
+                        <div className="space-y-6">
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span>Width</span>
+                              <span className="font-medium">{configuration.dimensions?.width || 24}"</span>
+                            </div>
+                            <Slider
+                              value={[configuration.dimensions?.width || 24]}
+                              onValueChange={([value]) => updateConfiguration('dimensions', {
+                                ...configuration.dimensions,
+                                width: value
+                              })}
+                              min={12}
+                              max={72}
+                              step={1}
+                              data-testid="width-slider"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span>Height</span>
+                              <span className="font-medium">{configuration.dimensions?.height || 30}"</span>
+                            </div>
+                            <Slider
+                              value={[configuration.dimensions?.height || 30]}
+                              onValueChange={([value]) => updateConfiguration('dimensions', {
+                                ...configuration.dimensions,
+                                height: value
+                              })}
+                              min={12}
+                              max={48}
+                              step={1}
+                              data-testid="height-slider"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span>Depth</span>
+                              <span className="font-medium">{configuration.dimensions?.depth || 18}"</span>
+                            </div>
+                            <Slider
+                              value={[configuration.dimensions?.depth || 18]}
+                              onValueChange={([value]) => updateConfiguration('dimensions', {
+                                ...configuration.dimensions,
+                                depth: value
+                              })}
+                              min={8}
+                              max={36}
+                              step={1}
+                              data-testid="depth-slider"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Hardware */}
+                  {currentStep === 2 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-4">Hardware</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-base font-medium mb-4 block">Hardware Finish</Label>
+                            <Select
+                              value={configuration.hardware || ''}
+                              onValueChange={(value) => updateConfiguration('hardware', value)}
+                            >
+                              <SelectTrigger data-testid="hardware-select">
+                                <SelectValue placeholder="Choose hardware finish" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="brass">Brass</SelectItem>
+                                <SelectItem value="chrome">Chrome</SelectItem>
+                                <SelectItem value="black">Matte Black</SelectItem>
+                                <SelectItem value="nickel">Brushed Nickel</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-base font-medium mb-4 block">Surface Finish</Label>
+                            <Select
+                              value={configuration.finish || ''}
+                              onValueChange={(value) => updateConfiguration('finish', value)}
+                            >
+                              <SelectTrigger data-testid="finish-select">
+                                <SelectValue placeholder="Choose surface finish" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="natural">Natural Oil</SelectItem>
+                                <SelectItem value="satin">Satin Lacquer</SelectItem>
+                                <SelectItem value="gloss">High Gloss</SelectItem>
+                                <SelectItem value="matte">Matte Finish</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Review & Save */}
+                  {currentStep === 3 && (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-4">Review & Save</h3>
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                          {configuration.material && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Material:</span>
+                              <span className="font-medium">
+                                {materials.find((m: any) => m.id === configuration.material)?.name}
+                              </span>
+                            </div>
+                          )}
+                          {configuration.color && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Color:</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded border" style={{ backgroundColor: configuration.color }} />
+                                <span className="font-medium">{configuration.color}</span>
+                              </div>
+                            </div>
+                          )}
+                          {configuration.dimensions && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Dimensions:</span>
+                              <span className="font-medium">
+                                {configuration.dimensions.width}" × {configuration.dimensions.height}" × {configuration.dimensions.depth}"
+                              </span>
+                            </div>
+                          )}
+                          {configuration.hardware && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Hardware:</span>
+                              <span className="font-medium capitalize">{configuration.hardware}</span>
+                            </div>
+                          )}
+                          {configuration.finish && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Finish:</span>
+                              <span className="font-medium">{configuration.finish}</span>
+                            </div>
+                          )}
+                          <div className="border-t pt-3 mt-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-lg font-semibold">Total Price:</span>
+                              <span className="text-2xl font-bold text-[#254127]">${basePrice.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-between pt-6 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                      disabled={currentStep === 0}
+                      data-testid="prev-step"
+                    >
+                      Previous
+                    </Button>
+                    {currentStep < configurationSteps.length - 1 ? (
+                      <Button
+                        onClick={() => setCurrentStep(Math.min(configurationSteps.length - 1, currentStep + 1))}
+                        className="bg-[#254127] hover:bg-[#1a2f1b]"
+                        data-testid="next-step"
+                      >
+                        Next
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={addToCartWithConfiguration}
+                        className="bg-[#254127] hover:bg-[#1a2f1b]"
+                        data-testid="add-to-cart"
+                      >
+                        Add to Cart
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
