@@ -501,38 +501,41 @@ export default function Configurator() {
 
               {/* Step Navigation */}
               <div className="border-t pt-6">
-                <div className="flex items-center justify-between mb-6">
-                  {configurationSteps.map((step, index) => (
-                    <div key={step.id} className="flex items-center">
+                <div className="mb-8">
+                  <div className="flex items-center justify-start gap-6 mb-2">
+                    {configurationSteps.map((step, index) => (
                       <button
+                        key={step.id}
                         onClick={() => setCurrentStep(index)}
-                        className={`flex items-center space-x-2 ${
+                        className={`flex items-center gap-2 ${
                           index === currentStep ? 'text-[#254127]' : 'text-gray-400'
                         }`}
                         data-testid={`step-${step.id}`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                          index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-200'
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${
+                          index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-300 text-gray-600'
                         }`}>
                           {index + 1}
                         </div>
-                        <span className="hidden md:inline text-sm font-medium">{step.title}</span>
+                        <span className="text-sm font-medium whitespace-nowrap">{step.title}</span>
                       </button>
-                      {index < configurationSteps.length - 1 && (
-                        <div className={`w-8 h-0.5 mx-2 ${
-                          index < currentStep ? 'bg-[#254127]' : 'bg-gray-200'
-                        }`} />
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  {/* Progress Bar */}
+                  <div className="relative h-1 bg-gray-200 rounded-full">
+                    <div 
+                      className="absolute h-full bg-[#254127] rounded-full transition-all duration-300"
+                      style={{ width: `${((currentStep + 1) / configurationSteps.length) * 100}%` }}
+                    />
+                  </div>
                 </div>
 
                 {/* Step Content */}
                 <div className="space-y-6">
                   {/* Step 0: Material & Finish */}
                   {currentStep === 0 && (
-                    <div className="space-y-6">
-                      <h3 className="text-xl font-semibold mb-6">Material & Finish</h3>
+                    <div className="space-y-5">
+                      <h3 className="text-lg font-semibold">Material & Finish</h3>
                       
                       {/* Fabric Selection */}
                       <div className="border rounded-lg p-4">
@@ -541,33 +544,33 @@ export default function Configurator() {
                             <div className="text-sm text-gray-600 mb-1">2. Fabric</div>
                             <div className="font-medium">
                               {configuration.material 
-                                ? materials.find((m: any) => m.id === configuration.material)?.name || 'Select Fabric'
-                                : 'Select Fabric'}
+                                ? materials.find((m: any) => m.id === configuration.material)?.name || 'Luca Fabric in Turmeric'
+                                : 'Luca Fabric in Turmeric'}
                             </div>
                           </div>
-                          <span className="text-sm text-gray-500">{materials.length} options</span>
+                          <span className="text-sm text-gray-500">3 options</span>
                         </div>
 
                         {/* Fabric Details */}
-                        {configuration.material && (
-                          <div className="mb-4 pb-4 border-b">
-                            <div className="font-medium mb-1">
-                              {materials.find((m: any) => m.id === configuration.material)?.name}
-                            </div>
-                            <div className="text-sm text-gray-600 mb-2">
-                              {materials.find((m: any) => m.id === configuration.material)?.description || 'Cotton Blend Velvet'}
-                            </div>
-                            <div className="text-lg font-semibold mb-2">
-                              ${basePrice.toFixed(2)}
-                            </div>
-                            <button className="text-sm underline text-gray-600 hover:text-gray-900">
-                              Care & Material Details
-                            </button>
+                        <div className="mb-4 pb-4 border-b">
+                          <div className="font-medium mb-1">
+                            {configuration.material 
+                              ? materials.find((m: any) => m.id === configuration.material)?.name 
+                              : 'Luca Fabric in Turmeric'}
                           </div>
-                        )}
+                          <div className="text-sm text-gray-600 mb-2">
+                            Cotton Blend Velvet
+                          </div>
+                          <div className="text-xl font-semibold mb-2">
+                            ${basePrice.toFixed(2)}
+                          </div>
+                          <button className="text-sm underline text-gray-700 hover:text-gray-900">
+                            Care & Material Details
+                          </button>
+                        </div>
 
                         {/* Stocked Colors */}
-                        <div className="mb-3">
+                        <div>
                           <div className="text-sm font-medium mb-3">Stocked: Fastest delivery</div>
                           <div className="grid grid-cols-3 gap-4">
                             {[
@@ -577,7 +580,7 @@ export default function Configurator() {
                             ].map((colorOption) => (
                               <div key={colorOption.name} className="text-center">
                                 <div
-                                  className={`w-full aspect-square rounded-md border-2 cursor-pointer transition-all relative ${
+                                  className={`w-full aspect-square rounded border-2 cursor-pointer transition-all relative ${
                                     configuration.color === colorOption.hex
                                       ? 'border-gray-900 ring-2 ring-gray-900 ring-offset-2'
                                       : 'border-gray-300 hover:border-gray-400'
@@ -600,44 +603,14 @@ export default function Configurator() {
                             ))}
                           </div>
                         </div>
-
-                        {/* Material Options */}
-                        <div className="mt-4 pt-4 border-t">
-                          <div className="text-sm font-medium mb-3">All Materials</div>
-                          <div className="grid grid-cols-2 gap-3">
-                            {materials.slice(0, 4).map((material: any) => (
-                              <button
-                                key={material.id}
-                                className={`border-2 rounded-lg p-3 text-left transition-all ${
-                                  configuration.material === material.id
-                                    ? 'border-gray-900 bg-gray-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                                onClick={() => updateConfiguration('material', material.id)}
-                                data-testid={`material-${material.id}`}
-                              >
-                                <div
-                                  className="w-full h-16 rounded mb-2"
-                                  style={{ backgroundColor: material.color || '#8B4513' }}
-                                />
-                                <div className="text-sm font-medium">{material.name}</div>
-                                {material.priceMultiplier !== '1.0' && (
-                                  <div className="text-xs text-gray-600">
-                                    +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* Step 1: Dimensions */}
                   {currentStep === 1 && (
-                    <div className="space-y-6">
-                      <h3 className="text-xl font-semibold mb-6">Dimensions</h3>
+                    <div className="space-y-5">
+                      <h3 className="text-lg font-semibold">Dimensions</h3>
                       
                       {/* Visual Dimension Preview */}
                       <div className="bg-gray-50 rounded-lg p-6 mb-6">
@@ -759,9 +732,9 @@ export default function Configurator() {
 
                   {/* Step 2: Hardware */}
                   {currentStep === 2 && (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div>
-                        <h3 className="text-xl font-semibold mb-4">Hardware</h3>
+                        <h3 className="text-lg font-semibold mb-4">Hardware</h3>
                         <div className="space-y-4">
                           <div>
                             <Label className="text-base font-medium mb-4 block">Hardware Finish</Label>
@@ -805,9 +778,9 @@ export default function Configurator() {
 
                   {/* Step 3: Review & Save */}
                   {currentStep === 3 && (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div>
-                        <h3 className="text-xl font-semibold mb-4">Review & Save</h3>
+                        <h3 className="text-lg font-semibold mb-4">Review & Save</h3>
                         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                           {configuration.material && (
                             <div className="flex justify-between">
