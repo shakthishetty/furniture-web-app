@@ -365,6 +365,36 @@ export default function Configurator() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        {/* Step Navigation */}
+        <div className="mb-8">
+          <div className="flex items-center justify-start gap-6 mb-2">
+            {configurationSteps.map((step, index) => (
+              <button
+                key={step.id}
+                onClick={() => setCurrentStep(index)}
+                className={`flex items-center gap-2 ${
+                  index === currentStep ? 'text-[#254127]' : 'text-gray-400'
+                }`}
+                data-testid={`step-${step.id}`}
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${
+                  index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-300 text-gray-600'
+                }`}>
+                  {index + 1}
+                </div>
+                <span className="text-sm font-medium whitespace-nowrap">{step.title}</span>
+              </button>
+            ))}
+          </div>
+          {/* Progress Bar */}
+          <div className="relative h-1 bg-gray-200 rounded-full">
+            <div 
+              className="absolute h-full bg-[#254127] rounded-full transition-all duration-300"
+              style={{ width: `${((currentStep + 1) / configurationSteps.length) * 100}%` }}
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Side - 3D Viewer with Thumbnails */}
           <div className="lg:col-span-7">
@@ -499,38 +529,8 @@ export default function Configurator() {
                 </div>
               </div>
 
-              {/* Step Navigation */}
+              {/* Configuration Content */}
               <div className="border-t pt-6">
-                <div className="mb-8">
-                  <div className="flex items-center justify-start gap-6 mb-2">
-                    {configurationSteps.map((step, index) => (
-                      <button
-                        key={step.id}
-                        onClick={() => setCurrentStep(index)}
-                        className={`flex items-center gap-2 ${
-                          index === currentStep ? 'text-[#254127]' : 'text-gray-400'
-                        }`}
-                        data-testid={`step-${step.id}`}
-                      >
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${
-                          index === currentStep ? 'bg-[#254127] text-white' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {index + 1}
-                        </div>
-                        <span className="text-sm font-medium whitespace-nowrap">{step.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {/* Progress Bar */}
-                  <div className="relative h-1 bg-gray-200 rounded-full">
-                    <div 
-                      className="absolute h-full bg-[#254127] rounded-full transition-all duration-300"
-                      style={{ width: `${((currentStep + 1) / configurationSteps.length) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Step Content */}
                 <div className="space-y-6">
                   {/* Step 0: Material & Finish */}
                   {currentStep === 0 && (
