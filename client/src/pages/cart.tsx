@@ -222,10 +222,10 @@ export default function Cart() {
                           {/* Price */}
                           <div className="text-right">
                             <div className="text-lg font-semibold">
-                              ${(item.price * item.quantity).toLocaleString()}
+                              ${((item.price || 0) * item.quantity).toLocaleString()}
                             </div>
                             <div className="text-sm text-gray-600">
-                              ${item.price.toLocaleString()} each
+                              ${(item.price || 0).toLocaleString()} each
                             </div>
                           </div>
                         </div>
