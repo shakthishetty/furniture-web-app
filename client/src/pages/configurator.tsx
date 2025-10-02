@@ -283,7 +283,18 @@ export default function Configurator() {
   const addToCartWithConfiguration = () => {
     if (!product) return;
     
-    const price = pricingData ? parseFloat(pricingData.totalPrice) : parseFloat(product.price);
+    const price = pricingData 
+      ? parseFloat(pricingData.totalPrice) 
+      : (product.price ? parseFloat(product.price) : 0);
+    
+    if (isNaN(price) || price <= 0) {
+      toast({
+        title: "Error",
+        description: "Unable to add item to cart. Invalid price.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     addToCart({
       productId: product.id,
