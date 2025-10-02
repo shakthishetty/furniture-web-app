@@ -532,65 +532,103 @@ export default function Configurator() {
                   {/* Step 0: Material & Finish */}
                   {currentStep === 0 && (
                     <div className="space-y-6">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-4">Material & Finish</h3>
-                        <Label className="text-base font-medium mb-4 block">Choose Material</Label>
-                        <div className="grid grid-cols-2 gap-4">
-                          {materials.slice(0, 4).map((material: any) => (
-                            <div
-                              key={material.id}
-                              className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                                configuration.material === material.id
-                                  ? 'border-[#254127] bg-green-50'
-                                  : 'border-gray-200 hover:border-gray-300'
-                              }`}
-                              onClick={() => updateConfiguration('material', material.id)}
-                              data-testid={`material-${material.id}`}
-                            >
-                              <div
-                                className="w-full h-20 rounded mb-2"
-                                style={{ backgroundColor: material.color || '#8B4513' }}
-                              />
-                              <div className="font-medium">{material.name}</div>
-                              <div className="text-sm text-gray-600">
-                                {material.priceMultiplier !== '1.0' && (
-                                  <>+{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price</>
-                                )}
-                              </div>
+                      <h3 className="text-xl font-semibold mb-6">Material & Finish</h3>
+                      
+                      {/* Fabric Selection */}
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <div className="text-sm text-gray-600 mb-1">2. Fabric</div>
+                            <div className="font-medium">
+                              {configuration.material 
+                                ? materials.find((m: any) => m.id === configuration.material)?.name || 'Select Fabric'
+                                : 'Select Fabric'}
                             </div>
-                          ))}
+                          </div>
+                          <span className="text-sm text-gray-500">{materials.length} options</span>
                         </div>
-                      </div>
 
-                      <div>
-                        <Label className="text-base font-medium mb-4 block">Custom Color</Label>
-                        <div className="flex gap-3">
-                          {[
-                            { name: 'Turmeric', color: '#C17D3A', hex: '#C17D3A' },
-                            { name: 'Snow', color: '#F5F5F5', hex: '#F5F5F5' },
-                            { name: 'Forest Green', color: '#2D4A2B', hex: '#2D4A2B' },
-                            { name: 'Charcoal', color: '#36454F', hex: '#36454F' },
-                          ].map((colorOption) => (
-                            <div key={colorOption.name} className="text-center flex-1">
-                              <div
-                                className={`w-full aspect-square rounded border-2 cursor-pointer transition-all relative ${
-                                  configuration.color === colorOption.hex
-                                    ? 'border-[#254127] ring-2 ring-[#254127] ring-offset-2'
-                                    : 'border-gray-300 hover:border-gray-500'
+                        {/* Fabric Details */}
+                        {configuration.material && (
+                          <div className="mb-4 pb-4 border-b">
+                            <div className="font-medium mb-1">
+                              {materials.find((m: any) => m.id === configuration.material)?.name}
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">
+                              {materials.find((m: any) => m.id === configuration.material)?.description || 'Cotton Blend Velvet'}
+                            </div>
+                            <div className="text-lg font-semibold mb-2">
+                              ${basePrice.toFixed(2)}
+                            </div>
+                            <button className="text-sm underline text-gray-600 hover:text-gray-900">
+                              Care & Material Details
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Stocked Colors */}
+                        <div className="mb-3">
+                          <div className="text-sm font-medium mb-3">Stocked: Fastest delivery</div>
+                          <div className="grid grid-cols-3 gap-4">
+                            {[
+                              { name: 'Turmeric', color: '#C17D3A', hex: '#C17D3A', fabric: 'Luca, Velvet' },
+                              { name: 'Snow', color: '#F5F5F5', hex: '#F5F5F5', fabric: 'Robusta, Chenille' },
+                              { name: 'Forest Green', color: '#2D4A2B', hex: '#2D4A2B', fabric: 'Logan, Velvet' },
+                            ].map((colorOption) => (
+                              <div key={colorOption.name} className="text-center">
+                                <div
+                                  className={`w-full aspect-square rounded-md border-2 cursor-pointer transition-all relative ${
+                                    configuration.color === colorOption.hex
+                                      ? 'border-gray-900 ring-2 ring-gray-900 ring-offset-2'
+                                      : 'border-gray-300 hover:border-gray-400'
+                                  }`}
+                                  style={{ backgroundColor: colorOption.color }}
+                                  onClick={() => updateConfiguration('color', colorOption.hex)}
+                                  data-testid={`color-${colorOption.name.toLowerCase().replace(' ', '-')}`}
+                                >
+                                  {configuration.color === colorOption.hex && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                                        <Check className="h-5 w-5 text-gray-900" />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-sm font-medium mt-2">{colorOption.name}</div>
+                                <div className="text-xs text-gray-600">{colorOption.fabric}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Material Options */}
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="text-sm font-medium mb-3">All Materials</div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {materials.slice(0, 4).map((material: any) => (
+                              <button
+                                key={material.id}
+                                className={`border-2 rounded-lg p-3 text-left transition-all ${
+                                  configuration.material === material.id
+                                    ? 'border-gray-900 bg-gray-50'
+                                    : 'border-gray-200 hover:border-gray-300'
                                 }`}
-                                style={{ backgroundColor: colorOption.color }}
-                                onClick={() => updateConfiguration('color', colorOption.hex)}
-                                data-testid={`color-${colorOption.name.toLowerCase().replace(' ', '-')}`}
+                                onClick={() => updateConfiguration('material', material.id)}
+                                data-testid={`material-${material.id}`}
                               >
-                                {configuration.color === colorOption.hex && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <Check className="h-6 w-6 text-white drop-shadow-lg" />
+                                <div
+                                  className="w-full h-16 rounded mb-2"
+                                  style={{ backgroundColor: material.color || '#8B4513' }}
+                                />
+                                <div className="text-sm font-medium">{material.name}</div>
+                                {material.priceMultiplier !== '1.0' && (
+                                  <div className="text-xs text-gray-600">
+                                    +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
                                   </div>
                                 )}
-                              </div>
-                              <div className="text-xs mt-2">{colorOption.name}</div>
-                            </div>
-                          ))}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -599,16 +637,51 @@ export default function Configurator() {
                   {/* Step 1: Dimensions */}
                   {currentStep === 1 && (
                     <div className="space-y-6">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-4">Dimensions</h3>
-                        <Label className="text-base font-medium mb-4 block">
-                          Adjust Dimensions (inches)
-                        </Label>
-                        <div className="space-y-6">
+                      <h3 className="text-xl font-semibold mb-6">Dimensions</h3>
+                      
+                      {/* Visual Dimension Preview */}
+                      <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                        <div className="relative w-full h-64 flex items-center justify-center">
+                          <div className="relative">
+                            {/* Simple chair illustration */}
+                            <div className="w-40 h-40 bg-gray-300 rounded-lg relative">
+                              {/* Width dimension line */}
+                              <div className="absolute -top-8 left-0 right-0 flex items-center justify-center">
+                                <div className="flex items-center text-xs">
+                                  <div className="h-px w-2 bg-gray-600"></div>
+                                  <span className="mx-2 font-medium">{configuration.dimensions?.width || 24}"</span>
+                                  <div className="h-px w-2 bg-gray-600"></div>
+                                </div>
+                              </div>
+                              {/* Height dimension line */}
+                              <div className="absolute -right-12 top-0 bottom-0 flex flex-col items-center justify-center">
+                                <div className="flex flex-col items-center text-xs">
+                                  <div className="w-px h-2 bg-gray-600"></div>
+                                  <span className="my-2 font-medium">{configuration.dimensions?.height || 30}"</span>
+                                  <div className="w-px h-2 bg-gray-600"></div>
+                                </div>
+                              </div>
+                              {/* Depth dimension line */}
+                              <div className="absolute -bottom-8 left-0 right-0 flex items-center justify-center">
+                                <div className="flex items-center text-xs">
+                                  <div className="h-px w-2 bg-gray-600"></div>
+                                  <span className="mx-2 font-medium">{configuration.dimensions?.depth || 18}"</span>
+                                  <div className="h-px w-2 bg-gray-600"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Overall Dimensions */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold text-base mb-4 uppercase tracking-wide">Overall Dimensions</h4>
+                        <div className="space-y-4">
                           <div>
-                            <div className="flex justify-between text-sm mb-2">
-                              <span>Width</span>
-                              <span className="font-medium">{configuration.dimensions?.width || 24}"</span>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">Width:</span>
+                              <span className="text-sm font-semibold">{configuration.dimensions?.width || 24}"</span>
                             </div>
                             <Slider
                               value={[configuration.dimensions?.width || 24]}
@@ -618,31 +691,20 @@ export default function Configurator() {
                               })}
                               min={12}
                               max={72}
-                              step={1}
+                              step={0.25}
+                              className="mb-1"
                               data-testid="width-slider"
                             />
-                          </div>
-                          <div>
-                            <div className="flex justify-between text-sm mb-2">
-                              <span>Height</span>
-                              <span className="font-medium">{configuration.dimensions?.height || 30}"</span>
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>12"</span>
+                              <span>72"</span>
                             </div>
-                            <Slider
-                              value={[configuration.dimensions?.height || 30]}
-                              onValueChange={([value]) => updateConfiguration('dimensions', {
-                                ...configuration.dimensions,
-                                height: value
-                              })}
-                              min={12}
-                              max={48}
-                              step={1}
-                              data-testid="height-slider"
-                            />
                           </div>
+                          
                           <div>
-                            <div className="flex justify-between text-sm mb-2">
-                              <span>Depth</span>
-                              <span className="font-medium">{configuration.dimensions?.depth || 18}"</span>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">Depth:</span>
+                              <span className="text-sm font-semibold">{configuration.dimensions?.depth || 18}"</span>
                             </div>
                             <Slider
                               value={[configuration.dimensions?.depth || 18]}
@@ -652,11 +714,45 @@ export default function Configurator() {
                               })}
                               min={8}
                               max={36}
-                              step={1}
+                              step={0.25}
+                              className="mb-1"
                               data-testid="depth-slider"
                             />
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>8"</span>
+                              <span>36"</span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">Height:</span>
+                              <span className="text-sm font-semibold">{configuration.dimensions?.height || 30}"</span>
+                            </div>
+                            <Slider
+                              value={[configuration.dimensions?.height || 30]}
+                              onValueChange={([value]) => updateConfiguration('dimensions', {
+                                ...configuration.dimensions,
+                                height: value
+                              })}
+                              min={12}
+                              max={48}
+                              step={0.25}
+                              className="mb-1"
+                              data-testid="height-slider"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>12"</span>
+                              <span>48"</span>
+                            </div>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="text-center">
+                        <button className="text-sm underline text-gray-600 hover:text-gray-900">
+                          HOW TO MEASURE FOR FURNITURE DELIVERY
+                        </button>
                       </div>
                     </div>
                   )}
