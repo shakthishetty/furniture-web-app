@@ -7,12 +7,11 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, RotateCcw, Share2, Download, Eye, ShoppingCart, Plus } from "lucide-react";
+import { ArrowLeft, Save, RotateCcw, Share2, ShoppingCart, Star, Info } from "lucide-react";
 import * as THREE from 'three';
 import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
@@ -43,11 +42,11 @@ export default function Configurator() {
   const furnitureRef = useRef<THREE.Group>();
   const animationIdRef = useRef<number>();
 
-  const [currentStep, setCurrentStep] = useState(0);
   const [configuration, setConfiguration] = useState<Configuration>({});
   const [configurationName, setConfigurationName] = useState("");
   const [savedConfigurationId, setSavedConfigurationId] = useState<string | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
+  const [selectedThumbnail, setSelectedThumbnail] = useState(0);
 
   // Fetch product details
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -115,24 +114,21 @@ export default function Configurator() {
     },
   });
 
-  // Initialize 3D scene (run when loading completes and canvas exists)
+  // Initialize 3D scene
   useEffect(() => {
     if (productLoading || optionsLoading) return;
     const canvas = canvasRef.current;
-    if (!canvas || sceneRef.current) return; // wait for canvas, avoid double init
+    if (!canvas || sceneRef.current) return;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = null;
     sceneRef.current = scene;
 
-    // Camera setup
     const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
     camera.position.set(3, 2, 3);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Renderer setup
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvas, 
       antialias: true,
@@ -146,7 +142,6 @@ export default function Configurator() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
 
-    // Responsive sizing function
     const resize = () => {
       const width = canvas.clientWidth || 800;
       const height = canvas.clientHeight || 600;
@@ -156,11 +151,9 @@ export default function Configurator() {
       camera.updateProjectionMatrix();
     };
 
-    // Initial sizing
     resize();
     window.addEventListener('resize', resize);
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
@@ -172,7 +165,6 @@ export default function Configurator() {
     directionalLight.castShadow = true;
     scene.add(directionalLight);
 
-    // Add a ground plane
     const planeGeometry = new THREE.PlaneGeometry(20, 20);
     const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xf5f5f5, opacity: 0.5, transparent: true });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -181,7 +173,6 @@ export default function Configurator() {
     plane.receiveShadow = true;
     scene.add(plane);
 
-    // Controls (smooth rotation)
     let mouseX = 0;
     let mouseY = 0;
     let isMouseDown = false;
@@ -202,12 +193,9 @@ export default function Configurator() {
       const deltaX = event.clientX - mouseX;
       const deltaY = event.clientY - mouseY;
       
-      // Rotate primarily around Y axis (horizontal drag)
       furnitureRef.current.rotation.y += deltaX * 0.005;
       
-      // Slight tilt on vertical drag (constrained)
       const newRotationX = furnitureRef.current.rotation.x + deltaY * 0.003;
-      // Limit vertical rotation to avoid flipping
       furnitureRef.current.rotation.x = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, newRotationX));
       
       mouseX = event.clientX;
@@ -218,7 +206,6 @@ export default function Configurator() {
     canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('mousemove', handleMouseMove);
 
-    // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
@@ -227,7 +214,6 @@ export default function Configurator() {
     };
     animate();
 
-    // Mark scene as ready
     setSceneReady(true);
 
     return () => {
@@ -242,48 +228,38 @@ export default function Configurator() {
       canvas.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [productLoading, optionsLoading]); // Wait for loading to complete
+  }, [productLoading, optionsLoading]);
 
-  // Add furniture model when both scene and product are ready
+  // Add furniture model
   useEffect(() => {
     if (!sceneReady || !sceneRef.current || !product) return;
 
     const loadModel = async () => {
-      // Remove existing furniture if any
       if (furnitureRef.current && sceneRef.current) {
         sceneRef.current.remove(furnitureRef.current);
       }
 
       let furnitureGroup;
       
-      // Try to load the actual uploaded GLB file first
       if (product.model3dUrl) {
         try {
-          console.log('Loading 3D model from:', product.model3dUrl);
           furnitureGroup = await loadFurnitureModel(product.model3dUrl);
         } catch (error) {
-          console.error('Failed to load GLB model, using fallback model:', error);
-          // Use fallback model if GLB loading fails
           furnitureGroup = createFallbackModel();
         }
       } else {
-        // No GLB file, use fallback model
-        console.log('No 3D model URL found, using fallback model');
         furnitureGroup = createFallbackModel();
       }
 
-      // Center and scale the model to fit nicely in the viewport
       const box = new THREE.Box3().setFromObject(furnitureGroup);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxSize = Math.max(size.x, size.y, size.z);
       
-      // Scale to fit in view (target size of ~2 units)
       const targetSize = 2.5;
       const scale = targetSize / maxSize;
       furnitureGroup.scale.setScalar(scale);
       
-      // Center the model
       furnitureGroup.position.sub(center.multiplyScalar(scale));
 
       if (sceneRef.current) {
@@ -299,12 +275,10 @@ export default function Configurator() {
   useEffect(() => {
     if (!furnitureRef.current || !product) return;
 
-    // Update dimensions
     if (configuration.dimensions) {
       updateFurnitureDimensions(furnitureRef.current, configuration.dimensions, product.name);
     }
 
-    // Update material/color
     if (configuration.material) {
       const selectedMaterial = materials.find((m: any) => m.id === configuration.material);
       if (selectedMaterial && selectedMaterial.color) {
@@ -312,7 +286,6 @@ export default function Configurator() {
       }
     }
 
-    // Update color directly
     if (configuration.color) {
       updateFurnitureMaterial(furnitureRef.current, configuration.color);
     }
@@ -328,7 +301,7 @@ export default function Configurator() {
 
   const resetConfiguration = () => {
     setConfiguration({});
-    setCurrentStep(0);
+    setSavedConfigurationId(null);
   };
 
   const saveConfiguration = () => {
@@ -352,24 +325,9 @@ export default function Configurator() {
       title: "Added to cart!",
       description: `${product.name} with custom configuration has been added to your cart.`,
     });
-  };
-
-  const addToCartAndGoToCart = () => {
-    addToCartWithConfiguration();
+    
     setLocation('/cart');
   };
-
-  const addToCartAndContinueShopping = () => {
-    addToCartWithConfiguration();
-    setLocation('/catalog');
-  };
-
-  const configurationSteps = [
-    { id: 'material', title: 'Material & Finish', icon: '🪵' },
-    { id: 'dimensions', title: 'Dimensions', icon: '📏' },
-    { id: 'hardware', title: 'Hardware', icon: '🔧' },
-    { id: 'review', title: 'Review & Save', icon: '✅' },
-  ];
 
   if (productLoading || optionsLoading) {
     return (
@@ -396,433 +354,341 @@ export default function Configurator() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/catalog">
-              <Button variant="ghost" size="sm" data-testid="back-to-catalog">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Catalog
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">{product.name}</h1>
-              <p className="text-gray-600">Customize your furniture</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            {pricingData && (
-              <div className="text-right">
-                <div className="text-2xl font-bold text-[#254127]">
-                  ${parseFloat(pricingData.totalPrice).toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-500">estimated price</div>
-              </div>
-            )}
-            <Button variant="outline" onClick={resetConfiguration} data-testid="reset-config">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
-            <Button onClick={saveConfiguration} disabled={saveConfigurationMutation.isPending} data-testid="save-config">
-              <Save className="h-4 w-4 mr-2" />
-              Save Configuration
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="bg-white px-6 py-4 border-b">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            {configurationSteps.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center space-x-2 cursor-pointer ${
-                  index <= currentStep ? 'text-[#254127]' : 'text-gray-400'
-                }`}
-                onClick={() => setCurrentStep(index)}
-                data-testid={`step-${step.id}`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  index <= currentStep ? 'bg-[#254127] text-white' : 'bg-gray-200'
-                }`}>
-                  {index + 1}
-                </div>
-                <span className="hidden md:inline font-medium">{step.title}</span>
-              </div>
-            ))}
-          </div>
-          <Progress value={(currentStep + 1) / configurationSteps.length * 100} className="h-2" />
+          <Link href="/catalog">
+            <Button variant="ghost" size="sm" data-testid="back-to-catalog">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Catalog
+            </Button>
+          </Link>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 3D Preview */}
-          <div className="order-2 lg:order-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>3D Preview</span>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Left Side - 3D Preview & Thumbnails */}
+          <div className="space-y-4">
+            {/* Main Preview */}
+            <div className="bg-gray-50 rounded-lg overflow-hidden border">
+              <canvas
+                ref={canvasRef}
+                className="w-full h-[600px] cursor-move"
+                data-testid="3d-preview"
+              />
+            </div>
+            
+            {/* Thumbnail Strip */}
+            <div className="grid grid-cols-4 gap-3">
+              {[0, 1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className={`bg-gray-100 rounded-lg p-2 cursor-pointer border-2 transition-all ${
+                    selectedThumbnail === index
+                      ? 'border-[#254127]'
+                      : 'border-transparent hover:border-gray-300'
+                  }`}
+                  onClick={() => setSelectedThumbnail(index)}
+                  data-testid={`thumbnail-${index}`}
+                >
+                  <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                    View {index + 1}
                   </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-[hsl(36,33%,96%)] dark:bg-[hsl(30,6%,10%)] rounded-lg overflow-hidden">
-                  <canvas
-                    ref={canvasRef}
-                    className="w-full h-96 cursor-move"
-                    data-testid="3d-preview"
-                  />
                 </div>
-                <div className="mt-4 text-sm text-gray-600 text-center">
-                  Click and drag to rotate • Changes update in real-time
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+
+            <div className="text-sm text-gray-600 text-center">
+              Click and drag to rotate • Changes update in real-time
+            </div>
           </div>
 
-          {/* Configuration Panel */}
-          <div className="order-1 lg:order-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>{configurationSteps[currentStep].title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Step 0: Material & Finish */}
-                {currentStep === 0 && (
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">Choose Material</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
-                          <div
-                            key={material.id}
-                            className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                              configuration.material === material.id
-                                ? 'border-[#254127] bg-green-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                            onClick={() => updateConfiguration('material', material.id)}
-                            data-testid={`material-${material.id}`}
-                          >
-                            <div
-                              className="w-full h-16 rounded mb-2"
-                              style={{ backgroundColor: material.color || '#8B4513' }}
-                            />
-                            <div className="font-medium">{material.name}</div>
-                            <div className="text-sm text-gray-600">
-                              {material.priceMultiplier !== '1.0' && (
-                                <>+{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price</>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">Custom Color</Label>
-                      <div className="flex items-center space-x-4">
-                        <Input
-                          type="color"
-                          value={configuration.color || '#8B4513'}
-                          onChange={(e) => updateConfiguration('color', e.target.value)}
-                          className="w-20 h-12"
-                          data-testid="color-picker"
-                        />
-                        <div className="text-sm text-gray-600">
-                          Or choose a custom color for your furniture
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 1: Dimensions */}
-                {currentStep === 1 && (
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">
-                        Adjust Dimensions (inches)
-                      </Label>
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-sm">Width: {configuration.dimensions?.width || 24}"</Label>
-                          <Slider
-                            value={[configuration.dimensions?.width || 24]}
-                            onValueChange={([value]) => updateConfiguration('dimensions', {
-                              ...configuration.dimensions,
-                              width: value
-                            })}
-                            min={12}
-                            max={72}
-                            step={1}
-                            className="mt-2"
-                            data-testid="width-slider"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm">Height: {configuration.dimensions?.height || 30}"</Label>
-                          <Slider
-                            value={[configuration.dimensions?.height || 30]}
-                            onValueChange={([value]) => updateConfiguration('dimensions', {
-                              ...configuration.dimensions,
-                              height: value
-                            })}
-                            min={12}
-                            max={48}
-                            step={1}
-                            className="mt-2"
-                            data-testid="height-slider"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm">Depth: {configuration.dimensions?.depth || 18}"</Label>
-                          <Slider
-                            value={[configuration.dimensions?.depth || 18]}
-                            onValueChange={([value]) => updateConfiguration('dimensions', {
-                              ...configuration.dimensions,
-                              depth: value
-                            })}
-                            min={8}
-                            max={36}
-                            step={1}
-                            className="mt-2"
-                            data-testid="depth-slider"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2: Hardware */}
-                {currentStep === 2 && (
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">Hardware Finish</Label>
-                      <Select
-                        value={configuration.hardware || ''}
-                        onValueChange={(value) => updateConfiguration('hardware', value)}
-                      >
-                        <SelectTrigger data-testid="hardware-select">
-                          <SelectValue placeholder="Choose hardware finish" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="brass">Brass</SelectItem>
-                          <SelectItem value="chrome">Chrome</SelectItem>
-                          <SelectItem value="black">Matte Black</SelectItem>
-                          <SelectItem value="nickel">Brushed Nickel</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">Surface Finish</Label>
-                      <Select
-                        value={configuration.finish || ''}
-                        onValueChange={(value) => updateConfiguration('finish', value)}
-                      >
-                        <SelectTrigger data-testid="finish-select">
-                          <SelectValue placeholder="Choose surface finish" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="natural">Natural Oil</SelectItem>
-                          <SelectItem value="satin">Satin Lacquer</SelectItem>
-                          <SelectItem value="gloss">High Gloss</SelectItem>
-                          <SelectItem value="matte">Matte Finish</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 3: Review & Save */}
-                {currentStep === 3 && (
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">Configuration Name</Label>
-                      <Input
-                        value={configurationName}
-                        onChange={(e) => setConfigurationName(e.target.value)}
-                        placeholder="My Custom Configuration"
-                        data-testid="config-name-input"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-base font-medium mb-4 block">Configuration Summary</Label>
-                      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                        {configuration.material && (
-                          <div className="flex justify-between">
-                            <span>Material:</span>
-                            <span className="font-medium">
-                              {materials.find((m: any) => m.id === configuration.material)?.name}
-                            </span>
-                          </div>
-                        )}
-                        {configuration.dimensions && (
-                          <div className="flex justify-between">
-                            <span>Dimensions:</span>
-                            <span className="font-medium">
-                              {configuration.dimensions.width}" × {configuration.dimensions.height}" × {configuration.dimensions.depth}"
-                            </span>
-                          </div>
-                        )}
-                        {configuration.hardware && (
-                          <div className="flex justify-between">
-                            <span>Hardware:</span>
-                            <span className="font-medium capitalize">{configuration.hardware}</span>
-                          </div>
-                        )}
-                        {configuration.finish && (
-                          <div className="flex justify-between">
-                            <span>Finish:</span>
-                            <span className="font-medium">{configuration.finish}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {pricingData && (
-                      <div>
-                        <Label className="text-base font-medium mb-4 block">Pricing Breakdown</Label>
-                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                          <div className="flex justify-between">
-                            <span>Base Price:</span>
-                            <span>${pricingData.breakdown.basePrice.toLocaleString()}</span>
-                          </div>
-                          {pricingData.breakdown.adjustments.map((adj: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>{adj.name}:</span>
-                              <span>{adj.amount >= 0 ? '+' : ''}${adj.amount.toLocaleString()}</span>
-                            </div>
-                          ))}
-                          {pricingData.breakdown.materialCosts.map((cost: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>{cost.name} (×{cost.multiplier}):</span>
-                              <span>+${cost.cost.toLocaleString()}</span>
-                            </div>
-                          ))}
-                          <hr className="my-2" />
-                          <div className="flex justify-between font-bold text-lg">
-                            <span>Total:</span>
-                            <span className="text-[#254127]">${parseFloat(pricingData.totalPrice).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Save Configuration and Add to Cart Section */}
-                    {!savedConfigurationId ? (
-                      <div className="space-y-4">
-                        <Button
-                          onClick={saveConfiguration}
-                          disabled={saveConfigurationMutation.isPending}
-                          className="w-full bg-[#254127] hover:bg-[#1a2f1b]"
-                          size="lg"
-                          data-testid="save-configuration-final"
-                        >
-                          <Save className="h-4 w-4 mr-2" />
-                          {saveConfigurationMutation.isPending ? 'Saving Configuration...' : 'Save Configuration'}
-                        </Button>
-                        <p className="text-sm text-gray-600 text-center">
-                          Save your configuration to add it to cart
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                          <div className="text-green-800 font-medium mb-2">
-                            ✅ Configuration saved successfully!
-                          </div>
-                          <div className="text-sm text-green-700">
-                            Your custom configuration is ready to add to cart.
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <Button
-                            onClick={addToCartAndGoToCart}
-                            className="w-full bg-[#254127] hover:bg-[#1a2f1b] text-lg py-3"
-                            size="lg"
-                            data-testid="add-to-cart-go-to-cart"
-                          >
-                            <ShoppingCart className="h-5 w-5 mr-2" />
-                            Add to Cart & Review Order
-                          </Button>
-                          
-                          <Button
-                            onClick={addToCartAndContinueShopping}
-                            variant="outline"
-                            className="w-full border-[#254127] text-[#254127] hover:bg-[#254127] hover:text-white text-lg py-3"
-                            size="lg"
-                            data-testid="add-to-cart-continue-shopping"
-                          >
-                            <Plus className="h-5 w-5 mr-2" />
-                            Add to Cart & Continue Shopping
-                          </Button>
-                          
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              onClick={() => {
-                                setSavedConfigurationId(null);
-                                setCurrentStep(0);
-                              }}
-                              className="flex-1"
-                            >
-                              Start Over
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => setSavedConfigurationId(null)}
-                              className="flex-1"
-                            >
-                              Edit Configuration
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Navigation */}
-                <div className="flex justify-between pt-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                    disabled={currentStep === 0}
-                    data-testid="prev-step"
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    onClick={() => setCurrentStep(Math.min(configurationSteps.length - 1, currentStep + 1))}
-                    disabled={currentStep === configurationSteps.length - 1}
-                    className="bg-[#254127] hover:bg-[#1a2f1b]"
-                    data-testid="next-step"
-                  >
-                    Next
-                  </Button>
+          {/* Right Side - Product Details & Options */}
+          <div className="space-y-6">
+            {/* Product Title & Price */}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+                <span className="text-sm text-gray-600">(5 reviews)</span>
+              </div>
+              
+              <div className="flex items-baseline gap-3 mb-4">
+                <div className="text-3xl font-bold text-gray-900">
+                  ${pricingData ? parseFloat(pricingData.totalPrice).toLocaleString() : product.basePrice?.toLocaleString() || '0'}
+                </div>
+                {pricingData && (
+                  <div className="text-sm text-gray-500">
+                    (customized price)
+                  </div>
+                )}
+              </div>
+
+              <p className="text-gray-600 leading-relaxed">
+                {product.description || "Customize this beautiful piece of furniture to match your exact specifications. Choose from various materials, dimensions, and finishes."}
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Material & Finish Section */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
+                    <div
+                      key={material.id}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        configuration.material === material.id
+                          ? 'border-[#254127] bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => updateConfiguration('material', material.id)}
+                      data-testid={`material-${material.id}`}
+                    >
+                      <div
+                        className="w-full h-20 rounded mb-2"
+                        style={{ backgroundColor: material.color || '#8B4513' }}
+                      />
+                      <div className="font-medium text-sm">{material.name}</div>
+                      {material.priceMultiplier !== '1.0' && (
+                        <div className="text-xs text-gray-600">
+                          +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Custom Color</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="color"
+                    value={configuration.color || '#8B4513'}
+                    onChange={(e) => updateConfiguration('color', e.target.value)}
+                    className="w-20 h-12 cursor-pointer"
+                    data-testid="color-picker"
+                  />
+                  <div className="text-sm text-gray-600">
+                    Or choose a custom color for your furniture
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Dimensions Section */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold mb-3 block">Adjust Dimensions</Label>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Label className="text-sm text-gray-700">Width</Label>
+                    <span className="text-sm font-medium">{configuration.dimensions?.width || 24}"</span>
+                  </div>
+                  <Slider
+                    value={[configuration.dimensions?.width || 24]}
+                    onValueChange={([value]) => updateConfiguration('dimensions', {
+                      ...configuration.dimensions,
+                      width: value
+                    })}
+                    min={12}
+                    max={72}
+                    step={1}
+                    className="mt-2"
+                    data-testid="width-slider"
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Label className="text-sm text-gray-700">Height</Label>
+                    <span className="text-sm font-medium">{configuration.dimensions?.height || 30}"</span>
+                  </div>
+                  <Slider
+                    value={[configuration.dimensions?.height || 30]}
+                    onValueChange={([value]) => updateConfiguration('dimensions', {
+                      ...configuration.dimensions,
+                      height: value
+                    })}
+                    min={12}
+                    max={48}
+                    step={1}
+                    className="mt-2"
+                    data-testid="height-slider"
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Label className="text-sm text-gray-700">Depth</Label>
+                    <span className="text-sm font-medium">{configuration.dimensions?.depth || 18}"</span>
+                  </div>
+                  <Slider
+                    value={[configuration.dimensions?.depth || 18]}
+                    onValueChange={([value]) => updateConfiguration('dimensions', {
+                      ...configuration.dimensions,
+                      depth: value
+                    })}
+                    min={8}
+                    max={36}
+                    step={1}
+                    className="mt-2"
+                    data-testid="depth-slider"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Hardware & Finish Section */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Hardware Finish</Label>
+                <Select
+                  value={configuration.hardware || ''}
+                  onValueChange={(value) => updateConfiguration('hardware', value)}
+                >
+                  <SelectTrigger data-testid="hardware-select" className="w-full">
+                    <SelectValue placeholder="Choose hardware finish" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="brass">Brass</SelectItem>
+                    <SelectItem value="chrome">Chrome</SelectItem>
+                    <SelectItem value="black">Matte Black</SelectItem>
+                    <SelectItem value="nickel">Brushed Nickel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Surface Finish</Label>
+                <Select
+                  value={configuration.finish || ''}
+                  onValueChange={(value) => updateConfiguration('finish', value)}
+                >
+                  <SelectTrigger data-testid="finish-select" className="w-full">
+                    <SelectValue placeholder="Choose surface finish" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="natural">Natural Oil</SelectItem>
+                    <SelectItem value="satin">Satin Lacquer</SelectItem>
+                    <SelectItem value="gloss">High Gloss</SelectItem>
+                    <SelectItem value="matte">Matte Finish</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Pricing Breakdown */}
+            {pricingData && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm font-semibold mb-3">Price Breakdown</div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Base Price:</span>
+                    <span>${pricingData.breakdown.basePrice.toLocaleString()}</span>
+                  </div>
+                  {pricingData.breakdown.adjustments.map((adj: any, index: number) => (
+                    <div key={index} className="flex justify-between">
+                      <span className="text-gray-600">{adj.name}:</span>
+                      <span>{adj.amount >= 0 ? '+' : ''}${adj.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  {pricingData.breakdown.materialCosts.map((cost: any, index: number) => (
+                    <div key={index} className="flex justify-between">
+                      <span className="text-gray-600">{cost.name} (×{cost.multiplier}):</span>
+                      <span>+${cost.cost.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-bold text-base">
+                    <span>Total:</span>
+                    <span className="text-[#254127]">${parseFloat(pricingData.totalPrice).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-3 pt-4">
+              {!savedConfigurationId ? (
+                <>
+                  <Button
+                    onClick={saveConfiguration}
+                    disabled={saveConfigurationMutation.isPending}
+                    className="w-full bg-[#254127] hover:bg-[#1a2f1b] h-12 text-base"
+                    data-testid="save-configuration"
+                  >
+                    <Save className="h-5 w-5 mr-2" />
+                    {saveConfigurationMutation.isPending ? 'Saving...' : 'Save Configuration'}
+                  </Button>
+                  <p className="text-sm text-gray-600 text-center">
+                    Save your configuration to add it to cart
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center text-sm text-green-800">
+                    ✅ Configuration saved successfully!
+                  </div>
+                  <Button
+                    onClick={addToCartWithConfiguration}
+                    className="w-full bg-[#254127] hover:bg-[#1a2f1b] h-14 text-lg"
+                    data-testid="add-to-cart"
+                  >
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Add to Cart
+                  </Button>
+                </>
+              )}
+              
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={resetConfiguration}
+                  className="flex-1"
+                  data-testid="reset-config"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Reset
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  data-testid="share-config"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+              <div className="flex gap-3">
+                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900">
+                  <p className="font-medium mb-1">Free shipping on orders over $500</p>
+                  <p className="text-blue-800">Handcrafted to order. Delivery in 4-6 weeks.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,0 +1,63 @@
+Prompt for Developer:
+
+I want the UI of the “Chair Customization Page” on my website to look like the first reference image I provided (the e-commerce product page style) while keeping all the existing functionality, content, and backend setup from my current site.
+
+Key Points:
+
+UI Change Only:
+
+Do not modify or add new backend logic, routes, APIs, or database structure.
+
+All product data, selections (material, finish, dimensions, hardware, etc.), and pricing logic must stay exactly as they are.
+
+Single-Page Layout:
+
+Currently, I have a step-by-step wizard (Material → Dimensions → Hardware → Review).
+
+I want all these steps and their content to appear together on one single page — just like the first screenshot’s product page (image on the left, all options on the right).
+
+No multi-step navigation. Everything should be scrollable or visible in sections on the same page.
+
+Image & Preview Section:
+
+Place the main 3D preview/image viewer on the left side, large and prominent.
+
+Add a thumbnail strip below or to the side of the preview (like the first image) to show different angles, materials, or views of the chair.
+
+Keep the same 3D rotation and real-time update functionality from the current site.
+
+Details & Options on the Right:
+
+On the right side, display:
+
+Product title, price, description
+
+Material & Finish selection
+
+Dimension options
+
+Hardware options
+
+Add to cart button
+
+Additional info (like delivery, reviews, etc.)
+
+Use the same data and options that currently exist — just reposition them in a visually similar way to the first screenshot.
+
+Design & Styling:
+
+Match the layout, spacing, font hierarchy, and visual style of the first screenshot (clean e-commerce look).
+
+Keep my site’s theme colors consistent where necessary but follow the first screenshot’s structure.
+
+Ensure it’s fully responsive for desktop, tablet, and mobile.
+
+Functionality Preservation:
+
+The current selection logic (like price updates on option change, real-time preview updates, add-to-cart, etc.) must remain fully functional after the UI change.
+
+Do not change how the data is stored or retrieved.
+
+Goal:
+
+Deliver a single-page, first-image-style UI using my existing website’s data and logic. Only the visual structure and layout should be updated, nothing else.
