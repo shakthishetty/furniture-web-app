@@ -111,6 +111,8 @@ export default function Configurator() {
       }
       
       setProductImages(images);
+      // Set default to 360° view (last thumbnail)
+      setSelectedThumbnail(images.length);
     }
   }, [product]);
 
@@ -317,6 +319,27 @@ export default function Configurator() {
       updateFurnitureMaterial(furnitureRef.current, configuration.color);
     }
   }, [configuration, materials, product]);
+
+  // Resize canvas when switching to 360° view
+  useEffect(() => {
+    if (selectedThumbnail === productImages.length && canvasRef.current && rendererRef.current && cameraRef.current) {
+      // Trigger resize after a short delay to ensure canvas is visible
+      setTimeout(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        
+        const width = canvas.clientWidth || 800;
+        const height = canvas.clientHeight || 600;
+        
+        if (rendererRef.current && cameraRef.current) {
+          rendererRef.current.setPixelRatio(window.devicePixelRatio);
+          rendererRef.current.setSize(width, height, false);
+          cameraRef.current.aspect = width / height;
+          cameraRef.current.updateProjectionMatrix();
+        }
+      }, 50);
+    }
+  }, [selectedThumbnail, productImages.length]);
 
   const updateConfiguration = (key: keyof Configuration, value: any) => {
     setConfiguration(prev => ({
