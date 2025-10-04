@@ -452,14 +452,14 @@ export default function Configurator() {
       <div className="max-w-7xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Side - 3D Preview & Thumbnails (Sticky) */}
-          <div className="flex gap-4 lg:sticky lg:top-6 lg:self-start">
+          <div className="flex gap-3 lg:sticky lg:top-6 lg:self-start">
             {/* Vertical Thumbnail List */}
-            <div className="flex flex-col gap-3 w-20">
+            <div className="flex flex-col gap-2 w-16">
               {/* Product Images */}
               {productImages.map((imageUrl, index) => (
                 <div
                   key={`img-${index}`}
-                  className={`bg-gray-100 rounded-lg p-2 cursor-pointer border-2 transition-all ${
+                  className={`bg-gray-100 rounded p-1 cursor-pointer border-2 transition-all ${
                     selectedThumbnail === index
                       ? 'border-[#254127]'
                       : 'border-transparent hover:border-gray-300'
@@ -479,7 +479,7 @@ export default function Configurator() {
               
               {/* 360° 3D View Thumbnail */}
               <div
-                className={`bg-gray-100 rounded-lg p-2 cursor-pointer border-2 transition-all ${
+                className={`bg-gray-100 rounded p-1 cursor-pointer border-2 transition-all ${
                   selectedThumbnail === productImages.length
                     ? 'border-[#254127]'
                     : 'border-transparent hover:border-gray-300'
@@ -489,8 +489,8 @@ export default function Configurator() {
               >
                 <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-gray-700">360°</div>
-                    <div className="text-[8px] text-gray-500 mt-1">3D View</div>
+                    <div className="text-sm font-bold text-gray-700">360°</div>
+                    <div className="text-[7px] text-gray-500">3D</div>
                   </div>
                 </div>
               </div>
