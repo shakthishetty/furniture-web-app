@@ -41,6 +41,8 @@ export default function Configurator() {
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const furnitureRef = useRef<THREE.Group>();
   const animationIdRef = useRef<number>();
+  const cameraRotationRef = useRef({ theta: Math.PI / 4, phi: Math.PI / 4 });
+  const cameraDistanceRef = useRef(5);
 
   const [configuration, setConfiguration] = useState<Configuration>({});
   const [configurationName, setConfigurationName] = useState("");
@@ -217,17 +219,24 @@ export default function Configurator() {
     };
     
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isMouseDown || !furnitureRef.current) return;
+      if (!isMouseDown || !cameraRef.current) return;
       
       const deltaX = event.clientX - mouseX;
       const deltaY = event.clientY - mouseY;
       
-      // Full 360° horizontal rotation (Y-axis)
-      furnitureRef.current.rotation.y += deltaX * 0.01;
+      // Orbit camera around model (not rotate model)
+      cameraRotationRef.current.theta -= deltaX * 0.01;
+      cameraRotationRef.current.phi -= deltaY * 0.01;
       
-      // Limited vertical rotation (X-axis) to prevent flipping upside down
-      const newRotationX = furnitureRef.current.rotation.x + deltaY * 0.006;
-      furnitureRef.current.rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, newRotationX));
+      // Limit vertical rotation to prevent flipping
+      cameraRotationRef.current.phi = Math.max(0.1, Math.min(Math.PI - 0.1, cameraRotationRef.current.phi));
+      
+      // Update camera position using spherical coordinates
+      const distance = cameraDistanceRef.current;
+      camera.position.x = distance * Math.sin(cameraRotationRef.current.phi) * Math.cos(cameraRotationRef.current.theta);
+      camera.position.y = distance * Math.cos(cameraRotationRef.current.phi);
+      camera.position.z = distance * Math.sin(cameraRotationRef.current.phi) * Math.sin(cameraRotationRef.current.theta);
+      camera.lookAt(0, 0, 0);
       
       mouseX = event.clientX;
       mouseY = event.clientY;
@@ -282,16 +291,36 @@ export default function Configurator() {
         furnitureGroup = createFallbackModel();
       }
 
+      // Calculate bounding sphere for proper camera fit
       const box = new THREE.Box3().setFromObject(furnitureGroup);
       const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      const maxSize = Math.max(size.x, size.y, size.z);
+      const sphere = box.getBoundingSphere(new THREE.Sphere());
       
-      const targetSize = 2.4;
-      const scale = targetSize / maxSize;
-      furnitureGroup.scale.setScalar(scale);
+      // Center the model at origin
+      furnitureGroup.position.sub(center);
       
-      furnitureGroup.position.sub(center.multiplyScalar(scale));
+      // Calculate camera distance from bounding sphere radius
+      const fov = cameraRef.current?.fov || 45;
+      const fovRad = (fov * Math.PI) / 180;
+      const distance = (sphere.radius / Math.sin(fovRad / 2)) * 1.2; // 20% margin
+      
+      cameraDistanceRef.current = distance;
+      
+      // Update camera position and clipping planes
+      if (cameraRef.current) {
+        const camera = cameraRef.current;
+        const theta = cameraRotationRef.current.theta;
+        const phi = cameraRotationRef.current.phi;
+        
+        camera.position.x = distance * Math.sin(phi) * Math.cos(theta);
+        camera.position.y = distance * Math.cos(phi);
+        camera.position.z = distance * Math.sin(phi) * Math.sin(theta);
+        camera.lookAt(0, 0, 0);
+        
+        camera.near = sphere.radius / 50;
+        camera.far = sphere.radius * 20;
+        camera.updateProjectionMatrix();
+      }
 
       if (sceneRef.current) {
         sceneRef.current.add(furnitureGroup);
