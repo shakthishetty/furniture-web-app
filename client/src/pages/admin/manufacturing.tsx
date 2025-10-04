@@ -1115,7 +1115,7 @@ export default function AdminManufacturing() {
                         {stage.updates.map((update) => (
                           <UpdateCard
                             key={update.id}
-                            update={update}
+                            update={{ ...update, stageName: stage.name }}
                             userRole="admin"
                             onReply={handleUpdateReply}
                             showFullContent={true}

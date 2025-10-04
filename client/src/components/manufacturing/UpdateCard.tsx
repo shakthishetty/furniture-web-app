@@ -22,6 +22,7 @@ interface UpdateCardProps {
   update: StageUpdate & {
     photos?: StageUpdatePhoto[];
     replies?: StageUpdateReply[];
+    stageName?: string;
   };
   userRole: "customer" | "manufacturer" | "admin";
   className?: string;
@@ -105,7 +106,7 @@ export function UpdateCard({
               </AvatarFallback>
             </Avatar>
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge 
                   variant="outline" 
                   className={cn("text-xs", getRoleColor(update.authorRole))}
@@ -113,6 +114,15 @@ export function UpdateCard({
                 >
                   {update.authorRole}
                 </Badge>
+                {update.stageName && (
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" 
+                    data-testid={`update-stage-name-${update.id}`}
+                  >
+                    {update.stageName}
+                  </Badge>
+                )}
                 {update.isInternal && (
                   <Badge variant="secondary" className="text-xs" data-testid={`update-internal-badge-${update.id}`}>
                     <Lock className="h-3 w-3 mr-1" />

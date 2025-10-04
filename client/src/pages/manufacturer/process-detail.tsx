@@ -999,7 +999,7 @@ export default function ManufacturerProcessDetail() {
                             {stage.updates.slice(0, 2).map((update) => (
                               <UpdateCard
                                 key={update.id}
-                                update={update}
+                                update={{ ...update, stageName: stage.name }}
                                 userRole="manufacturer"
                                 data-testid={`update-${update.id}`}
                               />
