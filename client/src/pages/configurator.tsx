@@ -421,9 +421,9 @@ export default function Configurator() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Side - 3D Preview & Thumbnails */}
-          <div className="flex gap-4 lg:col-span-3">
+          <div className="flex gap-4">
             {/* Vertical Thumbnail List */}
             <div className="flex flex-col gap-3 w-20">
               {/* Product Images */}
@@ -535,7 +535,7 @@ export default function Configurator() {
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
                     <div
                       key={material.id}
