@@ -423,7 +423,7 @@ export default function Configurator() {
       <div className="max-w-7xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Side - 3D Preview & Thumbnails (Sticky) */}
-          <div className="flex gap-4 lg:sticky lg:top-6 lg:self-start lg:h-[calc(100vh-8rem)]">
+          <div className="flex gap-4 lg:sticky lg:top-6 lg:self-start">
             {/* Vertical Thumbnail List */}
             <div className="flex flex-col gap-3 w-20">
               {/* Product Images */}
@@ -473,7 +473,7 @@ export default function Configurator() {
                 {/* Show 3D Canvas when 360° view is selected */}
                 <canvas
                   ref={canvasRef}
-                  className={`w-full h-[600px] cursor-move ${
+                  className={`w-full h-[450px] cursor-move ${
                     selectedThumbnail === productImages.length ? 'block' : 'hidden'
                   }`}
                   data-testid="3d-preview"
@@ -481,7 +481,7 @@ export default function Configurator() {
                 
                 {/* Show selected product image when image thumbnail is selected */}
                 {selectedThumbnail < productImages.length && (
-                  <div className="w-full h-[600px] flex items-center justify-center bg-white">
+                  <div className="w-full h-[450px] flex items-center justify-center bg-white">
                     <img 
                       src={productImages[selectedThumbnail]} 
                       alt={product.name}
