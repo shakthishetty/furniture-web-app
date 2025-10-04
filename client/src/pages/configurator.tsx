@@ -422,8 +422,8 @@ export default function Configurator() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Side - 3D Preview & Thumbnails */}
-          <div className="flex gap-4">
+          {/* Left Side - 3D Preview & Thumbnails (Sticky) */}
+          <div className="flex gap-4 lg:sticky lg:top-6 lg:self-start lg:h-[calc(100vh-8rem)]">
             {/* Vertical Thumbnail List */}
             <div className="flex flex-col gap-3 w-20">
               {/* Product Images */}
