@@ -153,8 +153,8 @@ export default function Configurator() {
     scene.background = null;
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
-    camera.position.set(3, 2, 3);
+    const camera = new THREE.PerspectiveCamera(60, 800 / 600, 0.1, 1000);
+    camera.position.set(5, 3, 5);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -285,7 +285,7 @@ export default function Configurator() {
       const size = box.getSize(new THREE.Vector3());
       const maxSize = Math.max(size.x, size.y, size.z);
       
-      const targetSize = 2.5;
+      const targetSize = 2.0;
       const scale = targetSize / maxSize;
       furnitureGroup.scale.setScalar(scale);
       
