@@ -532,10 +532,10 @@ export default function Configurator() {
             <Separator />
 
             {/* Material & Finish Section */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
-                <div className="grid grid-cols-3 gap-3">
+                <Label className="text-base font-semibold mb-2 block">Choose Material</Label>
+                <div className="grid grid-cols-4 gap-2">
                   {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
                     <div
                       key={material.id}
@@ -544,7 +544,7 @@ export default function Configurator() {
                       data-testid={`material-${material.id}`}
                     >
                       <div
-                        className={`w-20 h-20 rounded border-2 transition-all relative ${
+                        className={`w-16 h-16 rounded border-2 transition-all relative ${
                           configuration.material === material.id
                             ? 'border-[#254127] border-[3px]'
                             : 'border-gray-300 hover:border-gray-400'
@@ -553,19 +553,19 @@ export default function Configurator() {
                       >
                         {configuration.material === material.id && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="bg-white rounded-full w-7 h-7 flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
+                              <svg className="w-3.5 h-3.5 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
                           </div>
                         )}
                       </div>
-                      <div className="mt-1.5 text-center">
-                        <div className="text-xs font-medium text-gray-900">{material.name}</div>
+                      <div className="mt-1 text-center">
+                        <div className="text-[10px] font-medium text-gray-900 leading-tight">{material.name}</div>
                         {material.priceMultiplier !== '1.0' && (
-                          <div className="text-[10px] text-gray-500">
-                            +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
+                          <div className="text-[9px] text-gray-500">
+                            +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}%
                           </div>
                         )}
                       </div>
@@ -574,18 +574,18 @@ export default function Configurator() {
                 </div>
               </div>
 
-              <div>
-                <Label className="text-base font-semibold mb-3 block">Custom Color</Label>
-                <div className="flex items-center gap-3">
+              <div className="pt-2">
+                <Label className="text-base font-semibold mb-2 block">Custom Color</Label>
+                <div className="flex items-center gap-2">
                   <Input
                     type="color"
                     value={configuration.color || '#8B4513'}
                     onChange={(e) => updateConfiguration('color', e.target.value)}
-                    className="w-20 h-12 cursor-pointer"
+                    className="w-16 h-10 cursor-pointer"
                     data-testid="color-picker"
                   />
-                  <div className="text-sm text-gray-600">
-                    Or choose a custom color for your furniture
+                  <div className="text-xs text-gray-600">
+                    Choose a custom color
                   </div>
                 </div>
               </div>
