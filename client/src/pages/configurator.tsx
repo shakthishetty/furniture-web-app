@@ -568,7 +568,11 @@ export default function Configurator() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900">
                       <span className="mr-2">1.</span>Type
-                      <span className="ml-3 text-sm font-normal text-gray-600">Dining Armchair</span>
+                      {configuration.chairType && (
+                        <span className="ml-3 text-sm font-normal text-gray-600">
+                          {configuration.chairType === 'armchair' ? 'Dining Armchair' : 'Armless Dining Chair'}
+                        </span>
+                      )}
                     </h3>
                     <button className="text-gray-400 hover:text-gray-600">
                       <span className="text-sm">2 options</span>
