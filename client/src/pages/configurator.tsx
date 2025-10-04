@@ -371,19 +371,10 @@ export default function Configurator() {
       <div className="max-w-7xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Side - 3D Preview & Thumbnails */}
-          <div className="space-y-4">
-            {/* Main Preview */}
-            <div className="bg-gray-50 rounded-lg overflow-hidden border">
-              <canvas
-                ref={canvasRef}
-                className="w-full h-[600px] cursor-move"
-                data-testid="3d-preview"
-              />
-            </div>
-            
-            {/* Thumbnail Strip */}
-            <div className="grid grid-cols-4 gap-3">
-              {[0, 1, 2, 3].map((index) => (
+          <div className="flex gap-4">
+            {/* Vertical Thumbnail List */}
+            <div className="flex flex-col gap-3 w-20">
+              {[0, 1, 2, 3, 4, 5].map((index) => (
                 <div
                   key={index}
                   className={`bg-gray-100 rounded-lg p-2 cursor-pointer border-2 transition-all ${
@@ -394,15 +385,35 @@ export default function Configurator() {
                   onClick={() => setSelectedThumbnail(index)}
                   data-testid={`thumbnail-${index}`}
                 >
-                  <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-                    View {index + 1}
+                  <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
+                    {index === 0 && product.imageUrl ? (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={`View ${index + 1}`}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : (
+                      <div className="text-[10px] text-gray-500 text-center leading-tight">
+                        {index === 1 ? '360°' : `View ${index}`}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="text-sm text-gray-600 text-center">
-              Click and drag to rotate • Changes update in real-time
+            {/* Main Preview */}
+            <div className="flex-1">
+              <div className="bg-gray-50 rounded-lg overflow-hidden border mb-3">
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-[600px] cursor-move"
+                  data-testid="3d-preview"
+                />
+              </div>
+              <div className="text-sm text-gray-600 text-center">
+                Click and drag to rotate • Changes update in real-time
+              </div>
             </div>
           </div>
 
