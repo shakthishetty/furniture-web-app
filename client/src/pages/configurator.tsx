@@ -222,10 +222,12 @@ export default function Configurator() {
       const deltaX = event.clientX - mouseX;
       const deltaY = event.clientY - mouseY;
       
-      furnitureRef.current.rotation.y += deltaX * 0.005;
+      // Full 360° horizontal rotation (Y-axis)
+      furnitureRef.current.rotation.y += deltaX * 0.01;
       
-      const newRotationX = furnitureRef.current.rotation.x + deltaY * 0.003;
-      furnitureRef.current.rotation.x = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, newRotationX));
+      // Limited vertical rotation (X-axis) to prevent flipping upside down
+      const newRotationX = furnitureRef.current.rotation.x + deltaY * 0.006;
+      furnitureRef.current.rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, newRotationX));
       
       mouseX = event.clientX;
       mouseY = event.clientY;
