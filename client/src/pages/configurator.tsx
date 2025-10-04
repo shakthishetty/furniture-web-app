@@ -47,6 +47,7 @@ export default function Configurator() {
   const [savedConfigurationId, setSavedConfigurationId] = useState<string | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
   const [selectedThumbnail, setSelectedThumbnail] = useState(0);
+  const [productImages, setProductImages] = useState<string[]>([]);
 
   // Fetch product details
   const { data: productData, isLoading: productLoading } = useQuery({
@@ -86,6 +87,32 @@ export default function Configurator() {
   const product = (productData as any)?.product;
   const options = (optionsData as any)?.options || [];
   const materials = (materialsData as any)?.materials || [];
+
+  // Parse product images when product is loaded
+  useEffect(() => {
+    if (product) {
+      const images: string[] = [];
+      
+      // Add main image if it exists
+      if (product.imageUrl) {
+        images.push(product.imageUrl);
+      }
+      
+      // Add additional images if they exist
+      if (product.additionalImages) {
+        try {
+          const additionalImages = JSON.parse(product.additionalImages);
+          if (Array.isArray(additionalImages)) {
+            images.push(...additionalImages);
+          }
+        } catch (error) {
+          console.error('Error parsing additional images:', error);
+        }
+      }
+      
+      setProductImages(images);
+    }
+  }, [product]);
 
   // Save configuration mutation
   const saveConfigurationMutation = useMutation({
@@ -374,9 +401,10 @@ export default function Configurator() {
           <div className="flex gap-4">
             {/* Vertical Thumbnail List */}
             <div className="flex flex-col gap-3 w-20">
-              {[0, 1, 2, 3, 4, 5].map((index) => (
+              {/* Product Images */}
+              {productImages.map((imageUrl, index) => (
                 <div
-                  key={index}
+                  key={`img-${index}`}
                   className={`bg-gray-100 rounded-lg p-2 cursor-pointer border-2 transition-all ${
                     selectedThumbnail === index
                       ? 'border-[#254127]'
@@ -385,34 +413,63 @@ export default function Configurator() {
                   onClick={() => setSelectedThumbnail(index)}
                   data-testid={`thumbnail-${index}`}
                 >
-                  <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
-                    {index === 0 && product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={`View ${index + 1}`}
-                        className="w-full h-full object-cover rounded"
-                      />
-                    ) : (
-                      <div className="text-[10px] text-gray-500 text-center leading-tight">
-                        {index === 1 ? '360°' : `View ${index}`}
-                      </div>
-                    )}
+                  <div className="aspect-square bg-gray-200 rounded overflow-hidden">
+                    <img 
+                      src={imageUrl} 
+                      alt={`${product.name} view ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
               ))}
+              
+              {/* 360° 3D View Thumbnail */}
+              <div
+                className={`bg-gray-100 rounded-lg p-2 cursor-pointer border-2 transition-all ${
+                  selectedThumbnail === productImages.length
+                    ? 'border-[#254127]'
+                    : 'border-transparent hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedThumbnail(productImages.length)}
+                data-testid="thumbnail-360"
+              >
+                <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-gray-700">360°</div>
+                    <div className="text-[8px] text-gray-500 mt-1">3D View</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Main Preview */}
             <div className="flex-1">
-              <div className="bg-gray-50 rounded-lg overflow-hidden border mb-3">
+              <div className="bg-gray-50 rounded-lg overflow-hidden border mb-3 relative">
+                {/* Show 3D Canvas when 360° view is selected */}
                 <canvas
                   ref={canvasRef}
-                  className="w-full h-[600px] cursor-move"
+                  className={`w-full h-[600px] cursor-move ${
+                    selectedThumbnail === productImages.length ? 'block' : 'hidden'
+                  }`}
                   data-testid="3d-preview"
                 />
+                
+                {/* Show selected product image when image thumbnail is selected */}
+                {selectedThumbnail < productImages.length && (
+                  <div className="w-full h-[600px] flex items-center justify-center bg-white">
+                    <img 
+                      src={productImages[selectedThumbnail]} 
+                      alt={product.name}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                )}
               </div>
               <div className="text-sm text-gray-600 text-center">
-                Click and drag to rotate • Changes update in real-time
+                {selectedThumbnail === productImages.length 
+                  ? 'Click and drag to rotate • Changes update in real-time'
+                  : `Viewing image ${selectedThumbnail + 1} of ${productImages.length}`
+                }
               </div>
             </div>
           </div>
