@@ -535,7 +535,7 @@ export default function Configurator() {
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
-                <div className="flex flex-wrap gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
                     <div
                       key={material.id}
@@ -544,27 +544,27 @@ export default function Configurator() {
                       data-testid={`material-${material.id}`}
                     >
                       <div
-                        className={`w-24 h-24 rounded border-2 transition-all relative ${
+                        className={`w-20 h-20 rounded border-2 transition-all relative ${
                           configuration.material === material.id
-                            ? 'border-[#254127] border-4'
+                            ? 'border-[#254127] border-[3px]'
                             : 'border-gray-300 hover:border-gray-400'
                         }`}
                         style={{ backgroundColor: material.color || '#8B4513' }}
                       >
                         {configuration.material === material.id && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center">
-                              <svg className="w-5 h-5 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="bg-white rounded-full w-7 h-7 flex items-center justify-center">
+                              <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
                           </div>
                         )}
                       </div>
-                      <div className="mt-2 text-center">
-                        <div className="text-sm font-medium text-gray-900">{material.name}</div>
+                      <div className="mt-1.5 text-center">
+                        <div className="text-xs font-medium text-gray-900">{material.name}</div>
                         {material.priceMultiplier !== '1.0' && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-500">
                             +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
                           </div>
                         )}
