@@ -562,7 +562,7 @@ export default function Configurator() {
             <Separator />
 
             {/* Chair Type Section - Only show for chairs */}
-            {product.category?.toLowerCase().includes('chair') && (
+            {(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) && (
               <>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -613,7 +613,7 @@ export default function Configurator() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  <span className="mr-2">{product.category?.toLowerCase().includes('chair') ? '2.' : '1.'}</span>
+                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '2.' : '1.'}</span>
                   Fabric
                 </h3>
                 <button className="text-gray-400 hover:text-gray-600">
