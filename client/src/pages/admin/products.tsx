@@ -646,7 +646,7 @@ export default function AdminProducts() {
 
       {/* View Product Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl" data-testid="dialog-view-product">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col" data-testid="dialog-view-product">
           <DialogHeader>
             <DialogTitle>Product Details</DialogTitle>
             <DialogDescription>
@@ -655,13 +655,15 @@ export default function AdminProducts() {
           </DialogHeader>
           
           {viewingProduct && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-2">
               {viewingProduct.imageUrl && (
-                <img 
-                  src={viewingProduct.imageUrl} 
-                  alt={viewingProduct.name}
-                  className="w-full h-48 object-cover rounded"
-                />
+                <div className="relative">
+                  <img 
+                    src={viewingProduct.imageUrl} 
+                    alt={viewingProduct.name}
+                    className="w-full h-64 object-cover rounded-lg border"
+                  />
+                </div>
               )}
               
               <div className="grid grid-cols-2 gap-4">
@@ -753,13 +755,13 @@ export default function AdminProducts() {
               
               {/* 3D Model Viewer */}
               {(viewingProduct.model3dUrl || viewingProduct.modelUrl) && (
-                <div>
-                  <Label className="mb-2 block">3D Model</Label>
+                <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                  <Label className="mb-3 block text-base font-semibold">3D Model</Label>
                   <Model3DViewer 
                     modelUrl={viewingProduct.model3dUrl || viewingProduct.modelUrl!}
-                    width={400}
-                    height={250}
-                    className="mx-auto"
+                    width={600}
+                    height={400}
+                    className="mx-auto rounded-lg overflow-hidden border bg-white"
                   />
                 </div>
               )}
