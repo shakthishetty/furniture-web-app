@@ -287,7 +287,7 @@ export default function Configurator() {
       const size = box.getSize(new THREE.Vector3());
       const maxSize = Math.max(size.x, size.y, size.z);
       
-      const targetSize = 2.5;
+      const targetSize = 2.0;
       const scale = targetSize / maxSize;
       furnitureGroup.scale.setScalar(scale);
       
@@ -421,7 +421,7 @@ export default function Configurator() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Side - 3D Preview & Thumbnails */}
           <div className="flex gap-4">
             {/* Vertical Thumbnail List */}
@@ -535,7 +535,7 @@ export default function Configurator() {
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="flex flex-wrap gap-4">
                   {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
                     <div
                       key={material.id}
@@ -544,18 +544,18 @@ export default function Configurator() {
                       data-testid={`material-${material.id}`}
                     >
                       <div
-                        className={`w-[100px] h-[100px] rounded border-[3px] transition-all relative ${
+                        className={`w-24 h-24 rounded border-2 transition-all relative ${
                           configuration.material === material.id
-                            ? 'border-gray-800'
+                            ? 'border-[#254127] border-4'
                             : 'border-gray-300 hover:border-gray-400'
                         }`}
                         style={{ backgroundColor: material.color || '#8B4513' }}
                       >
                         {configuration.material === material.id && (
-                          <div className="absolute top-2 left-2">
-                            <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm">
-                              <svg className="w-5 h-5 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center">
+                              <svg className="w-5 h-5 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
                           </div>
