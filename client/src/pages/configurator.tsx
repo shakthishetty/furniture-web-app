@@ -150,7 +150,7 @@ export default function Configurator() {
     if (!canvas || sceneRef.current) return;
 
     const scene = new THREE.Scene();
-    scene.background = null;
+    scene.background = new THREE.Color(0xf5f5f5);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(60, 800 / 600, 0.1, 1000);
@@ -161,9 +161,8 @@ export default function Configurator() {
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvas, 
       antialias: true,
-      alpha: true
+      alpha: false
     });
-    renderer.setClearAlpha(0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
@@ -469,11 +468,11 @@ export default function Configurator() {
 
             {/* Main Preview */}
             <div className="flex-1">
-              <div className="bg-gray-50 rounded-lg overflow-hidden border mb-3 relative">
+              <div className="bg-[#f5f5f5] rounded-lg overflow-hidden border border-gray-200 mb-3 relative">
                 {/* Show 3D Canvas when 360° view is selected */}
                 <canvas
                   ref={canvasRef}
-                  className={`w-full h-[600px] cursor-move ${
+                  className={`w-full h-[750px] cursor-move ${
                     selectedThumbnail === productImages.length ? 'block' : 'hidden'
                   }`}
                   data-testid="3d-preview"
@@ -481,7 +480,7 @@ export default function Configurator() {
                 
                 {/* Show selected product image when image thumbnail is selected */}
                 {selectedThumbnail < productImages.length && (
-                  <div className="w-full h-[600px] flex items-center justify-center bg-white">
+                  <div className="w-full h-[750px] flex items-center justify-center bg-white">
                     <img 
                       src={productImages[selectedThumbnail]} 
                       alt={product.name}
