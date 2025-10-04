@@ -535,7 +535,7 @@ export default function Configurator() {
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
                     <div
                       key={material.id}
