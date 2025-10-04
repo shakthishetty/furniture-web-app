@@ -44,12 +44,23 @@ export async function loadFurnitureModel(model3dUrl: string): Promise<THREE.Grou
 // Update material/color of loaded 3D models
 export function updateFurnitureMaterial(furniture: THREE.Group, color: string | number) {
   furniture.traverse((child) => {
-    if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshPhongMaterial) {
-      if (typeof color === 'string') {
-        child.material.color.setHex(parseInt(color.replace('#', '0x')));
-      } else {
-        child.material.color.setHex(color);
-      }
+    if (child instanceof THREE.Mesh) {
+      const material = child.material;
+      
+      // Handle both single materials and material arrays
+      const materials = Array.isArray(material) ? material : [material];
+      
+      materials.forEach((mat: any) => {
+        if (mat && mat.color) {
+          if (typeof color === 'string') {
+            mat.color.setHex(parseInt(color.replace('#', '0x')));
+          } else {
+            mat.color.setHex(color);
+          }
+          // Mark material for update
+          mat.needsUpdate = true;
+        }
+      });
     }
   });
 }
