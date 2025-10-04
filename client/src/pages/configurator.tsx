@@ -26,6 +26,7 @@ interface Configuration {
   };
   hardware?: string;
   finish?: string;
+  chairType?: string;
 }
 
 export default function Configurator() {
@@ -560,63 +561,104 @@ export default function Configurator() {
 
             <Separator />
 
-            {/* Material & Finish Section */}
-            <div className="space-y-4">
-              <div>
-                <Label className="text-base font-semibold mb-3 block">Choose Material</Label>
-                <div className="flex flex-wrap gap-4">
-                  {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
-                    <div
-                      key={material.id}
-                      className="flex flex-col items-center cursor-pointer"
-                      onClick={() => updateConfiguration('material', material.id)}
-                      data-testid={`material-${material.id}`}
+            {/* Chair Type Section - Only show for chairs */}
+            {product.category?.toLowerCase().includes('chair') && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      <span className="mr-2">1.</span>Type
+                      <span className="ml-3 text-sm font-normal text-gray-600">Dining Armchair</span>
+                    </h3>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <span className="text-sm">2 options</span>
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      className={`py-4 px-6 border-2 rounded transition-all text-center ${
+                        configuration.chairType === 'armchair' || !configuration.chairType
+                          ? 'border-black bg-white'
+                          : 'border-gray-300 bg-white hover:border-gray-400'
+                      }`}
+                      onClick={() => updateConfiguration('chairType', 'armchair')}
+                      data-testid="type-armchair"
                     >
-                      <div
-                        className={`w-24 h-24 rounded border-2 transition-all relative ${
-                          configuration.material === material.id
-                            ? 'border-[#254127] border-4'
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}
-                        style={{ backgroundColor: material.color || '#8B4513' }}
-                      >
-                        {configuration.material === material.id && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center">
-                              <svg className="w-5 h-5 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-2 text-center">
-                        <div className="text-sm font-medium text-gray-900">{material.name}</div>
-                        {material.priceMultiplier !== '1.0' && (
-                          <div className="text-xs text-gray-500">
-                            +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-base font-semibold mb-3 block">Custom Color</Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="color"
-                    value={configuration.color || '#8B4513'}
-                    onChange={(e) => updateConfiguration('color', e.target.value)}
-                    className="w-20 h-12 cursor-pointer"
-                    data-testid="color-picker"
-                  />
-                  <div className="text-sm text-gray-600">
-                    Or choose a custom color for your furniture
+                      <div className="font-medium text-gray-900">Dining<br />Armchair</div>
+                    </button>
+                    <button
+                      className={`py-4 px-6 border-2 rounded transition-all text-center ${
+                        configuration.chairType === 'armless'
+                          ? 'border-black bg-white'
+                          : 'border-gray-300 bg-white hover:border-gray-400'
+                      }`}
+                      onClick={() => updateConfiguration('chairType', 'armless')}
+                      data-testid="type-armless"
+                    >
+                      <div className="font-medium text-gray-900">Armless Dining<br />Chair</div>
+                    </button>
                   </div>
                 </div>
+
+                <Separator />
+              </>
+            )}
+
+            {/* Material/Fabric Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <span className="mr-2">{product.category?.toLowerCase().includes('chair') ? '2.' : '1.'}</span>
+                  Fabric
+                </h3>
+                <button className="text-gray-400 hover:text-gray-600">
+                  <span className="text-sm">{materials.filter((m: any) => m.type === 'wood').length} options</span>
+                </button>
+              </div>
+              
+              {configuration.material && (
+                <div className="text-gray-700">
+                  {materials.find((m: any) => m.id === configuration.material)?.name || 'Select a material'}
+                </div>
+              )}
+              
+              <div className="flex flex-wrap gap-4">
+                {materials.filter((m: any) => m.type === 'wood').map((material: any) => (
+                  <div
+                    key={material.id}
+                    className="flex flex-col items-center cursor-pointer"
+                    onClick={() => updateConfiguration('material', material.id)}
+                    data-testid={`material-${material.id}`}
+                  >
+                    <div
+                      className={`w-24 h-24 rounded border-2 transition-all relative ${
+                        configuration.material === material.id
+                          ? 'border-[#254127] border-4'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: material.color || '#8B4513' }}
+                    >
+                      {configuration.material === material.id && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 text-center">
+                      <div className="text-sm font-medium text-gray-900">{material.name}</div>
+                      {material.priceMultiplier !== '1.0' && (
+                        <div className="text-xs text-gray-500">
+                          +{((parseFloat(material.priceMultiplier) - 1) * 100).toFixed(0)}% price
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
