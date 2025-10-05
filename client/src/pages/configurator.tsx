@@ -15,6 +15,8 @@ import { ArrowLeft, Save, RotateCcw, Share2, ShoppingCart, Star, Info } from "lu
 import * as THREE from 'three';
 import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Configuration {
   material?: string;
@@ -36,6 +38,8 @@ export default function Configurator() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist, isPending: wishlistPending } = useWishlist();
+  const { isAuthenticated } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
@@ -857,6 +861,30 @@ export default function Configurator() {
                   Share
                 </Button>
               </div>
+              
+              {/* Wishlist Button */}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    toast({
+                      title: "Login required",
+                      description: "Please log in to save items to your wishlist",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (productId) {
+                    toggleWishlist(productId);
+                  }
+                }}
+                disabled={wishlistPending}
+                className="w-full"
+                data-testid="save-to-wishlist"
+              >
+                <Star className={`h-4 w-4 mr-2 ${isInWishlist(productId || '') ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                {isInWishlist(productId || '') ? 'Saved to Wishlist' : 'Save for Later'}
+              </Button>
             </div>
 
             {/* Additional Info */}

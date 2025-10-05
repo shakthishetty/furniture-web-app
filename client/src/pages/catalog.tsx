@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { User, Search, Heart, ShoppingBag, Filter, Grid, List, Plus } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import Logo from "@/components/Logo";
 
 export default function Catalog() {
@@ -16,6 +18,8 @@ export default function Catalog() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<string>("name");
   const { addToCart, getCartCount } = useCart();
+  const { isInWishlist, toggleWishlist, isPending, getWishlistCount } = useWishlist();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
   const handleAddToCart = (product: any) => {
@@ -106,8 +110,13 @@ export default function Catalog() {
                 </Button>
               </Link>
               <Link href="/wishlist">
-                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100" data-testid="button-wishlist">
+                <Button variant="ghost" size="sm" className="p-2 text-black hover:text-gray-600 hover:bg-gray-100 relative" data-testid="button-wishlist">
                   <Heart className="h-5 w-5" />
+                  {getWishlistCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {getWishlistCount()}
+                    </span>
+                  )}
                 </Button>
               </Link>
               <Link href="/cart">
@@ -202,7 +211,7 @@ export default function Catalog() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map((product: any) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`product-card-${product.id}`}>
-                <div className="aspect-square bg-gray-100 relative">
+                <div className="aspect-square bg-gray-100 relative group">
                   {product.imageUrl ? (
                     <img 
                       src={product.imageUrl} 
@@ -219,6 +228,29 @@ export default function Catalog() {
                       Customizable
                     </Badge>
                   )}
+                  {/* Wishlist Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        toast({
+                          title: "Login required",
+                          description: "Please log in to add items to your wishlist",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      toggleWishlist(product.id);
+                    }}
+                    disabled={isPending}
+                    className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-testid={`wishlist-toggle-${product.id}`}
+                  >
+                    <Heart 
+                      className={`h-5 w-5 ${isInWishlist(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
+                    />
+                  </Button>
                 </div>
                 <CardContent className="p-6">
                   <div className="mb-2">
@@ -270,7 +302,7 @@ export default function Catalog() {
             {filteredProducts.map((product: any) => (
               <Card key={product.id} className="overflow-hidden" data-testid={`product-list-${product.id}`}>
                 <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-1/3 aspect-square md:aspect-auto">
+                  <div className="w-full md:w-1/3 aspect-square md:aspect-auto relative group">
                     {product.imageUrl ? (
                       <img 
                         src={product.imageUrl} 
@@ -282,6 +314,29 @@ export default function Catalog() {
                         No Image
                       </div>
                     )}
+                    {/* Wishlist Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast({
+                            title: "Login required",
+                            description: "Please log in to add items to your wishlist",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        toggleWishlist(product.id);
+                      }}
+                      disabled={isPending}
+                      className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                      data-testid={`wishlist-toggle-list-${product.id}`}
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${isInWishlist(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
+                      />
+                    </Button>
                   </div>
                   <CardContent className="flex-1 p-6">
                     <div className="flex justify-between items-start mb-4">
