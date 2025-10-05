@@ -191,7 +191,7 @@ export default function ManufacturerLayout({ children }: ManufacturerLayoutProps
             </div>
             
             {/* Notification Bell */}
-            <Link href="/manufacturer/notifications">
+            <Link href="/notifications">
               <Button
                 variant="ghost"
                 size="sm"
