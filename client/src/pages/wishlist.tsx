@@ -87,9 +87,9 @@ export default function Wishlist() {
         </div>
 
         {/* Wishlist Items */}
-        {wishlistItems.length > 0 ? (
+        {wishlistItems.filter((item: any) => item.product).length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {wishlistItems.map((item: any) => (
+            {wishlistItems.filter((item: any) => item.product).map((item: any) => (
               <div
                 key={item.id}
                 className="group relative bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow"
