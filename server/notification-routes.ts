@@ -105,6 +105,8 @@ router.post("/mark-read", verifyAuth, async (req, res) => {
 router.post("/ask-question", verifyAuth, async (req, res) => {
   try {
     const userId = req.user?.userId;
+    console.log('Ask question request:', { body: req.body, userId });
+    
     const validation = customerQuestionSchema.safeParse(req.body);
     
     if (!userId) {
@@ -112,6 +114,7 @@ router.post("/ask-question", verifyAuth, async (req, res) => {
     }
 
     if (!validation.success) {
+      console.log('Validation failed:', validation.error.errors);
       return res.status(400).json({
         error: "Invalid request data",
         details: validation.error.errors,
@@ -119,11 +122,19 @@ router.post("/ask-question", verifyAuth, async (req, res) => {
     }
 
     const { orderId, stageId, message } = validation.data;
+    console.log('Validated data:', { orderId, stageId, messageLength: message.length });
 
     // Verify customer owns this order
     const order = await storage.getOrder(orderId);
-    if (!order || order.userId !== userId) {
+    console.log('Ask question - Order lookup:', { orderId, userId, orderFound: !!order, orderUserId: order?.userId });
+    
+    if (!order) {
       return res.status(404).json({ error: "Order not found" });
+    }
+    
+    if (order.userId !== userId) {
+      console.log('Order ownership mismatch:', { orderUserId: order.userId, requestUserId: userId });
+      return res.status(403).json({ error: "You don't have permission to access this order" });
     }
 
     // Get manufacturing process with full details
