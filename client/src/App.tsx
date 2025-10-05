@@ -44,6 +44,7 @@ import ManufacturerProcessDetail from "@/pages/manufacturer/process-detail";
 import ManufacturerNotifications from "@/pages/manufacturer/notifications";
 import ManufacturerRegistration from "@/pages/manufacturer-registration";
 import ManufacturerLogin from "@/pages/manufacturer-login";
+import Support from "@/pages/support";
 
 function AdminRouter() {
   return (
@@ -106,6 +107,7 @@ function Router() {
       <Route path="/orders" component={Orders} />
       <Route path="/orders/:orderId/tracking" component={OrderTracking} />
       <Route path="/cart" component={Cart} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );
