@@ -503,7 +503,7 @@ export default function Configurator() {
                 {/* Show 3D Canvas when 360° view is selected */}
                 <canvas
                   ref={canvasRef}
-                  className={`w-full h-[450px] cursor-move ${
+                  className={`w-full h-[450px] cursor-grab active:cursor-grabbing ${
                     selectedThumbnail === productImages.length ? 'block' : 'hidden'
                   }`}
                   data-testid="3d-preview"
