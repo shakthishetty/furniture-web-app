@@ -122,23 +122,40 @@ router.post("/ask-question", verifyAuth, async (req, res) => {
 
     // Verify customer owns this order
     const order = await storage.getOrder(orderId);
-    if (!order || order.customerId !== userId) {
+    if (!order || order.userId !== userId) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    // Get manufacturing process for this order
+    // Get manufacturing process with full details
     const manufacturingProcess = await storage.getManufacturingProcessByOrderId(orderId);
     if (!manufacturingProcess) {
       return res.status(404).json({ error: "Manufacturing process not found" });
     }
 
+    // Get full manufacturing process details with stages
+    const fullProcess = await storage.getManufacturingProcessWithDetails(manufacturingProcess.id);
+    if (!fullProcess || !fullProcess.stages || fullProcess.stages.length === 0) {
+      return res.status(404).json({ error: "Manufacturing stages not found" });
+    }
+
+    // Find the target stage
+    const targetStage = stageId 
+      ? fullProcess.stages.find(s => s.id === stageId)
+      : fullProcess.stages[0];
+    
+    if (!targetStage || !targetStage.updates || targetStage.updates.length === 0) {
+      return res.status(404).json({ error: "No updates found for this stage" });
+    }
+
+    // Use the first update of the stage for the reply
+    const targetUpdate = targetStage.updates[0];
+
     // Create customer question as a stage update reply
     const updateData = {
-      stageId: stageId || manufacturingProcess.stages?.[0]?.id, // Use first stage if no specific stage
+      updateId: targetUpdate.id,
       message: message,
       authorUserId: userId,
-      authorName: req.user?.firstName || 'Customer',
-      isManufacturerReply: false,
+      authorRole: 'customer',
       isCustomerQuestion: true // New field to distinguish customer questions
     };
 
@@ -147,6 +164,28 @@ router.post("/ask-question", verifyAuth, async (req, res) => {
     // Notify manufacturer about new customer question
     if (manufacturingProcess.assignedManufacturerId) {
       const manufacturer = await storage.getUser(manufacturingProcess.assignedManufacturerId);
+      
+      // Get customer name
+      const customer = await storage.getUser(userId);
+      const customerName = customer?.firstName || 'A customer';
+
+      // Create in-app notification for manufacturer
+      try {
+        await storage.createNotification({
+          userId: manufacturingProcess.assignedManufacturerId,
+          orderId: orderId,
+          processId: manufacturingProcess.id,
+          stageId: stageId || undefined,
+          type: 'customer_question',
+          title: 'New Customer Question',
+          message: `${customerName} asked: ${message}`,
+          isRead: false,
+        });
+      } catch (notificationError) {
+        console.error('Failed to create in-app notification for manufacturer:', notificationError);
+      }
+      
+      // Send email notification
       if (manufacturer?.email) {
         try {
           await sendManufacturerNotificationEmail(

@@ -1,5 +1,6 @@
 import { useLocation, Link, useLocation as useLocationHook } from "wouter";
 import { useManufacturerAuth } from "@/hooks/useManufacturerAuth";
+import { useQuery } from "@tanstack/react-query";
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -19,11 +20,13 @@ import {
   Settings,
   LogOut,
   Store,
-  Wrench
+  Wrench,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 
 const manufacturerMenuItems = [
@@ -159,6 +162,14 @@ function UnauthorizedState() {
 
 export default function ManufacturerLayout({ children }: ManufacturerLayoutProps) {
   const { manufacturerUser, isLoading, isManufacturer } = useManufacturerAuth();
+  const [, setLocation] = useLocationHook();
+
+  // Fetch unread notification count
+  const { data: unreadCount } = useQuery<{ count: number }>({
+    queryKey: ['/api/notifications', 'unread-count'],
+    enabled: !!manufacturerUser,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   if (isLoading) {
     return <LoadingState />;
@@ -178,6 +189,27 @@ export default function ManufacturerLayout({ children }: ManufacturerLayoutProps
             <div className="flex-1">
               <h1 className="font-semibold text-lg">Manufacturing Portal</h1>
             </div>
+            
+            {/* Notification Bell */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative p-2"
+              onClick={() => setLocation('/manufacturer/notifications')}
+              data-testid="button-notifications"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount && unreadCount.count > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                  data-testid="notification-count-badge"
+                >
+                  {unreadCount.count}
+                </Badge>
+              )}
+            </Button>
+
             <Button 
               variant="outline" 
               size="sm" 
