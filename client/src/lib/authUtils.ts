@@ -32,4 +32,5 @@ export async function resetAuthState(queryClient: QueryClient) {
   queryClient.removeQueries({ queryKey: ['/api/auth/me'] });
   queryClient.removeQueries({ queryKey: ['/api/orders'] });
   queryClient.removeQueries({ queryKey: ['/api/notifications'] });
+  queryClient.removeQueries({ queryKey: ['/api/wishlist'] });
 }
