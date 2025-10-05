@@ -75,7 +75,7 @@ export default function Wishlist() {
       <Navigation />
 
       {/* Page Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 pt-24 pb-12">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-3 text-gray-900 dark:text-gray-100" data-testid="page-title">
