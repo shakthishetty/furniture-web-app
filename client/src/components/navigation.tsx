@@ -87,6 +87,13 @@ export default function Navigation() {
             >
               Outdoor
             </Link>
+            <Link 
+              href="/support" 
+              className="nav-link text-sm font-medium text-muted-foreground hover:text-primary" 
+              data-testid="nav-support"
+            >
+              Support
+            </Link>
           </div>
 
           {/* User Actions */}
@@ -189,11 +196,11 @@ export default function Navigation() {
                     <span className="text-sm font-medium">Cancel/Return Order</span>
                   </div>
                   
-                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" data-testid="mobile-support">
+                  <Link href="/support" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors" data-testid="mobile-support">
                     <HeadphonesIcon className="h-5 w-5 text-green-600" />
                     <span className="text-sm font-medium">Customer Support</span>
                     <Badge variant="destructive" className="ml-auto">24/7</Badge>
-                  </div>
+                  </Link>
                 </div>
               </div>
               
