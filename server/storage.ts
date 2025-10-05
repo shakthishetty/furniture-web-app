@@ -2298,10 +2298,10 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(supportTickets.userId, options.userId));
     }
     if (options?.status) {
-      conditions.push(eq(supportTickets.status, options.status));
+      conditions.push(sql`${supportTickets.status} = ${options.status}`);
     }
     if (options?.category) {
-      conditions.push(eq(supportTickets.category, options.category));
+      conditions.push(sql`${supportTickets.category} = ${options.category}`);
     }
     if (options?.assignedTo) {
       conditions.push(eq(supportTickets.assignedTo, options.assignedTo));
