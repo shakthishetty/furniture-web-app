@@ -24,7 +24,8 @@ import {
   LogOut,
   Store,
   Wrench,
-  Building2
+  Building2,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -71,6 +72,11 @@ const adminMenuItems = [
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Support",
+    url: "/support",
+    icon: MessageCircle,
   },
   {
     title: "Settings",

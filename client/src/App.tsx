@@ -38,6 +38,7 @@ import AdminAnalytics from "@/pages/admin/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import AdminManufacturing from "@/pages/admin/manufacturing";
 import AdminManufacturers from "@/pages/admin/manufacturers";
+import AdminSupport from "@/pages/admin/support";
 import ManufacturerDashboard from "@/pages/manufacturer/dashboard";
 import ManufacturerProcesses from "@/pages/manufacturer/processes";
 import ManufacturerProcessDetail from "@/pages/manufacturer/process-detail";
@@ -58,6 +59,7 @@ function AdminRouter() {
         <Route path="/manufacturers" component={AdminManufacturers} />
         <Route path="/discounts" component={AdminDiscounts} />
         <Route path="/analytics" component={AdminAnalytics} />
+        <Route path="/support" component={AdminSupport} />
         <Route path="/settings" component={AdminSettings} />
         <Route component={() => <div>Admin Page Not Found</div>} />
       </Switch>
