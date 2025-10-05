@@ -733,3 +733,58 @@ export const insertCustomerNotificationSchema = createInsertSchema(customerNotif
 
 export type CustomerNotification = typeof customerNotifications.$inferSelect;
 export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;
+
+// Support Tickets Table
+export const supportTicketStatusEnum = pgEnum("support_ticket_status", ["open", "in_progress", "resolved", "closed"]);
+export const supportTicketCategoryEnum = pgEnum("support_ticket_category", ["sales", "customer_support", "manufacturing", "technical", "general"]);
+export const supportTicketPriorityEnum = pgEnum("support_ticket_priority", ["low", "medium", "high", "urgent"]);
+
+export const supportTickets = pgTable("support_tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"), // Optional - for logged-in users
+  userRole: varchar("user_role"), // customer, manufacturer, guest
+  name: varchar("name").notNull(), // Name of the person submitting
+  email: varchar("email").notNull(), // Contact email
+  category: supportTicketCategoryEnum("category").notNull().default("general"),
+  subject: varchar("subject").notNull(),
+  message: text("message").notNull(),
+  orderId: varchar("order_id"), // Optional - if related to an order
+  processId: varchar("process_id"), // Optional - if related to a manufacturing process
+  status: supportTicketStatusEnum("status").notNull().default("open"),
+  priority: supportTicketPriorityEnum("priority").notNull().default("medium"),
+  assignedTo: varchar("assigned_to"), // Admin or manufacturer user ID
+  internalNotes: text("internal_notes"), // Private notes for staff
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Support ticket schemas
+export const createSupportTicketSchema = createInsertSchema(supportTickets).omit({
+  id: true,
+  userId: true,
+  userRole: true,
+  status: true,
+  priority: true,
+  assignedTo: true,
+  internalNotes: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+  subject: z.string().min(5, "Subject must be at least 5 characters"),
+  message: z.string().min(20, "Message must be at least 20 characters"),
+  category: z.enum(["sales", "customer_support", "manufacturing", "technical", "general"]).default("general"),
+});
+
+export const updateSupportTicketSchema = z.object({
+  status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  assignedTo: z.string().nullable().optional(),
+  internalNotes: z.string().optional(),
+});
+
+// Support ticket types
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type CreateSupportTicketRequest = z.infer<typeof createSupportTicketSchema>;
+export type UpdateSupportTicketRequest = z.infer<typeof updateSupportTicketSchema>;
