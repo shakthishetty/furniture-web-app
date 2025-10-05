@@ -2,6 +2,7 @@ import { Router } from "express";
 import { storage } from "./storage";
 import { createSupportTicketSchema, updateSupportTicketSchema } from "@shared/schema";
 import { sendEmail } from "./utils/email";
+import { requireAuth, requireAdmin, verifyAuth } from "./utils/auth";
 
 const router = Router();
 
@@ -111,8 +112,8 @@ async function sendAdminNotificationEmail(
   return await sendEmail(adminEmail, `New Support Ticket: ${category} - ${subject}`, html);
 }
 
-// Create a new support ticket (public endpoint - no auth required)
-router.post("/", async (req, res) => {
+// Create a new support ticket (auth optional - verifyAuth provides user context if available)
+router.post("/", verifyAuth, async (req, res) => {
   try {
     const validatedData = createSupportTicketSchema.parse(req.body);
     const userId = req.user?.userId;
@@ -160,8 +161,8 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get support tickets (for logged-in users - their own tickets)
-router.get("/", async (req, res) => {
+// Get support tickets (for logged-in users - their own tickets only)
+router.get("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.userId;
     
@@ -171,10 +172,11 @@ router.get("/", async (req, res) => {
 
     const user = await storage.getUser(userId);
     
-    // Customers see only their tickets
-    // Admins and manufacturers can see filtered tickets
+    // Only return tickets owned by the authenticated user
+    // Admins should use /api/support/all
+    // Manufacturers should use /api/support/manufacturer
     const tickets = await storage.getSupportTickets({
-      userId: user?.role === 'customer' ? userId : undefined,
+      userId: userId,
       status: req.query.status as string,
       category: req.query.category as string,
     });
@@ -187,7 +189,7 @@ router.get("/", async (req, res) => {
 });
 
 // Get all support tickets (admin only)
-router.get("/all", async (req, res) => {
+router.get("/all", requireAdmin, async (req, res) => {
   try {
     const userId = req.user?.userId;
     
@@ -214,17 +216,26 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// Get manufacturing support tickets (manufacturer only)
-router.get("/manufacturer", async (req, res) => {
+// Get manufacturing support tickets (manufacturer only - assigned tickets)
+router.get("/manufacturer", requireAuth, async (req, res) => {
   try {
-    const manufacturerId = req.manufacturerUser?.manufacturerId;
+    const userId = req.user?.userId;
     
-    if (!manufacturerId) {
-      return res.status(401).json({ error: "Not authenticated as manufacturer" });
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
+    // Verify user is a manufacturer
+    const user = await storage.getUser(userId);
+    if (user?.role !== 'manufacturer') {
+      return res.status(403).json({ error: "Manufacturer access required" });
+    }
+
+    // Only return tickets explicitly assigned to this manufacturer
+    // This prevents data leakage to unauthorized manufacturers
     const tickets = await storage.getSupportTickets({
       category: "manufacturing",
+      assignedTo: userId,  // Only tickets assigned to this manufacturer
       status: req.query.status as string,
     });
 
@@ -236,7 +247,7 @@ router.get("/manufacturer", async (req, res) => {
 });
 
 // Get a single support ticket
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.userId;
     const ticketId = req.params.id;
@@ -252,8 +263,14 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Support ticket not found" });
     }
 
-    // Verify access: user owns ticket or is admin
-    if (ticket.userId !== userId && user?.role !== 'admin') {
+    // Verify access: user owns ticket, is admin, or is manufacturer assigned to the ticket
+    const isOwner = ticket.userId === userId;
+    const isAdmin = user?.role === 'admin';
+    const isAssignedManufacturer = user?.role === 'manufacturer' && 
+                                    ticket.category === 'manufacturing' && 
+                                    ticket.assignedTo === userId;
+    
+    if (!isOwner && !isAdmin && !isAssignedManufacturer) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
@@ -264,33 +281,10 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update support ticket (admin or manufacturer)
-router.patch("/:id", async (req, res) => {
+// Update support ticket (admin only)
+router.patch("/:id", requireAdmin, async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    const manufacturerId = req.manufacturerUser?.manufacturerId;
     const ticketId = req.params.id;
-    
-    if (!userId && !manufacturerId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Check if admin
-    let isAdmin = false;
-    if (userId) {
-      const user = await storage.getUser(userId);
-      isAdmin = user?.role === 'admin';
-    }
-
-    // Manufacturers can only update manufacturing tickets
-    if (manufacturerId && !isAdmin) {
-      const ticket = await storage.getSupportTicket(ticketId);
-      if (!ticket || ticket.category !== 'manufacturing') {
-        return res.status(403).json({ error: "Unauthorized - Can only update manufacturing tickets" });
-      }
-    } else if (!isAdmin) {
-      return res.status(403).json({ error: "Unauthorized - Admin access required" });
-    }
 
     const validatedData = updateSupportTicketSchema.parse(req.body);
     const ticket = await storage.updateSupportTicket(ticketId, validatedData);
@@ -307,7 +301,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Delete support ticket (admin only)
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const userId = req.user?.userId;
     const ticketId = req.params.id;

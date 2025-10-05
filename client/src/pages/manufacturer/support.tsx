@@ -50,28 +50,6 @@ export default function ManufacturerSupport() {
     },
   });
 
-  const updateTicketMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      const response = await apiRequest("PATCH", `/api/support/${id}`, updates);
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Ticket updated",
-        description: "Support ticket has been updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/support/manufacturer"] });
-      setSelectedTicket(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update ticket",
-        variant: "destructive",
-      });
-    },
-  });
-
   const tickets = ticketsData?.tickets || [];
 
   const ticketsByStatus = {
@@ -79,13 +57,6 @@ export default function ManufacturerSupport() {
     in_progress: tickets.filter(t => t.status === "in_progress"),
     resolved: tickets.filter(t => t.status === "resolved"),
     closed: tickets.filter(t => t.status === "closed"),
-  };
-
-  const handleUpdateStatus = (ticketId: string, status: string) => {
-    updateTicketMutation.mutate({
-      id: ticketId,
-      updates: { status },
-    });
   };
 
   const getStatusBadge = (status: string) => (
@@ -235,7 +206,6 @@ export default function ManufacturerSupport() {
           ticket={selectedTicket}
           open={!!selectedTicket}
           onClose={() => setSelectedTicket(null)}
-          onUpdateStatus={handleUpdateStatus}
           getStatusBadge={getStatusBadge}
           getPriorityBadge={getPriorityBadge}
         />
@@ -311,12 +281,11 @@ interface TicketDetailDialogProps {
   ticket: SupportTicket;
   open: boolean;
   onClose: () => void;
-  onUpdateStatus: (id: string, status: string) => void;
   getStatusBadge: (status: string) => JSX.Element;
   getPriorityBadge: (priority: string) => JSX.Element;
 }
 
-function TicketDetailDialog({ ticket, open, onClose, onUpdateStatus, getStatusBadge, getPriorityBadge }: TicketDetailDialogProps) {
+function TicketDetailDialog({ ticket, open, onClose, getStatusBadge, getPriorityBadge }: TicketDetailDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -331,20 +300,20 @@ function TicketDetailDialog({ ticket, open, onClose, onUpdateStatus, getStatusBa
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Status */}
-          <div>
-            <Label className="mb-2 block">Status</Label>
-            <Select value={ticket.status} onValueChange={(value) => onUpdateStatus(ticket.id, value)}>
-              <SelectTrigger data-testid="select-ticket-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Status & Priority (Read-only for manufacturers) */}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Label className="mb-2 block">Status</Label>
+              <div className="py-2">
+                {getStatusBadge(ticket.status)}
+              </div>
+            </div>
+            <div className="flex-1">
+              <Label className="mb-2 block">Priority</Label>
+              <div className="py-2">
+                {getPriorityBadge(ticket.priority)}
+              </div>
+            </div>
           </div>
 
           {/* Customer Info */}
