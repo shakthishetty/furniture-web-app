@@ -75,13 +75,13 @@ export default function Wishlist() {
       <Navigation />
 
       {/* Page Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold font-serif mb-4" data-testid="page-title">
+        <div className="mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-3 text-gray-900 dark:text-gray-100" data-testid="page-title">
             My Wishlist
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg" data-testid="page-description">
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg" data-testid="page-description">
             Save your favorite pieces for later and never lose track of what you love.
           </p>
         </div>
