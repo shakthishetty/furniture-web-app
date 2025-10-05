@@ -43,6 +43,7 @@ import ManufacturerDashboard from "@/pages/manufacturer/dashboard";
 import ManufacturerProcesses from "@/pages/manufacturer/processes";
 import ManufacturerProcessDetail from "@/pages/manufacturer/process-detail";
 import ManufacturerNotifications from "@/pages/manufacturer/notifications";
+import ManufacturerSupport from "@/pages/manufacturer/support";
 import ManufacturerRegistration from "@/pages/manufacturer-registration";
 import ManufacturerLogin from "@/pages/manufacturer-login";
 import Support from "@/pages/support";
@@ -75,6 +76,7 @@ function ManufacturerRouter() {
         <Route path="/processes" component={ManufacturerProcesses} />
         <Route path="/processes/:id" component={ManufacturerProcessDetail} />
         <Route path="/notifications" component={ManufacturerNotifications} />
+        <Route path="/support" component={ManufacturerSupport} />
         <Route component={() => <div>Manufacturer Page Not Found</div>} />
       </Switch>
     </ManufacturerLayout>

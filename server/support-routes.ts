@@ -214,6 +214,27 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// Get manufacturing support tickets (manufacturer only)
+router.get("/manufacturer", async (req, res) => {
+  try {
+    const manufacturerId = req.manufacturerUser?.manufacturerId;
+    
+    if (!manufacturerId) {
+      return res.status(401).json({ error: "Not authenticated as manufacturer" });
+    }
+
+    const tickets = await storage.getSupportTickets({
+      category: "manufacturing",
+      status: req.query.status as string,
+    });
+
+    res.json({ tickets });
+  } catch (error: any) {
+    console.error("Error fetching manufacturer support tickets:", error);
+    res.status(500).json({ error: "Failed to fetch support tickets" });
+  }
+});
+
 // Get a single support ticket
 router.get("/:id", async (req, res) => {
   try {
@@ -243,19 +264,31 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update support ticket (admin only)
+// Update support ticket (admin or manufacturer)
 router.patch("/:id", async (req, res) => {
   try {
     const userId = req.user?.userId;
+    const manufacturerId = req.manufacturerUser?.manufacturerId;
     const ticketId = req.params.id;
     
-    if (!userId) {
+    if (!userId && !manufacturerId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const user = await storage.getUser(userId);
-    
-    if (user?.role !== 'admin') {
+    // Check if admin
+    let isAdmin = false;
+    if (userId) {
+      const user = await storage.getUser(userId);
+      isAdmin = user?.role === 'admin';
+    }
+
+    // Manufacturers can only update manufacturing tickets
+    if (manufacturerId && !isAdmin) {
+      const ticket = await storage.getSupportTicket(ticketId);
+      if (!ticket || ticket.category !== 'manufacturing') {
+        return res.status(403).json({ error: "Unauthorized - Can only update manufacturing tickets" });
+      }
+    } else if (!isAdmin) {
       return res.status(403).json({ error: "Unauthorized - Admin access required" });
     }
 

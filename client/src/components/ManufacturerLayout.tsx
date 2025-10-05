@@ -21,7 +21,8 @@ import {
   LogOut,
   Store,
   Wrench,
-  Bell
+  Bell,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -39,6 +40,11 @@ const manufacturerMenuItems = [
     title: "My Processes",
     url: "/processes",
     icon: Wrench,
+  },
+  {
+    title: "Support",
+    url: "/support",
+    icon: MessageCircle,
   },
   {
     title: "Settings",
