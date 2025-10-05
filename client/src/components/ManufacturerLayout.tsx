@@ -191,24 +191,25 @@ export default function ManufacturerLayout({ children }: ManufacturerLayoutProps
             </div>
             
             {/* Notification Bell */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="relative p-2"
-              onClick={() => setLocation('/manufacturer/notifications')}
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount && unreadCount.count > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                  data-testid="notification-count-badge"
-                >
-                  {unreadCount.count}
-                </Badge>
-              )}
-            </Button>
+            <Link href="/manufacturer/notifications">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative p-2"
+                data-testid="button-notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount && unreadCount.count > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                    data-testid="notification-count-badge"
+                  >
+                    {unreadCount.count}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
 
             <Button 
               variant="outline" 
