@@ -48,6 +48,9 @@ import {
   type UpdateManufacturerRequest,
   type CustomerNotification,
   type InsertCustomerNotification,
+  type SupportTicket,
+  type CreateSupportTicketRequest,
+  type UpdateSupportTicketRequest,
   users, 
   sessions,
   products,
@@ -69,7 +72,8 @@ import {
   stageUpdateReplies,
   manufacturerProfiles,
   manufacturers,
-  customerNotifications
+  customerNotifications,
+  supportTickets
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gt, sql, or, ilike, gte, lte, desc, inArray } from "drizzle-orm";
@@ -262,6 +266,13 @@ export interface IStorage {
   markNotificationAsRead(notificationId: string, userId: string): Promise<boolean>;
   markAllNotificationsAsRead(userId: string): Promise<boolean>;
   getUnreadNotificationCount(userId: string): Promise<number>;
+
+  // Support Tickets operations
+  createSupportTicket(ticketData: CreateSupportTicketRequest, userId?: string, userRole?: string): Promise<SupportTicket>;
+  getSupportTickets(options?: { userId?: string; status?: string; category?: string; assignedTo?: string }): Promise<SupportTicket[]>;
+  getSupportTicket(id: string): Promise<SupportTicket | undefined>;
+  updateSupportTicket(id: string, updates: UpdateSupportTicketRequest): Promise<SupportTicket | undefined>;
+  deleteSupportTicket(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2264,6 +2275,78 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return result?.count || 0;
+  }
+
+  // Support Tickets operations
+  async createSupportTicket(ticketData: CreateSupportTicketRequest, userId?: string, userRole?: string): Promise<SupportTicket> {
+    const [ticket] = await db
+      .insert(supportTickets)
+      .values({
+        ...ticketData,
+        userId: userId || null,
+        userRole: userRole || (userId ? 'customer' : 'guest'),
+      })
+      .returning();
+    
+    return ticket;
+  }
+
+  async getSupportTickets(options?: { userId?: string; status?: string; category?: string; assignedTo?: string }): Promise<SupportTicket[]> {
+    const conditions = [];
+    
+    if (options?.userId) {
+      conditions.push(eq(supportTickets.userId, options.userId));
+    }
+    if (options?.status) {
+      conditions.push(eq(supportTickets.status, options.status));
+    }
+    if (options?.category) {
+      conditions.push(eq(supportTickets.category, options.category));
+    }
+    if (options?.assignedTo) {
+      conditions.push(eq(supportTickets.assignedTo, options.assignedTo));
+    }
+    
+    const query = db
+      .select()
+      .from(supportTickets)
+      .orderBy(desc(supportTickets.createdAt));
+    
+    const tickets = conditions.length > 0
+      ? await query.where(and(...conditions))
+      : await query;
+    
+    return tickets;
+  }
+
+  async getSupportTicket(id: string): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(supportTickets)
+      .where(eq(supportTickets.id, id));
+    
+    return ticket;
+  }
+
+  async updateSupportTicket(id: string, updates: UpdateSupportTicketRequest): Promise<SupportTicket | undefined> {
+    const [ticket] = await db
+      .update(supportTickets)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    
+    return ticket;
+  }
+
+  async deleteSupportTicket(id: string): Promise<boolean> {
+    const result = await db
+      .delete(supportTickets)
+      .where(eq(supportTickets.id, id));
+    
+    return true;
   }
 }
 
