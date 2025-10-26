@@ -8,10 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Save, RotateCcw, Share2, ShoppingCart, Star, Info } from "lucide-react";
+import { ArrowLeft, RotateCcw, Share2, ShoppingCart, Star, Info } from "lucide-react";
 import * as THREE from 'three';
 import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
@@ -35,7 +34,6 @@ export default function Configurator() {
   const params = useParams();
   const productId = params.id;
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist, isPending: wishlistPending } = useWishlist();
@@ -50,8 +48,6 @@ export default function Configurator() {
   const cameraDistanceRef = useRef(5);
 
   const [configuration, setConfiguration] = useState<Configuration>({});
-  const [configurationName, setConfigurationName] = useState("");
-  const [savedConfigurationId, setSavedConfigurationId] = useState<string | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
   const [selectedThumbnail, setSelectedThumbnail] = useState(0);
   const [productImages, setProductImages] = useState<string[]>([]);
@@ -82,9 +78,13 @@ export default function Configurator() {
     queryKey: [`/api/configurator/pricing`, configuration],
     queryFn: async () => {
       if (!productId || Object.keys(configuration).length === 0) return null;
-      const response = await apiRequest('POST', '/api/configurator/pricing', {
-        productId,
-        configuration,
+      const response = await fetch('/api/configurator/pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          configuration,
+        }),
       });
       return await response.json();
     },
@@ -123,32 +123,6 @@ export default function Configurator() {
     }
   }, [product]);
 
-  // Save configuration mutation
-  const saveConfigurationMutation = useMutation({
-    mutationFn: async (data: { name?: string; configuration: Configuration }) => {
-      const response = await apiRequest('POST', '/api/configurator/configurations', {
-        productId,
-        name: data.name,
-        configuration: data.configuration,
-      });
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      setSavedConfigurationId(data.configuration.id);
-      toast({
-        title: 'Configuration saved',
-        description: 'Your custom configuration has been saved successfully.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/configurator/configurations'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Save failed',
-        description: error.message || 'Failed to save configuration.',
-        variant: 'destructive',
-      });
-    },
-  });
 
   // Initialize 3D scene
   useEffect(() => {
@@ -387,12 +361,6 @@ export default function Configurator() {
 
   const resetConfiguration = () => {
     setConfiguration({});
-    setSavedConfigurationId(null);
-  };
-
-  const saveConfiguration = () => {
-    const name = configurationName || `${product?.name} Custom Configuration`;
-    saveConfigurationMutation.mutate({ name, configuration });
   };
 
   const addToCartWithConfiguration = () => {
@@ -400,7 +368,6 @@ export default function Configurator() {
     
     addToCart({
       productId: product.id,
-      configurationId: savedConfigurationId || undefined,
       customConfiguration: configuration,
       name: `${product.name} (Custom)`,
       price: parseFloat(pricingData.totalPrice),
@@ -811,36 +778,14 @@ export default function Configurator() {
 
             {/* Action Buttons */}
             <div className="space-y-3 pt-4">
-              {!savedConfigurationId ? (
-                <>
-                  <Button
-                    onClick={saveConfiguration}
-                    disabled={saveConfigurationMutation.isPending}
-                    className="w-full bg-[#254127] hover:bg-[#1a2f1b] h-12 text-base"
-                    data-testid="save-configuration"
-                  >
-                    <Save className="h-5 w-5 mr-2" />
-                    {saveConfigurationMutation.isPending ? 'Saving...' : 'Save Configuration'}
-                  </Button>
-                  <p className="text-sm text-gray-600 text-center">
-                    Save your configuration to add it to cart
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center text-sm text-green-800">
-                    ✅ Configuration saved successfully!
-                  </div>
-                  <Button
-                    onClick={addToCartWithConfiguration}
-                    className="w-full bg-[#254127] hover:bg-[#1a2f1b] h-14 text-lg"
-                    data-testid="add-to-cart"
-                  >
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Add to Cart
-                  </Button>
-                </>
-              )}
+              <Button
+                onClick={addToCartWithConfiguration}
+                className="w-full bg-[#254127] hover:bg-[#1a2f1b] h-14 text-lg"
+                data-testid="add-to-cart"
+              >
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                Add to Cart
+              </Button>
               
               <div className="flex gap-3">
                 <Button
