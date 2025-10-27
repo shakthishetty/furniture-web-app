@@ -20,6 +20,8 @@ interface OrderItem {
   quantity: number;
   price: number;
   total: number;
+  customConfiguration?: string | any;
+  productImage?: string;
 }
 
 interface Order {
@@ -449,18 +451,92 @@ export default function AdminOrders() {
               {/* Order Items */}
               <div>
                 <Label>Order Items</Label>
-                <div className="mt-2 space-y-2">
-                  {viewingOrder.items.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center p-3 border rounded">
-                      <div>
-                        <p className="font-medium">{item.productName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {item.quantity} × {formatPrice(item.price)}
-                        </p>
+                <div className="mt-2 space-y-3">
+                  {viewingOrder.items.map((item) => {
+                    // Parse custom configuration if it exists
+                    let customConfig = null;
+                    try {
+                      if (item.customConfiguration) {
+                        customConfig = typeof item.customConfiguration === 'string' 
+                          ? JSON.parse(item.customConfiguration) 
+                          : item.customConfiguration;
+                      }
+                    } catch (e) {
+                      console.error('Error parsing custom configuration:', e);
+                    }
+
+                    return (
+                      <div key={item.id} className="flex gap-3 p-3 border rounded">
+                        {item.productImage && (
+                          <img
+                            src={item.productImage}
+                            alt={item.productName}
+                            className="w-16 h-16 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Quantity: {item.quantity} × {formatPrice(item.price)}
+                          </p>
+                          
+                          {/* Display Custom Configuration */}
+                          {customConfig && (
+                            <div className="mt-2 space-y-1">
+                              {customConfig.chairType && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Type:</span> {customConfig.chairType === 'armchair' ? 'Dining Armchair' : 'Armless Dining Chair'}
+                                </p>
+                              )}
+                              {customConfig.woodType && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Wood Type:</span> {customConfig.woodType.charAt(0).toUpperCase() + customConfig.woodType.slice(1)}
+                                </p>
+                              )}
+                              {customConfig.woodStain && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Wood Stain:</span> {customConfig.woodStain.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                </p>
+                              )}
+                              {customConfig.upholstery && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Upholstery:</span> {customConfig.upholstery.charAt(0).toUpperCase() + customConfig.upholstery.slice(1)}
+                                </p>
+                              )}
+                              {customConfig.hardware && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Hardware:</span> {customConfig.hardware.charAt(0).toUpperCase() + customConfig.hardware.slice(1)}
+                                </p>
+                              )}
+                              {customConfig.finish && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Surface Finish:</span> {customConfig.finish.charAt(0).toUpperCase() + customConfig.finish.slice(1)}
+                                </p>
+                              )}
+                              {customConfig.dimensions && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Dimensions:</span> {customConfig.dimensions.width}"W × {customConfig.dimensions.height}"H × {customConfig.dimensions.depth}"D
+                                </p>
+                              )}
+                              {customConfig.material && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Material:</span> Custom
+                                </p>
+                              )}
+                              {customConfig.color && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Color:</span> {customConfig.color}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatPrice(item.total)}</p>
+                        </div>
                       </div>
-                      <p className="font-medium">{formatPrice(item.total)}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
