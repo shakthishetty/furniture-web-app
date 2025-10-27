@@ -28,6 +28,9 @@ interface Configuration {
   hardware?: string;
   finish?: string;
   chairType?: string;
+  woodType?: string;
+  woodStain?: string;
+  upholstery?: string;
 }
 
 export default function Configurator() {
@@ -700,6 +703,75 @@ export default function Configurator() {
                     data-testid="depth-slider"
                   />
                 </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Wood Type Section */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Wood Type</Label>
+                <Select
+                  value={configuration.woodType || ''}
+                  onValueChange={(value) => updateConfiguration('woodType', value)}
+                >
+                  <SelectTrigger data-testid="wood-type-select" className="w-full">
+                    <SelectValue placeholder="Choose wood type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="teak">Teak</SelectItem>
+                    <SelectItem value="oak">Oak</SelectItem>
+                    <SelectItem value="walnut">Walnut</SelectItem>
+                    <SelectItem value="maple">Maple</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Wood Stain Section */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Wood Stain</Label>
+                <Select
+                  value={configuration.woodStain || ''}
+                  onValueChange={(value) => updateConfiguration('woodStain', value)}
+                >
+                  <SelectTrigger data-testid="wood-stain-select" className="w-full">
+                    <SelectValue placeholder="Choose wood stain" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="natural-teak">Natural Teak</SelectItem>
+                    <SelectItem value="dark-teak">Dark Teak</SelectItem>
+                    <SelectItem value="light-teak">Light Teak</SelectItem>
+                    <SelectItem value="mahogany-teak">Mahogany Teak</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Upholstery Section */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">Upholstery</Label>
+                <Select
+                  value={configuration.upholstery || ''}
+                  onValueChange={(value) => updateConfiguration('upholstery', value)}
+                >
+                  <SelectTrigger data-testid="upholstery-select" className="w-full">
+                    <SelectValue placeholder="Choose upholstery" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="leather">Leather</SelectItem>
+                    <SelectItem value="cotton">Cotton</SelectItem>
+                    <SelectItem value="linen">Linen</SelectItem>
+                    <SelectItem value="velvet">Velvet</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
