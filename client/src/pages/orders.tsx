@@ -248,29 +248,95 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
                     <div>
                       <h4 className="font-semibold mb-3">Items</h4>
                       <div className="space-y-3">
-                        {orderDetails.items.map((item, index) => (
-                          <div key={index} className="flex gap-3 p-3 border rounded-lg">
-                            {item.productImage && (
-                              <img
-                                src={item.productImage}
-                                alt={item.productName}
-                                className="w-16 h-16 object-cover rounded"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <h5 className="font-medium">{item.productName}</h5>
-                              <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                              <p className="text-sm font-medium">
-                                ${parseFloat(item.unitPrice).toFixed(2)} each
-                              </p>
+                        {orderDetails.items.map((item, index) => {
+                          // Parse custom configuration if it exists
+                          let customConfig = null;
+                          try {
+                            if (item.customConfiguration) {
+                              customConfig = typeof item.customConfiguration === 'string' 
+                                ? JSON.parse(item.customConfiguration) 
+                                : item.customConfiguration;
+                            }
+                          } catch (e) {
+                            console.error('Error parsing custom configuration:', e);
+                          }
+
+                          return (
+                            <div key={index} className="flex gap-3 p-3 border rounded-lg">
+                              {item.productImage && (
+                                <img
+                                  src={item.productImage}
+                                  alt={item.productName}
+                                  className="w-16 h-16 object-cover rounded"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <h5 className="font-medium">{item.productName}</h5>
+                                <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                                
+                                {/* Display Custom Configuration */}
+                                {customConfig && (
+                                  <div className="mt-2 space-y-1">
+                                    {customConfig.chairType && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Type:</span> {customConfig.chairType === 'armchair' ? 'Dining Armchair' : 'Armless Dining Chair'}
+                                      </p>
+                                    )}
+                                    {customConfig.woodType && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Wood Type:</span> {customConfig.woodType.charAt(0).toUpperCase() + customConfig.woodType.slice(1)}
+                                      </p>
+                                    )}
+                                    {customConfig.woodStain && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Wood Stain:</span> {customConfig.woodStain.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                      </p>
+                                    )}
+                                    {customConfig.upholstery && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Upholstery:</span> {customConfig.upholstery.charAt(0).toUpperCase() + customConfig.upholstery.slice(1)}
+                                      </p>
+                                    )}
+                                    {customConfig.hardware && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Hardware:</span> {customConfig.hardware.charAt(0).toUpperCase() + customConfig.hardware.slice(1)}
+                                      </p>
+                                    )}
+                                    {customConfig.finish && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Surface Finish:</span> {customConfig.finish.charAt(0).toUpperCase() + customConfig.finish.slice(1)}
+                                      </p>
+                                    )}
+                                    {customConfig.dimensions && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Dimensions:</span> {customConfig.dimensions.width}"W × {customConfig.dimensions.height}"H × {customConfig.dimensions.depth}"D
+                                      </p>
+                                    )}
+                                    {customConfig.material && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Material:</span> Custom
+                                      </p>
+                                    )}
+                                    {customConfig.color && (
+                                      <p className="text-xs text-gray-600">
+                                        <span className="font-medium">Color:</span> {customConfig.color}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                <p className="text-sm font-medium mt-2">
+                                  ${parseFloat(item.unitPrice).toFixed(2)} each
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold">
+                                  ${parseFloat(item.totalPrice).toFixed(2)}
+                                </p>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold">
-                                ${parseFloat(item.totalPrice).toFixed(2)}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
