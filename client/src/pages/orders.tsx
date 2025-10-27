@@ -46,6 +46,30 @@ import type { Order, OrderItem } from "@shared/schema";
 
 interface OrderWithItems extends Order {
   items: OrderItem[];
+  shippingAddress?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    street: string;
+    apartment?: string | null;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone?: string | null;
+  };
+  billingAddress?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    street: string;
+    apartment?: string | null;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone?: string | null;
+  };
 }
 
 interface OrderWithTracking extends Order {
@@ -380,9 +404,28 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
                         <MapPin className="h-4 w-4 mr-1" />
                         Shipping Address
                       </h4>
-                      <p className="text-sm text-gray-600">
-                        Address information would be displayed here
-                      </p>
+                      {orderDetails.shippingAddress ? (
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p className="font-medium text-gray-900">
+                            {orderDetails.shippingAddress.firstName} {orderDetails.shippingAddress.lastName}
+                          </p>
+                          <p>{orderDetails.shippingAddress.street}</p>
+                          {orderDetails.shippingAddress.apartment && (
+                            <p>{orderDetails.shippingAddress.apartment}</p>
+                          )}
+                          <p>
+                            {orderDetails.shippingAddress.city}, {orderDetails.shippingAddress.state} {orderDetails.shippingAddress.postalCode}
+                          </p>
+                          <p>{orderDetails.shippingAddress.country}</p>
+                          {orderDetails.shippingAddress.phone && (
+                            <p className="mt-2">Phone: {orderDetails.shippingAddress.phone}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          Address information not available
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

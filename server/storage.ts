@@ -850,12 +850,26 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
-  async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined> {
+  async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[]; shippingAddress?: Address; billingAddress?: Address }) | undefined> {
     const order = await this.getOrder(id);
     if (!order) return undefined;
 
     const items = await this.getOrderItems(id);
-    return { ...order, items };
+    
+    // Fetch shipping and billing addresses if they exist
+    const shippingAddress = order.shippingAddressId 
+      ? await this.getAddress(order.shippingAddressId) 
+      : undefined;
+    const billingAddress = order.billingAddressId 
+      ? await this.getAddress(order.billingAddressId) 
+      : undefined;
+    
+    return { 
+      ...order, 
+      items,
+      shippingAddress,
+      billingAddress
+    };
   }
 
   async updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined> {
