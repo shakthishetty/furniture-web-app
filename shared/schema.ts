@@ -166,11 +166,38 @@ export const materials = pgTable("materials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   type: varchar("type").notNull(), // wood, metal, fabric, etc.
+  subType: varchar("sub_type"), // wood-type, wood-stain, upholstery, hardware, surface-finish
   description: text("description"),
+  priceModifier: varchar("price_modifier").default("0"), // flat price addition (e.g., "+150" or "+15%")
   priceMultiplier: varchar("price_multiplier").notNull(), // multiplier for base price
   textureUrl: varchar("texture_url"), // URL to texture image
-  color: varchar("color"), // hex color code
+  color: varchar("color"), // hex color code for swatches
+  stock: integer("stock").default(0), // manual stock tracking
   isAvailable: boolean("is_available").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product-Material Assignment Table
+export const productMaterials = pgTable("product_materials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull(),
+  materialId: varchar("material_id").notNull(),
+  isEnabled: boolean("is_enabled").default(true),
+  isDefault: boolean("is_default").default(false),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product Activity Tracking
+export const productActivity = pgTable("product_activity", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull(),
+  activityType: varchar("activity_type").notNull(), // view, customize, add_to_cart
+  userId: varchar("user_id"), // nullable for anonymous users
+  sessionId: varchar("session_id"), // track anonymous sessions
+  metadata: text("metadata"), // JSON for additional context
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -226,17 +253,48 @@ export const createCategorySchema = createInsertSchema(categories).omit({
 
 export const updateCategorySchema = createCategorySchema.partial();
 
+// Material Schemas
+export const createMaterialSchema = createInsertSchema(materials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateMaterialSchema = createMaterialSchema.partial();
+
+// Product Material Assignment Schemas
+export const createProductMaterialSchema = createInsertSchema(productMaterials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateProductMaterialSchema = createProductMaterialSchema.partial();
+
+// Product Activity Schema
+export const createProductActivitySchema = createInsertSchema(productActivity).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Category = typeof categories.$inferSelect;
 export type CreateCategoryRequest = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryRequest = z.infer<typeof updateCategorySchema>;
 export type Product = typeof products.$inferSelect;
 export type Material = typeof materials.$inferSelect;
+export type ProductMaterial = typeof productMaterials.$inferSelect;
+export type ProductActivity = typeof productActivity.$inferSelect;
 export type ConfigurationOption = typeof configurationOptions.$inferSelect;
 export type SavedConfiguration = typeof savedConfigurations.$inferSelect;
 export type CreateConfigurationRequest = z.infer<typeof createConfigurationSchema>;
 export type UpdateConfigurationRequest = z.infer<typeof updateConfigurationSchema>;
 export type PricingRequest = z.infer<typeof pricingRequestSchema>;
+export type CreateMaterialRequest = z.infer<typeof createMaterialSchema>;
+export type UpdateMaterialRequest = z.infer<typeof updateMaterialSchema>;
+export type CreateProductMaterialRequest = z.infer<typeof createProductMaterialSchema>;
+export type UpdateProductMaterialRequest = z.infer<typeof updateProductMaterialSchema>;
+export type CreateProductActivityRequest = z.infer<typeof createProductActivitySchema>;
 
 // Order Management Schema
 export const addresses = pgTable("addresses", {

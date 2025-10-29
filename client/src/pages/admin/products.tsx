@@ -9,12 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box, Trash2 } from "lucide-react";
+import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box, Trash2, Settings, TreeDeciduous, Sofa, Wrench } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SimpleUploader } from "@/components/SimpleUploader";
 import { Model3DViewer } from "@/components/Model3DViewer";
+import { CustomizationModal } from "@/components/CustomizationModal";
+import { CustomizationStatusBadge } from "@/components/CustomizationStatusBadge";
 
 interface Category {
   id: string;
@@ -82,6 +84,47 @@ interface ProductFormData {
   stock?: number;
 }
 
+// Component to show customization status for each product
+function ProductCustomizationStatus({ productId }: { productId: string }) {
+  const { data: statusData } = useQuery<{ status: string; counts: Record<string, number> }>({
+    queryKey: ['/api/admin/customizations', productId, 'status'],
+  });
+
+  if (!statusData) {
+    return null;
+  }
+
+  const status = statusData.status as 'complete' | 'partial' | 'not_setup';
+  const counts = statusData.counts;
+
+  return (
+    <div className="flex items-center gap-2 mt-1" data-testid={`customization-status-${productId}`}>
+      <div className="text-xs text-muted-foreground">🛠️ Customization:</div>
+      <CustomizationStatusBadge status={status} />
+      <div className="flex gap-1 text-xs text-muted-foreground">
+        {counts['wood-type'] > 0 && (
+          <Badge variant="outline" className="text-xs">
+            <TreeDeciduous className="h-3 w-3 mr-1" />
+            {counts['wood-type']}
+          </Badge>
+        )}
+        {counts['upholstery'] > 0 && (
+          <Badge variant="outline" className="text-xs">
+            <Sofa className="h-3 w-3 mr-1" />
+            {counts['upholstery']}
+          </Badge>
+        )}
+        {counts['hardware'] > 0 && (
+          <Badge variant="outline" className="text-xs">
+            <Wrench className="h-3 w-3 mr-1" />
+            {counts['hardware']}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminProducts() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -95,6 +138,8 @@ export default function AdminProducts() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [customizingProduct, setCustomizingProduct] = useState<Product | null>(null);
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
   const [newProduct, setNewProduct] = useState<ProductFormData>({
     name: '',
     description: '',
@@ -576,6 +621,7 @@ export default function AdminProducts() {
                           </Badge>
                         )}
                       </div>
+                      <ProductCustomizationStatus productId={product.id} />
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -596,6 +642,19 @@ export default function AdminProducts() {
                     >
                       <Edit2 className="h-4 w-4 mr-1" />
                       Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCustomizingProduct(product);
+                        setIsCustomizationModalOpen(true);
+                      }}
+                      data-testid={`button-options-product-${product.id}`}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      Options
                     </Button>
                     <Button
                       variant="outline"
@@ -1384,6 +1443,16 @@ export default function AdminProducts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Customization Modal */}
+      {customizingProduct && (
+        <CustomizationModal
+          productId={customizingProduct.id}
+          productName={customizingProduct.name}
+          open={isCustomizationModalOpen}
+          onOpenChange={setIsCustomizationModalOpen}
+        />
+      )}
     </div>
   );
 }
