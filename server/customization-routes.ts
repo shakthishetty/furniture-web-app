@@ -61,6 +61,27 @@ router.post("/materials", async (req, res) => {
   }
 });
 
+// GET /api/admin/materials/:id - Get a single material by ID (must be before /:productId)
+router.get("/materials/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const [material] = await db
+      .select()
+      .from(materials)
+      .where(eq(materials.id, id));
+
+    if (!material) {
+      return res.status(404).json({ error: "Material not found" });
+    }
+
+    res.json(material);
+  } catch (error: any) {
+    console.error("Error fetching material:", error);
+    res.status(500).json({ error: "Failed to fetch material", details: error.message });
+  }
+});
+
 // PATCH /api/admin/materials/:id - Update a material (must be before /:productId)
 router.patch("/materials/:id", async (req, res) => {
   try {

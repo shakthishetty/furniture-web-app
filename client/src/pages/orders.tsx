@@ -135,6 +135,61 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
     enabled: showDetails,
   });
 
+  // Fetch materials to map IDs to names
+  const [materialMap, setMaterialMap] = useState<Record<string, string>>({});
+
+  // Fetch materials when order details are loaded
+  useEffect(() => {
+    if (!orderDetails?.items) return;
+
+    const fetchMaterialNames = async () => {
+      const materialIds = new Set<string>();
+      
+      // Collect all material IDs from order items
+      orderDetails.items.forEach((item) => {
+        let customConfig = null;
+        try {
+          if (item.customConfiguration) {
+            customConfig = typeof item.customConfiguration === 'string' 
+              ? JSON.parse(item.customConfiguration) 
+              : item.customConfiguration;
+          }
+        } catch (e) {
+          console.error('Error parsing custom configuration:', e);
+        }
+
+        if (customConfig) {
+          if (customConfig.woodType) materialIds.add(customConfig.woodType);
+          if (customConfig.woodStain) materialIds.add(customConfig.woodStain);
+          if (customConfig.upholstery) materialIds.add(customConfig.upholstery);
+          if (customConfig.hardware) materialIds.add(customConfig.hardware);
+          if (customConfig.finish) materialIds.add(customConfig.finish);
+        }
+      });
+
+      if (materialIds.size === 0) return;
+
+      // Fetch material names for all IDs
+      const map: Record<string, string> = {};
+      
+      for (const materialId of Array.from(materialIds)) {
+        try {
+          const response = await apiRequest("GET", `/api/configurator/materials/${materialId}`);
+          if (response.ok) {
+            const material = await response.json();
+            map[materialId] = material.name;
+          }
+        } catch (e) {
+          console.error(`Error fetching material ${materialId}:`, e);
+        }
+      }
+
+      setMaterialMap(map);
+    };
+
+    fetchMaterialNames();
+  }, [orderDetails]);
+
   // Cancel order mutation
   const cancelOrderMutation = useMutation({
     mutationFn: async (reason: string) => {
@@ -308,27 +363,27 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
                                     )}
                                     {customConfig.woodType && (
                                       <p className="text-xs text-gray-600">
-                                        <span className="font-medium">Wood Type:</span> {customConfig.woodType.charAt(0).toUpperCase() + customConfig.woodType.slice(1)}
+                                        <span className="font-medium">Wood Type:</span> {materialMap[customConfig.woodType] || customConfig.woodType}
                                       </p>
                                     )}
                                     {customConfig.woodStain && (
                                       <p className="text-xs text-gray-600">
-                                        <span className="font-medium">Wood Stain:</span> {customConfig.woodStain.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                        <span className="font-medium">Wood Stain:</span> {materialMap[customConfig.woodStain] || customConfig.woodStain}
                                       </p>
                                     )}
                                     {customConfig.upholstery && (
                                       <p className="text-xs text-gray-600">
-                                        <span className="font-medium">Upholstery:</span> {customConfig.upholstery.charAt(0).toUpperCase() + customConfig.upholstery.slice(1)}
+                                        <span className="font-medium">Upholstery:</span> {materialMap[customConfig.upholstery] || customConfig.upholstery}
                                       </p>
                                     )}
                                     {customConfig.hardware && (
                                       <p className="text-xs text-gray-600">
-                                        <span className="font-medium">Hardware:</span> {customConfig.hardware.charAt(0).toUpperCase() + customConfig.hardware.slice(1)}
+                                        <span className="font-medium">Hardware:</span> {materialMap[customConfig.hardware] || customConfig.hardware}
                                       </p>
                                     )}
                                     {customConfig.finish && (
                                       <p className="text-xs text-gray-600">
-                                        <span className="font-medium">Surface Finish:</span> {customConfig.finish.charAt(0).toUpperCase() + customConfig.finish.slice(1)}
+                                        <span className="font-medium">Surface Finish:</span> {materialMap[customConfig.finish] || customConfig.finish}
                                       </p>
                                     )}
                                     {customConfig.dimensions && (

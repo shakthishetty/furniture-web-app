@@ -148,6 +148,27 @@ router.get('/materials', async (req, res) => {
   }
 });
 
+// Get a single material by ID (public endpoint for displaying order details)
+router.get('/materials/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const [material] = await db
+      .select()
+      .from(materials)
+      .where(eq(materials.id, id));
+
+    if (!material) {
+      return res.status(404).json({ error: 'Material not found' });
+    }
+
+    res.json(material);
+  } catch (error) {
+    console.error('Error fetching material:', error);
+    res.status(500).json({ error: 'Failed to fetch material' });
+  }
+});
+
 // Pricing calculation endpoint
 router.post('/pricing', async (req, res) => {
   try {
