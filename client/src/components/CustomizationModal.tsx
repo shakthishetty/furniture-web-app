@@ -214,7 +214,12 @@ export function CustomizationModal({ productId, productName, open, onOpenChange 
           <Button
             size="sm"
             onClick={() => {
-              setNewMaterial({ ...newMaterial, subType, type: subType.includes('wood') ? 'wood' : subType.includes('upholstery') ? 'fabric' : 'hardware' });
+              let materialType = 'hardware';
+              if (subType.includes('wood')) materialType = 'wood';
+              else if (subType === 'upholstery') materialType = 'fabric';
+              else if (subType.includes('hardware') || subType.includes('surface')) materialType = 'hardware';
+              
+              setNewMaterial({ ...newMaterial, subType, type: materialType });
               setShowAddMaterial(true);
             }}
             data-testid={`button-add-${subType}`}
@@ -312,7 +317,7 @@ export function CustomizationModal({ productId, productName, open, onOpenChange 
               </TabsContent>
 
               <TabsContent value="hardware" className="space-y-4 mt-4">
-                {renderMaterialSection("hardware", "Hardware Options", Wrench)}
+                {renderMaterialSection("hardware-finish", "Hardware Options", Wrench)}
               </TabsContent>
 
               <TabsContent value="surface-finish" className="space-y-4 mt-4">
