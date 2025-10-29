@@ -1,0 +1,110 @@
+# FINAL REPLIT PROMPT: Furniture Customization Admin Panel
+
+## 🎯 Mission
+Enhance the existing Products section with powerful customization management that gives admin complete control over what materials and options users can select in their 3D furniture configurator.
+
+## 🚀 Core Requirements
+
+### 1. **Add to Existing Products Header**
+```javascript
+# Products
+Manage your product catalog  
+[10] + Create Category  + Create Product  [⚙️ Manage Customizations]
+```
+
+### 2. **Enhanced Product Cards**
+Add to each product card:
+```
+🛠️ Customization: [Status Badge]
+[🪵 X woods] [🛋️ Y fabrics] [🔩 Z hardware]
+
+[View] [Edit] [⚙️ Options] [Delete]
+```
+
+**Status Badges:**
+- 🟢 Complete (All options configured)
+- 🟡 Partial (Some options missing)  
+- 🔴 Not Setup (No customization options)
+- 👁️ X users (Live viewer count)
+
+### 3. **New "⚙️ Options" Modal**
+When admin clicks "⚙️ Options" on any product:
+
+**Customization Manager Modal:**
+```
+[Product Name] - Customization Options
+
+🪵 WOOD TYPES
+[✅] Teak (+$150) [Stock: 45] [Edit]
+[✅] Oak (+$120) [Stock: 32] [Edit]
+[➕ Add Wood]
+
+🎨 WOOD STAINS & FINISHES  
+[Dark] [Natural] [White Wash] [Ebony]
+[Matte] [Satin] [Semi-Gloss]
+
+🛋️ FABRIC MATERIALS
+[✅] Leather (+$180) [Stock: 25yd] [Edit]
+[✅] Linen (+$120) [Stock: 18yd] [Edit]
+[➕ Add Fabric]
+
+🔩 HARDWARE OPTIONS
+[✅] Modern Pulls (+$45) [Stock: 120] [Edit]
+[➕ Add Hardware]
+
+[💾 Save] [🚀 Publish to Users] [Cancel]
+```
+
+### 4. **Real-time Features**
+- **Live user counters** on product cards
+- **One-click publishing** to all active users
+- **Instant updates** in user 3D configurators
+- **Stock level tracking** for all materials
+
+## 🛠️ Technical Implementation
+
+### **Frontend Components to Create:**
+1. `CustomizationStatusBadge` - Shows 🟢🟡🔴 status
+2. `OptionsButton` - The new ⚙️ button
+3. `CustomizationModal` - Full options manager
+4. `MaterialRow` - Individual material controls
+
+### **Backend Endpoints:**
+```javascript
+GET /api/products/:id/customizations
+PUT /api/products/:id/customizations  
+POST /api/products/:id/publish-customizations
+GET /api/materials/wood-types
+GET /api/materials/fabrics
+// etc.
+```
+
+### **Database Additions:**
+```sql
+product_customizations (product_id, material_type, material_id, enabled, price_modifier, stock)
+customization_materials (id, type, name, base_price, specs)
+```
+
+## ✅ Success Metrics
+- **Admin can setup** product customizations in <2 minutes
+- **Real-time updates** to users within 3 seconds
+- **Intuitive interface** - zero training needed
+- **Comprehensive control** over all material options
+
+## 🎯 User Experience Flow
+```
+Admin sees product → Clicks "⚙️ Options" → Adds materials → Clicks "Publish" 
+→ Users instantly see new options in 3D configurator
+→ Admin sees live user count and customization activity
+```
+
+## 💡 Key Features
+- **Quick toggles** for enabling/disabling options
+- **Price impact** visible for every material
+- **Stock level management** per material
+- **Real-time user engagement** metrics
+- **One-click publishing** to all users
+
+---
+
+**This prompt gives admin supreme power while keeping the interface clean, intuitive, and satisfying to use!** 🚀
