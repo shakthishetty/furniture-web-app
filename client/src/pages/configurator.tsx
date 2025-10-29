@@ -67,13 +67,10 @@ export default function Configurator() {
     enabled: !!productId,
   });
 
-  // Fetch materials
-  const { data: materialsData } = useQuery({
-    queryKey: ['/api/configurator/materials'],
-    queryFn: async () => {
-      const response = await fetch('/api/configurator/materials');
-      return await response.json();
-    },
+  // Fetch product-specific materials (configured by admin)
+  const { data: materialsData, isLoading: materialsLoading } = useQuery({
+    queryKey: [`/api/configurator/products/${productId}/materials`],
+    enabled: !!productId,
   });
 
   // Fetch pricing
@@ -96,7 +93,14 @@ export default function Configurator() {
 
   const product = (productData as any)?.product;
   const options = (optionsData as any)?.options || [];
-  const materials = (materialsData as any)?.materials || [];
+  const materials = (materialsData as any)?.materials || {};
+  
+  // Extract materials by type
+  const woodTypes = materials['wood-type'] || [];
+  const woodStains = materials['wood-stain'] || [];
+  const upholsteryOptions = materials['upholstery'] || [];
+  const hardwareOptions = materials['hardware-finish'] || [];
+  const surfaceFinishOptions = materials['surface-finish'] || [];
 
   // Parse product images when product is loaded
   useEffect(() => {
@@ -321,8 +325,12 @@ export default function Configurator() {
       updateFurnitureDimensions(furnitureRef.current, configuration.dimensions, product.name);
     }
 
-    if (configuration.material) {
-      const selectedMaterial = materials.find((m: any) => m.id === configuration.material);
+    if (configuration.material && Object.keys(materials).length > 0) {
+      // Flatten grouped materials to find the selected one, filtering out non-array values
+      const allMaterials = Object.values(materials)
+        .filter((group): group is any[] => Array.isArray(group))
+        .flat();
+      const selectedMaterial = allMaterials.find((m: any) => m.id === configuration.material);
       if (selectedMaterial && selectedMaterial.color) {
         updateFurnitureMaterial(furnitureRef.current, selectedMaterial.color);
       }
@@ -584,238 +592,174 @@ export default function Configurator() {
             )}
 
             {/* 2. Wood Type Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '2.' : '1.'}</span>
-                  Wood Type
-                </h3>
-                <Select
-                  value={configuration.woodType || ''}
-                  onValueChange={(value) => updateConfiguration('woodType', value)}
-                >
-                  <SelectTrigger data-testid="wood-type-select" className="w-full mt-3">
-                    <SelectValue placeholder="Choose wood type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="teak">Teak</SelectItem>
-                    <SelectItem value="oak">Oak</SelectItem>
-                    <SelectItem value="walnut">Walnut</SelectItem>
-                    <SelectItem value="maple">Maple</SelectItem>
-                  </SelectContent>
-                </Select>
+            {woodTypes.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '2.' : '1.'}</span>
+                    Wood Type
+                  </h3>
+                  <Select
+                    value={configuration.woodType || ''}
+                    onValueChange={(value) => updateConfiguration('woodType', value)}
+                  >
+                    <SelectTrigger data-testid="wood-type-select" className="w-full mt-3">
+                      <SelectValue placeholder="Choose wood type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {woodTypes.map((wood: any) => (
+                        <SelectItem key={wood.id} value={wood.id}>
+                          {wood.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            )}
 
             <Separator />
 
             {/* 3. Wood Stain Section - Color Swatches */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '3.' : '2.'}</span>
-                  Wood Stain
-                </h3>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <span className="text-sm">4 options</span>
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-4 gap-3">
-                <div
-                  className="flex flex-col items-center cursor-pointer"
-                  onClick={() => updateConfiguration('woodStain', 'natural-teak')}
-                  data-testid="stain-natural-teak"
-                >
-                  <div
-                    className={`w-full aspect-square rounded border-2 transition-all relative ${
-                      configuration.woodStain === 'natural-teak' || !configuration.woodStain
-                        ? 'border-[#254127] border-4'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: '#B8860B' }}
-                  >
-                    {(configuration.woodStain === 'natural-teak' || !configuration.woodStain) && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center">
-                    <div className="text-sm font-medium text-gray-900">Natural Teak</div>
-                  </div>
+            {woodStains.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '3.' : '2.'}</span>
+                    Wood Stain
+                  </h3>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <span className="text-sm">{woodStains.length} options</span>
+                  </button>
                 </div>
-
-                <div
-                  className="flex flex-col items-center cursor-pointer"
-                  onClick={() => updateConfiguration('woodStain', 'dark-teak')}
-                  data-testid="stain-dark-teak"
-                >
-                  <div
-                    className={`w-full aspect-square rounded border-2 transition-all relative ${
-                      configuration.woodStain === 'dark-teak'
-                        ? 'border-[#254127] border-4'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: '#654321' }}
-                  >
-                    {configuration.woodStain === 'dark-teak' && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
+                
+                <div className="grid grid-cols-4 gap-3">
+                  {woodStains.map((stain: any, index: number) => {
+                    const isSelected = configuration.woodStain === stain.id || (index === 0 && !configuration.woodStain);
+                    return (
+                      <div
+                        key={stain.id}
+                        className="flex flex-col items-center cursor-pointer"
+                        onClick={() => updateConfiguration('woodStain', stain.id)}
+                        data-testid={`stain-${stain.id}`}
+                      >
+                        <div
+                          className={`w-full aspect-square rounded border-2 transition-all relative ${
+                            isSelected
+                              ? 'border-[#254127] border-4'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                          style={{ backgroundColor: stain.color || '#B8860B' }}
+                        >
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
+                                <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-center">
+                          <div className="text-sm font-medium text-gray-900">{stain.name}</div>
+                          {stain.priceModifier && stain.priceModifier !== '0' && (
+                            <div className="text-xs text-gray-500">{stain.priceModifier}</div>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center">
-                    <div className="text-sm font-medium text-gray-900">Dark Teak</div>
-                    <div className="text-xs text-gray-500">+15% price</div>
-                  </div>
-                </div>
-
-                <div
-                  className="flex flex-col items-center cursor-pointer"
-                  onClick={() => updateConfiguration('woodStain', 'light-teak')}
-                  data-testid="stain-light-teak"
-                >
-                  <div
-                    className={`w-full aspect-square rounded border-2 transition-all relative ${
-                      configuration.woodStain === 'light-teak'
-                        ? 'border-[#254127] border-4'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: '#DEB887' }}
-                  >
-                    {configuration.woodStain === 'light-teak' && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center">
-                    <div className="text-sm font-medium text-gray-900">Light Teak</div>
-                    <div className="text-xs text-gray-500">+5% price</div>
-                  </div>
-                </div>
-
-                <div
-                  className="flex flex-col items-center cursor-pointer"
-                  onClick={() => updateConfiguration('woodStain', 'weathered-teak')}
-                  data-testid="stain-weathered-teak"
-                >
-                  <div
-                    className={`w-full aspect-square rounded border-2 transition-all relative ${
-                      configuration.woodStain === 'weathered-teak'
-                        ? 'border-[#254127] border-4'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: '#A0522D' }}
-                  >
-                    {configuration.woodStain === 'weathered-teak' && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center">
-                    <div className="text-sm font-medium text-gray-900">Weathered Teak</div>
-                    <div className="text-xs text-gray-500">+25% price</div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            )}
 
             <Separator />
 
             {/* 4. Upholstery Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '4.' : '3.'}</span>
-                  Upholstery
-                </h3>
-                <Select
-                  value={configuration.upholstery || ''}
-                  onValueChange={(value) => updateConfiguration('upholstery', value)}
-                >
-                  <SelectTrigger data-testid="upholstery-select" className="w-full mt-3">
-                    <SelectValue placeholder="Choose upholstery" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="leather">Leather</SelectItem>
-                    <SelectItem value="cotton">Cotton</SelectItem>
-                    <SelectItem value="linen">Linen</SelectItem>
-                    <SelectItem value="velvet">Velvet</SelectItem>
-                  </SelectContent>
-                </Select>
+            {upholsteryOptions.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '4.' : '3.'}</span>
+                    Upholstery
+                  </h3>
+                  <Select
+                    value={configuration.upholstery || ''}
+                    onValueChange={(value) => updateConfiguration('upholstery', value)}
+                  >
+                    <SelectTrigger data-testid="upholstery-select" className="w-full mt-3">
+                      <SelectValue placeholder="Choose upholstery" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {upholsteryOptions.map((fabric: any) => (
+                        <SelectItem key={fabric.id} value={fabric.id}>
+                          {fabric.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            )}
 
             <Separator />
 
             {/* 5. Hardware Finish Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '5.' : '4.'}</span>
-                  Hardware Finish
-                </h3>
-                <Select
-                  value={configuration.hardware || ''}
-                  onValueChange={(value) => updateConfiguration('hardware', value)}
-                >
-                  <SelectTrigger data-testid="hardware-select" className="w-full mt-3">
-                    <SelectValue placeholder="Choose hardware finish" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="brass">Brass</SelectItem>
-                    <SelectItem value="chrome">Chrome</SelectItem>
-                    <SelectItem value="black">Matte Black</SelectItem>
-                    <SelectItem value="nickel">Brushed Nickel</SelectItem>
-                  </SelectContent>
-                </Select>
+            {hardwareOptions.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '5.' : '4.'}</span>
+                    Hardware Finish
+                  </h3>
+                  <Select
+                    value={configuration.hardware || ''}
+                    onValueChange={(value) => updateConfiguration('hardware', value)}
+                  >
+                    <SelectTrigger data-testid="hardware-select" className="w-full mt-3">
+                      <SelectValue placeholder="Choose hardware finish" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hardwareOptions.map((hardware: any) => (
+                        <SelectItem key={hardware.id} value={hardware.id}>
+                          {hardware.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            )}
 
             <Separator />
 
             {/* 6. Surface Finish Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '6.' : '5.'}</span>
-                  Surface Finish
-                </h3>
-                <Select
-                  value={configuration.finish || ''}
-                  onValueChange={(value) => updateConfiguration('finish', value)}
-                >
-                  <SelectTrigger data-testid="finish-select" className="w-full mt-3">
-                    <SelectValue placeholder="Choose surface finish" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="natural">Natural Oil</SelectItem>
-                    <SelectItem value="satin">Satin Lacquer</SelectItem>
-                    <SelectItem value="gloss">High Gloss</SelectItem>
-                    <SelectItem value="matte">Matte Finish</SelectItem>
-                  </SelectContent>
-                </Select>
+            {surfaceFinishOptions.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '6.' : '5.'}</span>
+                    Surface Finish
+                  </h3>
+                  <Select
+                    value={configuration.finish || ''}
+                    onValueChange={(value) => updateConfiguration('finish', value)}
+                  >
+                    <SelectTrigger data-testid="finish-select" className="w-full mt-3">
+                      <SelectValue placeholder="Choose surface finish" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {surfaceFinishOptions.map((finish: any) => (
+                        <SelectItem key={finish.id} value={finish.id}>
+                          {finish.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            )}
 
             <Separator />
 

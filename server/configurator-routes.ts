@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { storage } from './storage';
+import { db } from './db';
+import { materials, productMaterials } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 import { 
   createConfigurationSchema,
   updateConfigurationSchema,
@@ -43,6 +46,67 @@ router.get('/products/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// Get published materials for a specific product (for customer configurator)
+router.get('/products/:id/materials', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify product exists
+    const product = await storage.getProduct(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Get all enabled materials for this product with material details
+    const productMaterialsList = await db
+      .select({
+        id: productMaterials.id,
+        materialId: productMaterials.materialId,
+        isDefault: productMaterials.isDefault,
+        sortOrder: productMaterials.sortOrder,
+        material: materials
+      })
+      .from(productMaterials)
+      .innerJoin(materials, eq(productMaterials.materialId, materials.id))
+      .where(and(
+        eq(productMaterials.productId, id),
+        eq(productMaterials.isEnabled, true)
+      ))
+      .orderBy(productMaterials.sortOrder);
+    
+    // Group materials by type and subType
+    const groupedMaterials: Record<string, any[]> = {};
+    
+    productMaterialsList.forEach(item => {
+      const mat = item.material;
+      const key = mat.subType || mat.type;
+      
+      if (!groupedMaterials[key]) {
+        groupedMaterials[key] = [];
+      }
+      
+      groupedMaterials[key].push({
+        id: mat.id,
+        name: mat.name,
+        description: mat.description,
+        type: mat.type,
+        subType: mat.subType,
+        color: mat.color,
+        textureUrl: mat.textureUrl,
+        priceMultiplier: mat.priceMultiplier,
+        priceModifier: mat.priceModifier,
+        stock: mat.stock,
+        isDefault: item.isDefault
+      });
+    });
+    
+    res.json({ materials: groupedMaterials });
+  } catch (error) {
+    console.error('Error fetching product materials:', error);
+    res.status(500).json({ error: 'Failed to fetch product materials' });
   }
 });
 
