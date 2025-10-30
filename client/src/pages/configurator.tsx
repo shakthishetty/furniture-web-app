@@ -592,13 +592,13 @@ export default function Configurator() {
             )}
 
             {/* 2. Wood Type Section */}
-            {woodTypes.length > 0 && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '2.' : '1.'}</span>
-                    Wood Type
-                  </h3>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '2.' : '1.'}</span>
+                  Wood Type
+                </h3>
+                {woodTypes.length > 0 ? (
                   <Select
                     value={configuration.woodType || ''}
                     onValueChange={(value) => updateConfiguration('woodType', value)}
@@ -614,25 +614,31 @@ export default function Configurator() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No wood type options available yet</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             <Separator />
 
             {/* 3. Wood Stain Section - Color Swatches */}
-            {woodStains.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '3.' : '2.'}</span>
-                    Wood Stain
-                  </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '3.' : '2.'}</span>
+                  Wood Stain
+                </h3>
+                {woodStains.length > 0 && (
                   <button className="text-gray-400 hover:text-gray-600">
                     <span className="text-sm">{woodStains.length} options</span>
                   </button>
-                </div>
-                
+                )}
+              </div>
+              
+              {woodStains.length > 0 ? (
                 <div className="grid grid-cols-4 gap-3">
                   {woodStains.map((stain: any, index: number) => {
                     const isSelected = configuration.woodStain === stain.id || (index === 0 && !configuration.woodStain);
@@ -671,19 +677,23 @@ export default function Configurator() {
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                  <p className="text-sm text-gray-500">No wood stain options available yet</p>
+                </div>
+              )}
+            </div>
 
             <Separator />
 
             {/* 4. Upholstery Section */}
-            {upholsteryOptions.length > 0 && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '4.' : '3.'}</span>
-                    Upholstery
-                  </h3>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '4.' : '3.'}</span>
+                  Upholstery
+                </h3>
+                {upholsteryOptions.length > 0 ? (
                   <Select
                     value={configuration.upholstery || ''}
                     onValueChange={(value) => updateConfiguration('upholstery', value)}
@@ -699,20 +709,24 @@ export default function Configurator() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No upholstery options available yet</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             <Separator />
 
             {/* 5. Hardware Finish Section */}
-            {hardwareOptions.length > 0 && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '5.' : '4.'}</span>
-                    Hardware Finish
-                  </h3>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '5.' : '4.'}</span>
+                  Hardware Finish
+                </h3>
+                {hardwareOptions.length > 0 ? (
                   <Select
                     value={configuration.hardware || ''}
                     onValueChange={(value) => updateConfiguration('hardware', value)}
@@ -728,20 +742,24 @@ export default function Configurator() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No hardware finish options available yet</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             <Separator />
 
             {/* 6. Surface Finish Section */}
-            {surfaceFinishOptions.length > 0 && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '6.' : '5.'}</span>
-                    Surface Finish
-                  </h3>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '6.' : '5.'}</span>
+                  Surface Finish
+                </h3>
+                {surfaceFinishOptions.length > 0 ? (
                   <Select
                     value={configuration.finish || ''}
                     onValueChange={(value) => updateConfiguration('finish', value)}
@@ -757,9 +775,13 @@ export default function Configurator() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No surface finish options available yet</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             <Separator />
 
