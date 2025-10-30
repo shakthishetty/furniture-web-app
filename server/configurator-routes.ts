@@ -11,6 +11,7 @@ import {
   type UpdateConfigurationRequest,
   type PricingRequest
 } from '@shared/schema';
+import { calculateProductStatus, calculateCompletionPercentage } from './utils/product-status';
 
 const router = Router();
 
@@ -26,7 +27,56 @@ router.get('/products', async (req, res) => {
       products = await storage.getAllProducts();
     }
     
-    res.json({ products });
+    // Filter to only show active products (in stock and complete customization setup)
+    const activeProducts = [];
+    
+    for (const product of products) {
+      // Get material counts for this product with material details
+      const productMaterialsList = await db
+        .select({
+          subType: materials.subType
+        })
+        .from(productMaterials)
+        .innerJoin(materials, eq(productMaterials.materialId, materials.id))
+        .where(and(
+          eq(productMaterials.productId, product.id),
+          eq(productMaterials.isEnabled, true)
+        ));
+
+      const materialCounts = {
+        woodTypes: 0,
+        woodStains: 0,
+        upholstery: 0,
+        hardwareFinish: 0,
+        surfaceFinish: 0,
+      };
+
+      productMaterialsList.forEach(item => {
+        const subType = item.subType;
+        if (subType === 'wood-type') materialCounts.woodTypes++;
+        else if (subType === 'wood-stain') materialCounts.woodStains++;
+        else if (subType === 'upholstery') materialCounts.upholstery++;
+        else if (subType === 'hardware-finish' || subType === 'hardware') materialCounts.hardwareFinish++;
+        else if (subType === 'surface-finish') materialCounts.surfaceFinish++;
+      });
+
+      const statusResult = calculateProductStatus(
+        {
+          status: product.status ?? undefined,
+          stock: product.stock ?? undefined,
+          inStock: product.inStock ?? undefined,
+          category: product.category ?? undefined
+        },
+        materialCounts
+      );
+
+      // Only include products with 'active' status
+      if (statusResult.computedStatus === 'active') {
+        activeProducts.push(product);
+      }
+    }
+    
+    res.json({ products: activeProducts });
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
