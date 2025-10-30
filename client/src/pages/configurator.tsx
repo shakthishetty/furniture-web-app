@@ -339,7 +339,15 @@ export default function Configurator() {
     if (configuration.color) {
       updateFurnitureMaterial(furnitureRef.current, configuration.color);
     }
-  }, [configuration, materials, product]);
+
+    // Apply wood stain color last so it takes precedence over material and color
+    if (configuration.woodStain && woodStains.length > 0) {
+      const selectedStain = woodStains.find((stain: any) => stain.id === configuration.woodStain);
+      if (selectedStain && selectedStain.color) {
+        updateFurnitureMaterial(furnitureRef.current, selectedStain.color);
+      }
+    }
+  }, [configuration, materials, product, woodStains]);
 
   // Resize canvas when switching to 360° view
   useEffect(() => {
