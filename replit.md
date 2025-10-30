@@ -46,6 +46,70 @@ The application features a comprehensive discount system with both admin managem
 - Protection against over-applying discounts (capped at order subtotal)
 - Payment confirmation required before incrementing usage count
 
+# Automatic Product Status System (October 2025)
+
+## Overview
+The application features an intelligent automatic product status calculation system that determines product availability based on stock levels and customization setup completeness. This ensures customers only see products that are truly ready to purchase and customize.
+
+## Status Types
+The system automatically assigns one of four status types to each product:
+
+- **🟢 Active**: Product is in stock, has complete customization setup (100%), and is marked as active
+- **🟡 Partial**: Product has incomplete customization setup (missing material options)
+- **🔴 Out of Stock**: Product stock is depleted (stock ≤ 0 or inStock = false)
+- **⚪ Draft**: Product is marked as inactive or draft (not ready for sale)
+
+## Status Calculation Logic
+The system calculates status based on priority:
+
+1. **Draft Check**: If product status is 'inactive' or 'draft' → Draft status
+2. **Stock Check**: If inStock = false OR stock ≤ 0 → Out of Stock status
+3. **Completion Check**: If customization setup < 100% → Partial status
+4. **Success**: All checks pass → Active status
+
+## Customization Completion Requirements
+A product reaches 100% completion when it has at least one option configured for each required customization type:
+
+**Standard Products**:
+- Wood Type (at least 1 option)
+- Wood Stain (at least 1 option)
+- Hardware Finish (at least 1 option)
+- Surface Finish (at least 1 option)
+
+**Chair Products** (additional requirement):
+- Upholstery (at least 1 option)
+
+## Admin Features
+The admin products page displays comprehensive status information for each product:
+
+- **Color-coded Status Badges**: Visual indicators with emojis for quick status identification
+- **Progress Bars**: Visual representation of customization setup completion percentage
+- **Completion Percentage**: Numeric display of setup completion (0-100%)
+- **Missing Setup Indicators**: Lists which customization categories are incomplete
+- **Stock Count Badge**: Shows current stock levels for products with inventory
+
+## Customer Experience
+The customer-facing product catalog automatically filters to show only Active products:
+
+- Customers never see products that are out of stock
+- Only products with complete customization options are displayed
+- Draft and partially configured products are hidden from the catalog
+- Ensures all visible products can be purchased and customized immediately
+
+## Database Schema
+- **products.stock**: Integer field tracking inventory count
+- **products.inStock**: Boolean field for manual stock availability control
+- Existing status field used for draft/inactive marking
+
+## Implementation
+- **Status Utilities** (`server/utils/product-status.ts`): Core calculation functions
+- **Admin Endpoint** (`/api/admin/products`): Returns computed status for admin view
+- **Customer Endpoint** (`/api/configurator/products`): Filters by active status only
+- **Material Counting**: Database queries count enabled materials by subType
+
+## Performance Note
+The architect has noted that the current implementation uses one query per product for material counting. For high-traffic scenarios, this could be optimized with batch queries or aggregation.
+
 # Manufacturing Tracking System (December 2025)
 
 ## Three-Portal Architecture
