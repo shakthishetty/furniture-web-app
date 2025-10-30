@@ -663,6 +663,7 @@ export const stageUpdateReplies = pgTable("stage_update_replies", {
   authorUserId: varchar("author_user_id").notNull(),
   authorRole: varchar("author_role").notNull(), // admin, customer
   message: text("message").notNull(),
+  isCustomerQuestion: boolean("is_customer_question").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
