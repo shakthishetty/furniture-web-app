@@ -1211,10 +1211,39 @@ router.post("/manufacturing/stages/:stageId/updates", requireAdmin, async (req, 
     
     const update = await storage.createStageUpdate(validatedData);
     
-    // Broadcast stage update to SSE connections
+    // Broadcast stage update to SSE connections and send customer notification
     const stage = await storage.getManufacturingStage(req.params.stageId);
-    if (stage && global.broadcastStageUpdate) {
-      global.broadcastStageUpdate(stage.processId, update);
+    if (stage) {
+      if (global.broadcastStageUpdate) {
+        global.broadcastStageUpdate(stage.processId, update);
+      }
+      
+      // Create customer notification for admin update (only if not internal)
+      if (!update.isInternal) {
+        try {
+          const process = await storage.getManufacturingProcess(stage.processId);
+          if (process) {
+            const order = await storage.getOrder(process.orderId);
+            if (order) {
+              await storage.createNotification({
+                userId: order.userId,
+                orderId: order.id,
+                processId: process.id,
+                stageId: stage.id,
+                type: 'admin_message',
+                title: `Admin Update: ${stage.name}`,
+                message: `Administrator posted an update: ${update.message.substring(0, 100)}${update.message.length > 100 ? '...' : ''}`,
+                isRead: false
+              });
+              
+              console.log(`Created notification for customer ${order.userId} about admin update ${update.id}`);
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to create customer notification for admin update:', notificationError);
+          // Don't fail the request if notification fails
+        }
+      }
     }
     
     console.log(`Admin ${req.user?.userId} created stage update ${update.id} for stage ${req.params.stageId}`);
@@ -1263,12 +1292,39 @@ router.post("/manufacturing/updates/:updateId/replies", requireAdmin, async (req
     
     const reply = await storage.createStageUpdateReply(validatedData);
     
-    // Broadcast new reply to SSE connections
+    // Broadcast new reply to SSE connections and send customer notification
     const update = await storage.getStageUpdate(req.params.updateId);
     if (update) {
       const stage = await storage.getManufacturingStage(update.stageId);
-      if (stage && global.broadcastNewReply) {
-        global.broadcastNewReply(stage.processId, reply);
+      if (stage) {
+        if (global.broadcastNewReply) {
+          global.broadcastNewReply(stage.processId, reply);
+        }
+        
+        // Create customer notification for admin reply
+        try {
+          const process = await storage.getManufacturingProcess(stage.processId);
+          if (process) {
+            const order = await storage.getOrder(process.orderId);
+            if (order) {
+              await storage.createNotification({
+                userId: order.userId,
+                orderId: order.id,
+                processId: process.id,
+                stageId: stage.id,
+                type: 'admin_message',
+                title: 'Admin Response',
+                message: `Administrator responded: ${reply.message.substring(0, 100)}${reply.message.length > 100 ? '...' : ''}`,
+                isRead: false
+              });
+              
+              console.log(`Created notification for customer ${order.userId} about admin reply ${reply.id}`);
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to create customer notification for admin reply:', notificationError);
+          // Don't fail the request if notification fails
+        }
       }
     }
     
