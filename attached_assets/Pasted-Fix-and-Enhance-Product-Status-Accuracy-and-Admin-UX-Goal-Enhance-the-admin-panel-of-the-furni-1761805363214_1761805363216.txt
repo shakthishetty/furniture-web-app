@@ -1,0 +1,138 @@
+Fix and Enhance Product Status Accuracy and Admin UX
+
+🎯 Goal:
+
+Enhance the admin panel of the furniture customization app by automating product status logic, improving interface clarity, and ensuring real-time synchronization with the user panel.
+The objective is to make product management accurate, intuitive, and visually appealing — while keeping 3D preview exclusive to the client (user) side.
+
+⚙️ Core Requirements:
+
+Automated Product Status Logic
+
+Dynamically determine product status using these parameters:
+
+stockCount
+
+customizationCompleteness
+
+isActive
+
+Logic:
+
+if (stockCount === 0) status = "Out of Stock";
+else if (customizationCompleteness < 100) status = "Partial Setup";
+else if (isActive) status = "Active";
+else status = "Draft";
+
+
+customizationCompleteness should calculate percentage based on how many customization categories are filled:
+
+Fabric
+
+Upholstery
+
+Wood Finish
+
+Other Options (Cushion, Frame, Hardware, etc.)
+
+Visual Status Indicators
+
+Add color-coded badges and icons beside product names:
+
+🟢 Active — fully setup and in stock
+
+🟡 Partial Setup — missing one or more customization options
+
+🔴 Out of Stock — zero stock available
+
+⚪ Draft — inactive or not published
+
+These badges should be clearly visible in the product list and product detail view.
+
+Customization Progress Bar
+
+Display a mini progress bar showing customization setup completion (0–100%).
+
+For example:
+
+4/4 categories filled → 100% (green)
+
+2/4 categories filled → 50% (yellow)
+
+Label: “Customization: 75% Complete”
+
+Product Card UI Enhancements
+
+Each product card in the admin “Products” list should include:
+
+Product image thumbnail
+
+Product name + price
+
+Category and stock info
+
+Status badge + customization progress
+
+3D model availability indicator (✅ or ❌)
+
+“Last Updated” timestamp
+
+Example layout:
+
+🪑 STRATA TEAK COFFEE TABLE  |  $850.00
+Category: Living Room | Stock: 12
+Status: 🟢 Active | Customization: 100% ✅ | 3D Model: ✅
+Updated: 29 Oct 2025
+
+
+Real-Time Data Sync
+
+Any updates in stock, status, or customization setup made in the admin panel should instantly reflect in the user panel (via WebSocket or API polling).
+
+Users should only see:
+
+status === "Active"
+
+stockCount > 0
+
+Admin edits should auto-trigger product availability updates on the client side.
+
+3D Preview Handling
+
+Admin panel: Only upload/manage 3D models (GLB format), no preview rendering needed.
+
+User panel: Integrate live 3D preview rendering that updates dynamically when customization options (wood, stain, upholstery, dimensions) are changed.
+
+Optional Enhancements
+
+Add filters in admin for:
+
+Product status (Active, Out of Stock, Partial, Draft)
+
+Style (Modern, Traditional, Rustic)
+
+Price range
+
+Display analytics summary (e.g., total Active, Out of Stock, Partial products).
+
+🧠 Key Notes for AI
+
+Focus on data accuracy, UI clarity, and smooth admin workflow.
+
+Keep admin panel functional and lightweight, no 3D rendering.
+
+Keep code modular — separate backend logic (status computation) from frontend rendering.
+
+Maintain design consistency with the existing panel (as seen in the provided screenshots).
+
+✅ Expected Output
+
+A fully refined Admin Product Management Interface that:
+
+Displays accurate product status automatically.
+
+Visually indicates completeness and stock clearly.
+
+Feels intuitive and well-organized for real-world use.
+
+Syncs seamlessly with the user-facing product catalog.
