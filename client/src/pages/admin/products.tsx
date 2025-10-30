@@ -51,6 +51,17 @@ interface Product {
     height: number;
     depth: number;
   };
+  // Computed status fields from backend
+  computedStatus?: 'active' | 'partial' | 'out_of_stock' | 'draft';
+  completionPercentage?: number;
+  missingSetup?: string[];
+  materialCounts?: {
+    woodTypes: number;
+    woodStains: number;
+    upholstery: number;
+    hardwareFinish: number;
+    surfaceFinish: number;
+  };
 }
 
 interface ProductsResponse {
@@ -408,16 +419,18 @@ export default function AdminProducts() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getComputedStatusBadge = (computedStatus?: string) => {
+    switch (computedStatus) {
       case "active":
-        return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-300">🟢 Active</Badge>;
+      case "partial":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">🟡 Partial</Badge>;
+      case "out_of_stock":
+        return <Badge className="bg-red-100 text-red-800 border-red-300">🔴 Out of Stock</Badge>;
       case "draft":
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Draft</Badge>;
-      case "archived":
-        return <Badge variant="outline" className="bg-red-100 text-red-800">Archived</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300">⚪ Draft</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{computedStatus || 'Unknown'}</Badge>;
     }
   };
 
@@ -598,10 +611,7 @@ export default function AdminProducts() {
                       </p>
                       <div className="flex gap-2 flex-wrap">
                         {product.categoryId ? getCategoryBadge(product.category) : <Badge variant="outline">Uncategorized</Badge>}
-                        {getStatusBadge(product.status)}
-                        {!product.inStock && (
-                          <Badge variant="destructive">Out of Stock</Badge>
-                        )}
+                        {getComputedStatusBadge(product.computedStatus)}
                         {product.additionalImages && product.additionalImages.length > 0 && (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700">
                             <Upload className="h-3 w-3 mr-1" />
@@ -620,8 +630,37 @@ export default function AdminProducts() {
                             3D Model
                           </Badge>
                         )}
+                        {product.stock !== undefined && product.stock > 0 && (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                            📦 {product.stock} in stock
+                          </Badge>
+                        )}
                       </div>
-                      <ProductCustomizationStatus productId={product.id} />
+                      {/* Customization Completion Progress */}
+                      {product.completionPercentage !== undefined && (
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">🛠️ Customization: {product.completionPercentage}% complete</span>
+                            {product.missingSetup && product.missingSetup.length > 0 && (
+                              <span className="text-yellow-600 text-xs">
+                                Missing: {product.missingSetup.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all ${
+                                product.completionPercentage === 100 
+                                  ? 'bg-green-500' 
+                                  : product.completionPercentage >= 50 
+                                    ? 'bg-yellow-500' 
+                                    : 'bg-red-500'
+                              }`}
+                              style={{ width: `${product.completionPercentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

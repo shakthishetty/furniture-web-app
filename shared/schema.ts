@@ -152,7 +152,9 @@ export const products = pgTable("products", {
   category: varchar("category").notNull(), // keep existing for backward compatibility
   basePrice: varchar("base_price").notNull(), // stored as string to avoid float precision issues
   isCustomizable: boolean("is_customizable").default(true),
-  status: varchar("status").default("active"), // active, inactive, discontinued
+  status: varchar("status").default("active"), // active, inactive, discontinued, out_of_stock, draft
+  stock: integer("stock").default(0), // manual stock tracking
+  inStock: boolean("in_stock").default(true), // quick availability flag
   imageUrl: varchar("image_url"),
   model3dUrl: varchar("model_3d_url"), // URL to 3D model file
   pdfUrl: varchar("pdf_url"), // URL to PDF documentation/catalog

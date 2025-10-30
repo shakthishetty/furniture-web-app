@@ -1,13 +1,16 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest, materials, productMaterials } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
 import { sendStageUpdateEmail } from "./utils/email";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { calculateProductStatus, type ProductMaterialCounts } from "./utils/product-status";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 // Validation schemas for admin operations
 const orderStatusUpdateSchema = z.object({
@@ -74,6 +77,36 @@ const adminProductUpdateSchema = z.object({
 });
 
 const router = express.Router();
+
+// Helper function to get material counts for a product
+async function getProductMaterialCounts(productId: string): Promise<ProductMaterialCounts> {
+  const productMaterialsList = await db
+    .select({
+      subType: materials.subType,
+    })
+    .from(productMaterials)
+    .innerJoin(materials, eq(productMaterials.materialId, materials.id))
+    .where(eq(productMaterials.productId, productId));
+
+  const counts: ProductMaterialCounts = {
+    woodTypes: 0,
+    woodStains: 0,
+    upholstery: 0,
+    hardwareFinish: 0,
+    surfaceFinish: 0,
+  };
+
+  productMaterialsList.forEach(item => {
+    const subType = item.subType;
+    if (subType === 'wood-type') counts.woodTypes++;
+    else if (subType === 'wood-stain') counts.woodStains++;
+    else if (subType === 'upholstery') counts.upholstery++;
+    else if (subType === 'hardware-finish' || subType === 'hardware') counts.hardwareFinish++;
+    else if (subType === 'surface-finish') counts.surfaceFinish++;
+  });
+
+  return counts;
+}
 
 // Admin Authentication Routes
 router.get("/auth/me", verifyAuth, async (req, res) => {
@@ -244,16 +277,39 @@ router.get("/products", requireAdmin, async (req, res) => {
       return [];
     };
 
-    // Transform products for frontend compatibility
-    const transformedProducts = result.products.map(product => ({
-      ...product,
-      // Convert basePrice string to price number for frontend
-      price: product.basePrice ? parseFloat(product.basePrice) : 0,
-      // Parse additionalImages JSON string to array with error handling
-      additionalImages: parseAdditionalImages(product.additionalImages),
-      // Keep basePrice for API compatibility
-      basePrice: product.basePrice
-    }));
+    // Transform products with calculated status and completion
+    const transformedProducts = await Promise.all(
+      result.products.map(async (product) => {
+        // Get material counts for this product
+        const materialCounts = await getProductMaterialCounts(product.id);
+        
+        // Calculate status and completion
+        const statusResult = calculateProductStatus(
+          {
+            status: product.status || undefined,
+            stock: product.stock !== null && product.stock !== undefined ? product.stock : undefined,
+            inStock: product.inStock !== null && product.inStock !== undefined ? product.inStock : undefined,
+            category: product.category || undefined,
+          },
+          materialCounts
+        );
+
+        return {
+          ...product,
+          // Convert basePrice string to price number for frontend
+          price: product.basePrice ? parseFloat(product.basePrice) : 0,
+          // Parse additionalImages JSON string to array with error handling
+          additionalImages: parseAdditionalImages(product.additionalImages),
+          // Keep basePrice for API compatibility
+          basePrice: product.basePrice,
+          // Add computed status and completion data
+          computedStatus: statusResult.computedStatus,
+          completionPercentage: statusResult.completionPercentage,
+          missingSetup: statusResult.missingSetup,
+          materialCounts,
+        };
+      })
+    );
 
     res.json({
       ...result,

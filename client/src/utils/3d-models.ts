@@ -84,22 +84,17 @@ export function storeOriginalColors(furniture: THREE.Group) {
 
 // Apply wood stain only to wood materials (not fabric/leather/upholstery)
 export function applyWoodStain(furniture: THREE.Group, color: string | number) {
-  console.log('Applying wood stain with color:', color);
-  
   furniture.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       const material = child.material;
       const materials = Array.isArray(material) ? material : [material];
       
-      materials.forEach((mat: any, index: number) => {
+      materials.forEach((mat: any) => {
         if (mat && mat.color) {
           // Check if this material is likely wood-based (not fabric/leather)
           // We identify fabric/leather by looking for material names or properties
           const materialName = mat.name?.toLowerCase() || '';
           const meshName = (child.name || '').toLowerCase();
-          
-          // Log material info for debugging
-          console.log(`Material ${index} - Mesh: "${child.name}", Material: "${mat.name}", Color:`, mat.color.getHexString());
           
           // Skip if material/mesh name suggests it's fabric, leather, or upholstery
           const isFabric = 
@@ -116,8 +111,6 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             meshName.includes('seat') ||
             meshName.includes('back_rest');
           
-          console.log(`  -> isFabric: ${isFabric}, will apply: ${!isFabric}`);
-          
           // Only apply to wood materials
           if (!isFabric) {
             if (typeof color === 'string') {
@@ -126,9 +119,6 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
               mat.color.setHex(color);
             }
             mat.needsUpdate = true;
-            console.log(`  -> Applied color successfully`);
-          } else {
-            console.log(`  -> Skipped (fabric/upholstery)`);
           }
         }
       });
