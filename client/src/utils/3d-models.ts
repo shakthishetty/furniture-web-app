@@ -65,6 +65,118 @@ export function updateFurnitureMaterial(furniture: THREE.Group, color: string | 
   });
 }
 
+// Store original material colors when model loads
+export function storeOriginalColors(furniture: THREE.Group) {
+  furniture.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const material = child.material;
+      const materials = Array.isArray(material) ? material : [material];
+      
+      materials.forEach((mat: any) => {
+        if (mat && mat.color && !(mat as any).originalColor) {
+          // Store the original color
+          (mat as any).originalColor = mat.color.clone();
+        }
+      });
+    }
+  });
+}
+
+// Apply wood stain only to wood materials (not fabric/leather/upholstery)
+export function applyWoodStain(furniture: THREE.Group, color: string | number) {
+  furniture.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const material = child.material;
+      const materials = Array.isArray(material) ? material : [material];
+      
+      materials.forEach((mat: any) => {
+        if (mat && mat.color) {
+          // Check if this material is likely wood-based (not fabric/leather)
+          // We identify fabric/leather by looking for material names or properties
+          const materialName = mat.name?.toLowerCase() || '';
+          const meshName = (child.name || '').toLowerCase();
+          
+          // Skip if material/mesh name suggests it's fabric, leather, or upholstery
+          const isFabric = 
+            materialName.includes('fabric') || 
+            materialName.includes('leather') || 
+            materialName.includes('upholstery') ||
+            materialName.includes('cushion') ||
+            materialName.includes('textile') ||
+            meshName.includes('fabric') || 
+            meshName.includes('leather') || 
+            meshName.includes('upholstery') ||
+            meshName.includes('cushion') ||
+            meshName.includes('seat_pad');
+          
+          // Only apply to wood materials
+          if (!isFabric) {
+            if (typeof color === 'string') {
+              mat.color.setHex(parseInt(color.replace('#', '0x')));
+            } else {
+              mat.color.setHex(color);
+            }
+            mat.needsUpdate = true;
+          }
+        }
+      });
+    }
+  });
+}
+
+// Reset materials to their original colors
+export function resetToOriginalColors(furniture: THREE.Group) {
+  furniture.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const material = child.material;
+      const materials = Array.isArray(material) ? material : [material];
+      
+      materials.forEach((mat: any) => {
+        if (mat && mat.color && (mat as any).originalColor) {
+          mat.color.copy((mat as any).originalColor);
+          mat.needsUpdate = true;
+        }
+      });
+    }
+  });
+}
+
+// Reset only wood materials to their original colors (preserving fabric colors)
+export function resetWoodToOriginal(furniture: THREE.Group) {
+  furniture.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const material = child.material;
+      const materials = Array.isArray(material) ? material : [material];
+      
+      materials.forEach((mat: any) => {
+        if (mat && mat.color && (mat as any).originalColor) {
+          // Check if this is a wood material (not fabric/leather)
+          const materialName = mat.name?.toLowerCase() || '';
+          const meshName = (child.name || '').toLowerCase();
+          
+          const isFabric = 
+            materialName.includes('fabric') || 
+            materialName.includes('leather') || 
+            materialName.includes('upholstery') ||
+            materialName.includes('cushion') ||
+            materialName.includes('textile') ||
+            meshName.includes('fabric') || 
+            meshName.includes('leather') || 
+            meshName.includes('upholstery') ||
+            meshName.includes('cushion') ||
+            meshName.includes('seat_pad');
+          
+          // Only reset wood materials to original
+          if (!isFabric) {
+            mat.color.copy((mat as any).originalColor);
+            mat.needsUpdate = true;
+          }
+        }
+      });
+    }
+  });
+}
+
 // Update dimensions of loaded 3D models
 export function updateFurnitureDimensions(furniture: THREE.Group, dimensions: { width: number; height: number; depth: number }, productName?: string) {
   const scaleX = dimensions.width / 100; // Normalize to percentage

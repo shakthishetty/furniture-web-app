@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, RotateCcw, Share2, ShoppingCart, Star, Info } from "lucide-react";
 import * as THREE from 'three';
-import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel } from "@/utils/3d-models";
+import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel, storeOriginalColors, applyWoodStain, resetWoodToOriginal } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/hooks/useAuth";
@@ -311,6 +311,9 @@ export default function Configurator() {
       if (sceneRef.current) {
         sceneRef.current.add(furnitureGroup);
         furnitureRef.current = furnitureGroup;
+        
+        // Store original colors for reset functionality
+        storeOriginalColors(furnitureGroup);
       }
     };
 
@@ -340,11 +343,15 @@ export default function Configurator() {
       updateFurnitureMaterial(furnitureRef.current, configuration.color);
     }
 
-    // Apply wood stain color last so it takes precedence over material and color
-    if (configuration.woodStain && woodStains.length > 0) {
+    // Apply wood stain color to wood parts only (or reset wood to original if "original" is selected)
+    if (configuration.woodStain === 'original') {
+      // Reset only wood parts to original colors (preserving fabric/upholstery colors)
+      resetWoodToOriginal(furnitureRef.current);
+    } else if (configuration.woodStain && woodStains.length > 0) {
       const selectedStain = woodStains.find((stain: any) => stain.id === configuration.woodStain);
       if (selectedStain && selectedStain.color) {
-        updateFurnitureMaterial(furnitureRef.current, selectedStain.color);
+        // Apply only to wood materials, not fabric/upholstery
+        applyWoodStain(furnitureRef.current, selectedStain.color);
       }
     }
   }, [configuration, materials, product, woodStains]);
@@ -636,15 +643,47 @@ export default function Configurator() {
                 </h3>
                 {woodStains.length > 0 && (
                   <button className="text-gray-400 hover:text-gray-600">
-                    <span className="text-sm">{woodStains.length} options</span>
+                    <span className="text-sm">{woodStains.length + 1} options</span>
                   </button>
                 )}
               </div>
               
               {woodStains.length > 0 ? (
                 <div className="grid grid-cols-4 gap-3">
-                  {woodStains.map((stain: any, index: number) => {
-                    const isSelected = configuration.woodStain === stain.id || (index === 0 && !configuration.woodStain);
+                  {/* Original/Default option */}
+                  <div
+                    className="flex flex-col items-center cursor-pointer"
+                    onClick={() => updateConfiguration('woodStain', 'original')}
+                    data-testid="stain-original"
+                  >
+                    <div
+                      className={`w-full aspect-square rounded border-2 transition-all relative bg-gradient-to-br from-amber-100 to-amber-200 ${
+                        configuration.woodStain === 'original' || !configuration.woodStain
+                          ? 'border-[#254127] border-4'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center text-2xl">
+                        🪵
+                      </div>
+                      {(configuration.woodStain === 'original' || !configuration.woodStain) && (
+                        <div className="absolute top-1 right-1">
+                          <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 text-center">
+                      <div className="text-sm font-medium text-gray-900">Original</div>
+                    </div>
+                  </div>
+                  
+                  {/* Wood stain options */}
+                  {woodStains.map((stain: any) => {
+                    const isSelected = configuration.woodStain === stain.id;
                     return (
                       <div
                         key={stain.id}
