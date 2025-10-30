@@ -47,6 +47,11 @@ export function UpdateCard({
     return null;
   }
 
+  // Filter out customer questions from manufacturer's view
+  const filteredReplies = userRole === "manufacturer" 
+    ? update.replies?.filter(reply => !reply.isCustomerQuestion)
+    : update.replies;
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case "admin":
@@ -149,11 +154,11 @@ export function UpdateCard({
                 </span>
               </div>
             )}
-            {update.replies && update.replies.length > 0 && (
+            {filteredReplies && filteredReplies.length > 0 && (
               <div className="flex items-center gap-1">
                 <MessageSquare className="h-3 w-3" />
                 <span data-testid={`update-replies-count-${update.id}`}>
-                  {update.replies.length}
+                  {filteredReplies.length}
                 </span>
               </div>
             )}
@@ -225,12 +230,12 @@ export function UpdateCard({
         )}
 
         {/* Replies section */}
-        {update.replies && update.replies.length > 0 && (
+        {filteredReplies && filteredReplies.length > 0 && (
           <>
             <Separator />
             <ReplyThread
               updateId={update.id}
-              replies={update.replies}
+              replies={filteredReplies}
               userRole={userRole}
               onReply={onReply}
               isReplying={isReplying}
@@ -240,7 +245,7 @@ export function UpdateCard({
         )}
 
         {/* Reply form for updates without existing replies */}
-        {(!update.replies || update.replies.length === 0) && onReply && (userRole === "manufacturer" || userRole === "admin") && (
+        {(!filteredReplies || filteredReplies.length === 0) && onReply && (userRole === "manufacturer" || userRole === "admin") && (
           <>
             <Separator />
             <ReplyThread
