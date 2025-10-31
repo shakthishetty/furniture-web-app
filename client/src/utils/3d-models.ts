@@ -23,11 +23,25 @@ export async function loadFurnitureModel(model3dUrl: string): Promise<THREE.Grou
     
     const model = gltf.scene;
     
-    // Add shadows to loaded model
+    // Add shadows and optimize materials for dark colors
     model.traverse((child: any) => {
       if (child instanceof THREE.Mesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        
+        // Optimize material properties for better visibility with dark colors
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((mat: any) => {
+          if (mat) {
+            // Set roughness and metalness for PBR rendering
+            if (mat.roughness !== undefined) {
+              mat.roughness = 0.7; // Higher roughness = more diffuse, less glossy
+            }
+            if (mat.metalness !== undefined) {
+              mat.metalness = 0.1; // Low metalness for wood furniture
+            }
+          }
+        });
       }
     });
     
@@ -57,6 +71,15 @@ export function updateFurnitureMaterial(furniture: THREE.Group, color: string | 
           } else {
             mat.color.setHex(color);
           }
+          
+          // Set PBR properties for better dark color visibility
+          if (mat.roughness !== undefined) {
+            mat.roughness = 0.7;
+          }
+          if (mat.metalness !== undefined) {
+            mat.metalness = 0.1;
+          }
+          
           // Mark material for update
           mat.needsUpdate = true;
         }
@@ -118,6 +141,15 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             } else {
               mat.color.setHex(color);
             }
+            
+            // Set PBR properties for better dark color visibility
+            if (mat.roughness !== undefined) {
+              mat.roughness = 0.7;
+            }
+            if (mat.metalness !== undefined) {
+              mat.metalness = 0.1;
+            }
+            
             mat.needsUpdate = true;
           }
         }
@@ -191,7 +223,11 @@ export function updateFurnitureDimensions(furniture: THREE.Group, dimensions: { 
 // Simple fallback model for when GLB files are not available
 export function createFallbackModel(): THREE.Group {
   const fallbackGroup = new THREE.Group();
-  const material = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+  const material = new THREE.MeshStandardMaterial({ 
+    color: 0x8B4513,
+    roughness: 0.7,
+    metalness: 0.1
+  });
   
   // Create a simple furniture-like shape (box with legs)
   const mainGeometry = new THREE.BoxGeometry(2, 0.2, 1.2);
