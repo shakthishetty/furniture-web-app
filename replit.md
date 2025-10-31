@@ -1,206 +1,50 @@
 # Overview
 
-Teak Theory is a premium furniture e-commerce website built with React and Express.js featuring a comprehensive three-portal Manufacturing Tracking system. The application showcases sustainable teak furniture with a focus on craftsmanship and environmental responsibility, now enhanced with complete visibility into the custom furniture manufacturing process. It features a modern, responsive design with a warm color palette that emphasizes the natural wood aesthetic. The site includes sections for featured categories, brand values, newsletter signup, comprehensive navigation, and a complete manufacturing tracking system with separate interfaces for administrators, manufacturers, and customers.
+Teak Theory is a premium e-commerce platform specializing in sustainable teak furniture. It integrates a modern React frontend with an Express.js backend, featuring a comprehensive Manufacturing Tracking system across three distinct portals (Admin, Manufacturer, Customer). The platform emphasizes craftsmanship and environmental responsibility, offering a seamless shopping experience complemented by detailed manufacturing visibility and advanced product customization. Key capabilities include a robust discount management system and an automatic product status calculation based on stock and customization completeness.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-# Discount Feature System (September 2025)
-
-## Complete Discount Management
-The application features a comprehensive discount system with both admin management and customer application capabilities:
-
-### Discount Types
-- **Percentage Discounts**: Apply percentage-based discounts (e.g., 20% off)
-- **Flat Discounts**: Apply fixed dollar amount discounts (e.g., $50 off)
-
-### Key Features
-- **Admin Management**: Full CRUD operations for creating and managing discount codes
-- **Validation Rules**: Comprehensive validation including:
-  - Minimum order value requirements
-  - Usage limits (max uses)
-  - Validity periods (validFrom/validUntil dates)
-  - Active/inactive status
-- **Checkout Integration**: Customers can apply discount codes during checkout
-- **Real-time Validation**: Instant feedback on discount code validity
-- **Usage Tracking**: Automatic increment of usage count on successful payment
-- **Order Integration**: Discounts are stored with orders for reporting and analytics
-
-### Database Schema
-- **discounts table**: Stores all discount codes with configuration
-- **orders.discountId**: Foreign key linking orders to applied discounts
-- **orders.discountAmount**: Stores the actual discount amount applied
-
-### API Endpoints
-- **POST /api/admin/discounts**: Create new discount codes (admin only)
-- **GET /api/admin/discounts**: List all discount codes with pagination (admin only)
-- **GET /api/admin/discounts/:id**: Get specific discount details (admin only)
-- **PATCH /api/admin/discounts/:id**: Update discount configuration (admin only)
-- **DELETE /api/admin/discounts/:id**: Delete discount code (admin only)
-- **POST /api/discount/apply**: Validate and calculate discount for checkout
-
-### Security & Validation
-- Admin-only access for discount management
-- Server-side validation for all discount operations
-- Protection against over-applying discounts (capped at order subtotal)
-- Payment confirmation required before incrementing usage count
-
-# Automatic Product Status System (October 2025)
-
-## Overview
-The application features an intelligent automatic product status calculation system that determines product availability based on stock levels and customization setup completeness. This ensures customers only see products that are truly ready to purchase and customize.
-
-## Status Types
-The system automatically assigns one of four status types to each product:
-
-- **🟢 Active**: Product is in stock, has complete customization setup (100%), and is marked as active
-- **🟡 Partial**: Product has incomplete customization setup (missing material options)
-- **🔴 Out of Stock**: Product stock is depleted (stock ≤ 0 or inStock = false)
-- **⚪ Draft**: Product is marked as inactive or draft (not ready for sale)
-
-## Status Calculation Logic
-The system calculates status based on priority:
-
-1. **Draft Check**: If product status is 'inactive' or 'draft' → Draft status
-2. **Stock Check**: If inStock = false OR stock ≤ 0 → Out of Stock status
-3. **Completion Check**: If customization setup < 100% → Partial status
-4. **Success**: All checks pass → Active status
-
-## Customization Completion Requirements
-A product reaches 100% completion when it has at least one option configured for each required customization type:
-
-**Standard Products**:
-- Wood Type (at least 1 option)
-- Wood Stain (at least 1 option)
-- Hardware Finish (at least 1 option)
-- Surface Finish (at least 1 option)
-
-**Chair Products** (additional requirement):
-- Upholstery (at least 1 option)
-
-## Admin Features
-The admin products page displays comprehensive status information for each product:
-
-- **Color-coded Status Badges**: Visual indicators with emojis for quick status identification
-- **Progress Bars**: Visual representation of customization setup completion percentage
-- **Completion Percentage**: Numeric display of setup completion (0-100%)
-- **Missing Setup Indicators**: Lists which customization categories are incomplete
-- **Stock Count Badge**: Shows current stock levels for products with inventory
-
-## Customer Experience
-The customer-facing product catalog automatically filters to show only Active products:
-
-- Customers never see products that are out of stock
-- Only products with complete customization options are displayed
-- Draft and partially configured products are hidden from the catalog
-- Ensures all visible products can be purchased and customized immediately
-
-## Database Schema
-- **products.stock**: Integer field tracking inventory count
-- **products.inStock**: Boolean field for manual stock availability control
-- Existing status field used for draft/inactive marking
-
-## Implementation
-- **Status Utilities** (`server/utils/product-status.ts`): Core calculation functions
-- **Admin Endpoint** (`/api/admin/products`): Returns computed status for admin view
-- **Customer Endpoint** (`/api/configurator/products`): Filters by active status only
-- **Material Counting**: Database queries count enabled materials by subType
-
-## Performance Note
-The architect has noted that the current implementation uses one query per product for material counting. For high-traffic scenarios, this could be optimized with batch queries or aggregation.
-
-# Manufacturing Tracking System (December 2025)
-
-## Three-Portal Architecture
-The system now features a comprehensive Manufacturing Tracking system with three separate portals:
-
-### Admin Portal (/admin/manufacturing)
-- **Process Management**: Create, assign, and monitor all manufacturing processes
-- **Manufacturer Assignment**: Assign processes to specific manufacturer users
-- **Bulk Operations**: Multi-select processes for efficient management
-- **Dashboard Statistics**: Real-time overview of all manufacturing activity
-- **Advanced Filtering**: Filter by status, manufacturer assignment, search by order ID
-- **Comprehensive Details**: 3-tab interface (Timeline, Updates, Management)
-- **Stage Management**: Add/edit manufacturing stages and update statuses
-- **Real-time Updates**: Live SSE connection with status monitoring
-
-### Manufacturer Portal (/manufacturer)
-- **Dedicated Interface**: Separate portal for manufacturer users
-- **Assigned Processes**: View only processes assigned to the current manufacturer
-- **Process Updates**: Post updates with photos and status changes
-- **Customer Communication**: Reply to customer questions and provide updates
-- **Real-time Notifications**: Live updates for new assignments and customer messages
-- **Dashboard Overview**: Statistics and processes needing attention
-- **Mobile Responsive**: Full functionality on all devices
-
-### Customer Portal (/orders/:orderId/tracking)
-- **Order Tracking**: Real-time visibility into manufacturing progress
-- **Timeline Visualization**: Clear progress indicators and stage status
-- **Photo Gallery**: View manufacturing progress photos
-- **Communication**: Ask questions and receive responses from manufacturers
-- **Public Updates Only**: Internal manufacturer notes are filtered out
-- **Real-time Updates**: Live notifications for manufacturing progress
-
-## Key Features Implemented
-- **Role-based Authentication**: Separate authentication for admin, manufacturer, and customer roles
-- **Real-time Communication**: Server-Sent Events (SSE) for live updates across all portals
-- **Comprehensive Security**: Role-based access control with strict data filtering
-- **Shared Component Library**: Reusable UI components (Timeline, UpdateCard, PhotoGrid, ReplyThread)
-- **Photo Upload System**: Object storage integration for manufacturing progress photos
-- **Database Schema**: Complete manufacturing data model with processes, stages, updates, and replies
-- **TypeScript Integration**: Full type safety across frontend and backend
-
 # System Architecture
 
 ## Frontend Architecture
-- **Framework**: React 18 with TypeScript for type safety and modern development practices
-- **Routing**: Wouter for lightweight client-side routing with support for single-page application navigation
-- **Styling**: Tailwind CSS with custom design system featuring warm, earth-toned color variables for consistent branding
-- **UI Components**: Shadcn/ui component library built on Radix UI primitives for accessible, customizable components
-- **State Management**: TanStack Query (React Query) for server state management and caching
-- **Build Tool**: Vite for fast development and optimized production builds with hot module replacement
+- **Framework**: React 18 with TypeScript.
+- **Routing**: Wouter for lightweight client-side routing.
+- **Styling**: Tailwind CSS with a custom design system featuring warm, earth-toned color variables.
+- **UI Components**: Shadcn/ui component library built on Radix UI primitives.
+- **State Management**: TanStack Query (React Query) for server state management.
+- **Build Tool**: Vite for fast development and optimized production builds.
 
-## Backend Architecture  
-- **Framework**: Express.js with TypeScript for REST API development
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations and migrations
-- **Database Provider**: Neon Database (serverless PostgreSQL) for scalable cloud database hosting
-- **Storage Layer**: Abstracted storage interface with in-memory implementation for development and PostgreSQL for production
-- **Development Server**: TSX for TypeScript execution in development with automatic restart capabilities
+## Backend Architecture
+- **Framework**: Express.js with TypeScript for REST API development.
+- **Database**: PostgreSQL with Drizzle ORM for type-safe operations.
+- **Development Server**: TSX for TypeScript execution with automatic restart.
 
 ## Design System
-- **Typography**: Multiple Google Fonts including Inter, Playfair Display, and Geist Mono for varied typography needs
-- **Color Scheme**: Custom CSS variables supporting light/dark themes with warm, natural tones reflecting the teak wood aesthetic
-- **Component Library**: Comprehensive UI component set including forms, navigation, dialogs, and data display components
-- **Responsive Design**: Mobile-first approach with Tailwind's responsive utilities
+- **Typography**: Multiple Google Fonts (Inter, Playfair Display, Geist Mono).
+- **Color Scheme**: Custom CSS variables supporting light/dark themes with warm, natural tones.
+- **Component Library**: Comprehensive UI component set.
+- **Responsive Design**: Mobile-first approach with Tailwind's responsive utilities.
 
-## Development Workflow
-- **Type Safety**: Shared TypeScript schemas between frontend and backend using Drizzle-Zod for validation
-- **Database Management**: Drizzle Kit for schema migrations and database push operations
-- **Development Tools**: Hot reloading, error overlays, and development banners for enhanced developer experience
-- **Build Process**: Separate client and server builds with ESBuild for server bundling
+## Core Features & Implementations
+- **Discount System**: Comprehensive CRUD operations for percentage and flat discounts, with validation rules (min order value, usage limits, validity periods) and checkout integration.
+- **Automatic Product Status**: Calculates product availability (Active, Partial, Out of Stock, Draft) based on stock levels and customization setup completeness. Admin views include color-coded badges, progress bars, and missing setup indicators.
+- **Manufacturing Tracking System**:
+    - **Three Portals**: Admin, Manufacturer, and Customer with role-based access.
+    - **Admin Portal**: Process management, manufacturer assignment, bulk operations, dashboard, advanced filtering, and real-time updates via SSE.
+    - **Manufacturer Portal**: Dedicated interface for assigned processes, updates with photos, customer communication, real-time notifications, and enhanced product customization visualization (3D previews, material details).
+    - **Customer Portal**: Real-time order tracking, timeline visualization, photo gallery, and direct communication with manufacturers.
+- **Enhanced Product Customization Visualization**: Interactive 3D preview using Three.js with robust fallback chain (3D model → product image → placeholder). Displays detailed material options with visual enhancements (icons, color swatches) and dimensions summary.
+- **Shared Component Library**: Reusable UI components (Timeline, UpdateCard, PhotoGrid, ReplyThread, ProductCustomizationDetail).
+- **Security**: Role-based authentication and access control.
+- **Type Safety**: Full TypeScript integration across frontend and backend, with shared schemas using Drizzle-Zod.
 
 # External Dependencies
 
-## Core Framework Dependencies
-- **React Ecosystem**: React 18, React DOM, React Hook Form with Zod resolvers for form validation
-- **Backend**: Express.js with middleware for JSON parsing, URL encoding, and session management
-- **Database**: Drizzle ORM with PostgreSQL dialect, Neon Database serverless driver
-
-## UI and Styling
-- **Component Library**: Radix UI primitives for accessible headless components
-- **Styling**: Tailwind CSS with PostCSS and Autoprefixer for cross-browser compatibility
-- **Icons**: Lucide React for consistent iconography
-- **Utilities**: Class Variance Authority (CVA) for component variant management, clsx for conditional classes
-
-## Development and Build Tools
-- **Build Tools**: Vite with React plugin, ESBuild for server bundling
-- **TypeScript**: Full TypeScript support with strict configuration
-- **Development**: TSX for TypeScript execution, Replit-specific plugins for enhanced development experience
-- **Database Tools**: Drizzle Kit for migrations and schema management
-
-## Third-Party Services
-- **Database Hosting**: Neon Database for serverless PostgreSQL hosting
-- **Font Loading**: Google Fonts for typography (Inter, Playfair Display, Geist Mono)
-- **Image Assets**: Unsplash for placeholder product and category images
-- **Development Environment**: Replit-specific integrations for cartographer and error modals
+- **Database Hosting**: Neon Database for serverless PostgreSQL.
+- **Font Loading**: Google Fonts (Inter, Playfair Display, Geist Mono).
+- **Image Assets**: Unsplash for placeholder content.
+- **Icons**: Lucide React.
+- **Component Primitives**: Radix UI.
+- **Development Environment**: Replit-specific integrations.
