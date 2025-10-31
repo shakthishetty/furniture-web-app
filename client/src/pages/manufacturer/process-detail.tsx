@@ -17,7 +17,8 @@ import {
   PhotoGrid, 
   ReplyThread, 
   StageUpdateComposer, 
-  useManufacturingSSE 
+  useManufacturingSSE,
+  ProductCustomizationDetail
 } from "@/components/manufacturing";
 import { ManufacturingProgressBar } from "@/components/manufacturing/ManufacturingProgressBar";
 import { 
@@ -133,6 +134,8 @@ interface ProcessWithDetails extends ManufacturingProcess {
         authorUserId: string;
         authorRole: string;
         createdAt: Date | null;
+        isCustomerQuestion: boolean | null;
+        isCustomerServiceReply: boolean | null;
       }>;
     }>;
   }>;
@@ -599,112 +602,19 @@ export default function ManufacturerProcessDetail() {
                 
                 <TabsContent value="items" className="mt-4 space-y-4" data-testid="content-order-items">
                   <div className="space-y-4">
-                    <h4 className="font-medium text-lg">Product Details ({process.order.items.length} item{process.order.items.length !== 1 ? 's' : ''})</h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-lg">Product Details</h4>
+                      <Badge variant="outline" className="font-semibold">
+                        {process.order.items.length} item{process.order.items.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
                     <div className="space-y-6">
-                      {process.order.items.map((item, index) => (
-                        <Card key={item.id} className="p-6" data-testid={`item-${item.id}`}>
-                          <div className="flex flex-col items-center space-y-6">
-                            {/* Product Image - Centered at top */}
-                            <div className="flex flex-col items-center space-y-3">
-                              {item.productImage ? (
-                                <img 
-                                  src={item.productImage} 
-                                  alt={item.productName}
-                                  className="w-32 h-32 object-cover rounded-lg border shadow-sm"
-                                  data-testid={`img-product-${item.id}`}
-                                />
-                              ) : (
-                                <div className="w-32 h-32 bg-muted rounded-lg border flex items-center justify-center">
-                                  <Package className="h-12 w-12 text-muted-foreground" />
-                                </div>
-                              )}
-                              <Badge variant="outline" className="text-xs" data-testid={`badge-quantity-${item.id}`}>
-                                Quantity: {item.quantity}
-                              </Badge>
-                            </div>
-                            
-                            {/* Product Information - Below image */}
-                            <div className="w-full space-y-5">
-                              {/* Product Header */}
-                              <div className="text-center">
-                                <h5 className="font-semibold text-xl mb-2" data-testid={`text-product-name-${item.id}`}>
-                                  {item.productName}
-                                </h5>
-                                <div className="w-20 h-1 bg-primary rounded-full mx-auto"></div>
-                              </div>
-                              
-                              {/* Product Specifications */}
-                              {item.customConfiguration && (() => {
-                                try {
-                                  // Parse JSON string if it's a string, otherwise use as-is
-                                  const config = typeof item.customConfiguration === 'string' 
-                                    ? JSON.parse(item.customConfiguration) 
-                                    : item.customConfiguration;
-                                  
-                                  return (
-                                    <div className="space-y-4">
-                                      <h6 className="font-medium text-sm text-muted-foreground text-center">Product Specifications</h6>
-                                      <div className="space-y-3 max-w-md mx-auto">
-                                        {config.color && (
-                                          <div className="flex items-center justify-between py-2 border-b border-muted">
-                                            <span className="text-sm font-medium text-muted-foreground">Color:</span>
-                                            <div className="text-sm font-semibold" data-testid={`text-color-${item.id}`}>
-                                              {config.color}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {config.texture && (
-                                          <div className="flex items-center justify-between py-2 border-b border-muted">
-                                            <span className="text-sm font-medium text-muted-foreground">Texture:</span>
-                                            <div className="text-sm font-semibold" data-testid={`text-texture-${item.id}`}>
-                                              {config.texture}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {config.dimensions && (
-                                          <div className="flex items-center justify-between py-2 border-b border-muted">
-                                            <span className="text-sm font-medium text-muted-foreground">Dimensions:</span>
-                                            <div className="text-sm font-semibold text-right" data-testid={`text-dimensions-${item.id}`}>
-                                              {typeof config.dimensions === 'object' 
-                                                ? `${config.dimensions.width || 'N/A'} × ${config.dimensions.height || 'N/A'} × ${config.dimensions.depth || 'N/A'}`
-                                                : config.dimensions}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {config.material && (
-                                          <div className="flex items-center justify-between py-2 border-b border-muted">
-                                            <span className="text-sm font-medium text-muted-foreground">Material:</span>
-                                            <div className="text-sm font-semibold" data-testid={`text-material-${item.id}`}>
-                                              {config.material}
-                                            </div>
-                                          </div>
-                                        )}
-                                        {config.finish && (
-                                          <div className="flex items-center justify-between py-2">
-                                            <span className="text-sm font-medium text-muted-foreground">Finish:</span>
-                                            <div className="text-sm font-semibold" data-testid={`text-finish-${item.id}`}>
-                                              {config.finish}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                } catch (error) {
-                                  // Fallback to raw display if JSON parsing fails
-                                  return (
-                                    <div className="mt-3 p-3 bg-muted rounded-lg max-w-md mx-auto">
-                                      <span className="text-xs font-medium text-muted-foreground mb-2 block">Configuration Details:</span>
-                                      <pre className="text-xs whitespace-pre-wrap text-muted-foreground" data-testid={`text-custom-config-${item.id}`}>
-                                        {typeof item.customConfiguration === 'string' ? item.customConfiguration : JSON.stringify(item.customConfiguration, null, 2)}
-                                      </pre>
-                                    </div>
-                                  );
-                                }
-                              })()}
-                            </div>
-                          </div>
-                        </Card>
+                      {process.order?.items.map((item) => (
+                        <ProductCustomizationDetail 
+                          key={item.id} 
+                          item={item} 
+                          updatedAt={process.order?.updatedAt}
+                        />
                       ))}
                     </div>
                   </div>

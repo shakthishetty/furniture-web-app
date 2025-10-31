@@ -6,6 +6,7 @@ export { UpdateCard } from "./UpdateCard";
 export { PhotoGrid } from "./PhotoGrid";
 export { ReplyThread } from "./ReplyThread";
 export { StageUpdateComposer } from "./StageUpdateComposer";
+export { ProductCustomizationDetail } from "./ProductCustomizationDetail";
 
 // Export hooks
 export { useSSE, useManufacturingSSE, useManufacturerDashboardSSE } from "../../hooks/useSSE";
