@@ -45,10 +45,11 @@ export function FloatingAdminChat() {
   // Send reply mutation
   const replyMutation = useMutation({
     mutationFn: async ({ questionId, message }: { questionId: string; message: string }) => {
-      return await apiRequest('POST', '/api/admin/customer-questions/reply', { 
+      const response = await apiRequest('POST', '/api/admin/customer-questions/reply', { 
         questionId, 
         message 
       });
+      return await response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customer-questions'] });
@@ -168,29 +169,40 @@ export function FloatingAdminChat() {
                         <p className="text-sm">{selectedQuestion.message}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        {formatDistanceToNow(new Date(selectedQuestion.createdAt), { addSuffix: true })}
+                        {selectedQuestion.createdAt && !isNaN(new Date(selectedQuestion.createdAt).getTime())
+                          ? formatDistanceToNow(new Date(selectedQuestion.createdAt), { addSuffix: true })
+                          : 'Recently'
+                        }
                       </p>
                     </div>
                   </div>
 
                   {/* Admin Replies */}
-                  {selectedQuestion.replies && selectedQuestion.replies.map((reply) => (
-                    <div key={reply.id} className="flex gap-2 flex-row-reverse">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                          <MessageSquare className="h-4 w-4 text-green-600" />
+                  {selectedQuestion.replies && selectedQuestion.replies.map((reply) => {
+                    const replyDate = reply.createdAt ? new Date(reply.createdAt) : new Date();
+                    const isValidDate = !isNaN(replyDate.getTime());
+                    
+                    return (
+                      <div key={reply.id} className="flex gap-2 flex-row-reverse">
+                        <div className="flex-shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <MessageSquare className="h-4 w-4 text-green-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                            <p className="text-sm">{reply.message}</p>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 text-right">
+                            {isValidDate 
+                              ? formatDistanceToNow(replyDate, { addSuffix: true })
+                              : 'Just now'
+                            }
+                          </p>
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-                          <p className="text-sm">{reply.message}</p>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1 text-right">
-                          {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
 
@@ -254,7 +266,10 @@ export function FloatingAdminChat() {
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
-                        {formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}
+                        {question.createdAt && !isNaN(new Date(question.createdAt).getTime())
+                          ? formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })
+                          : 'Recently'
+                        }
                       </p>
                     </div>
                   ))}
