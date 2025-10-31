@@ -47,10 +47,10 @@ export function UpdateCard({
     return null;
   }
 
-  // Filter out customer questions from admin and manufacturer views
-  // Customer questions should only appear in the floating admin chat widget
+  // Filter out customer questions and customer service replies from admin and manufacturer views
+  // Customer questions and admin replies to customers should only appear in the floating admin chat widget
   const filteredReplies = userRole === "admin" || userRole === "manufacturer"
-    ? update.replies?.filter(reply => !reply.isCustomerQuestion)
+    ? update.replies?.filter(reply => !reply.isCustomerQuestion && !reply.isCustomerServiceReply)
     : update.replies;
 
   const getRoleColor = (role: string) => {

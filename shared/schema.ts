@@ -664,6 +664,7 @@ export const stageUpdateReplies = pgTable("stage_update_replies", {
   authorRole: varchar("author_role").notNull(), // admin, customer
   message: text("message").notNull(),
   isCustomerQuestion: boolean("is_customer_question").default(false),
+  isCustomerServiceReply: boolean("is_customer_service_reply").default(false), // Admin replies to customers via chat widget
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -706,6 +707,7 @@ export const createStageUpdateReplySchema = createInsertSchema(stageUpdateReplie
   createdAt: true,
 }).extend({
   isCustomerQuestion: z.boolean().optional(),
+  isCustomerServiceReply: z.boolean().optional(),
 });
 
 export const manufacturingStatusUpdateSchema = z.object({

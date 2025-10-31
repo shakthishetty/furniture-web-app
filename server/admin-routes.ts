@@ -1602,6 +1602,7 @@ router.post("/customer-questions/reply", requireAdmin, async (req, res) => {
       authorUserId: req.user?.userId!,
       authorRole: "admin",
       isCustomerQuestion: false, // Reply from admin
+      isCustomerServiceReply: true, // Mark as customer service reply to exclude from Updates & Communication tab
     });
     
     // Create notification for the customer
