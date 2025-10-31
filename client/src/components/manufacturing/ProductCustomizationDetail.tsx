@@ -180,6 +180,22 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
               </div>
             ) : hasCustomizations ? (
               <>
+                {/* Timestamp Header */}
+                {updatedAt && (
+                  <div className="flex items-center justify-between pb-3 border-b border-border/50">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>Last updated by customer: {new Date(updatedAt).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Wood Type Section */}
                 {woodType && (
                   <div className="space-y-3" data-testid={`section-wood-type-${item.id}`}>
@@ -187,19 +203,19 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                       <span className="text-xl">🪵</span>
                       <h4>Wood Type</h4>
                     </div>
-                    <div className="pl-8 space-y-2">
-                      <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-amber-50/50 to-background dark:from-amber-950/10 dark:to-background rounded-xl border border-amber-200/30 dark:border-amber-800/30">
+                    <div className="pl-4 sm:pl-8 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gradient-to-r from-amber-50/50 to-background dark:from-amber-950/10 dark:to-background rounded-xl border border-amber-200/30 dark:border-amber-800/30">
                         <span className="text-sm font-semibold">{woodType.name}</span>
                         {woodType.color && (
                           <div 
-                            className="w-10 h-10 rounded-lg border-2 border-border shadow-md ring-2 ring-offset-2 ring-amber-400/20"
+                            className="w-10 h-10 rounded-lg border-2 border-border shadow-md ring-2 ring-offset-2 ring-amber-400/20 flex-shrink-0"
                             style={{ backgroundColor: woodType.color }}
                             title={woodType.name}
                           />
                         )}
                       </div>
                       {woodType.description && (
-                        <p className="text-xs text-muted-foreground pl-4 italic">{woodType.description}</p>
+                        <p className="text-xs text-muted-foreground pl-0 sm:pl-4 italic">{woodType.description}</p>
                       )}
                     </div>
                   </div>
@@ -212,26 +228,26 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                       <span className="text-xl">🎨</span>
                       <h4>Wood Stain</h4>
                     </div>
-                    <div className="pl-8 space-y-2">
-                      <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-purple-50/50 to-background dark:from-purple-950/10 dark:to-background rounded-xl border border-purple-200/30 dark:border-purple-800/30">
-                        <div className="flex items-center gap-3">
+                    <div className="pl-4 sm:pl-8 space-y-2">
+                      <div className="flex items-start sm:items-center justify-between py-3 px-4 bg-gradient-to-r from-purple-50/50 to-background dark:from-purple-950/10 dark:to-background rounded-xl border border-purple-200/30 dark:border-purple-800/30">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           {woodStain.color && (
                             <div 
-                              className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-purple-400/20"
+                              className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-purple-400/20 flex-shrink-0"
                               style={{ backgroundColor: woodStain.color }}
                               title={woodStain.name}
                             />
                           )}
-                          <div>
-                            <div className="text-sm font-semibold">{woodStain.name}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold truncate">{woodStain.name}</div>
                             {woodStain.color && (
-                              <div className="text-xs text-muted-foreground font-mono mt-0.5">{woodStain.color}</div>
+                              <div className="text-xs text-muted-foreground font-mono mt-0.5 break-all">{woodStain.color}</div>
                             )}
                           </div>
                         </div>
                       </div>
                       {woodStain.description && (
-                        <p className="text-xs text-muted-foreground pl-4 italic">{woodStain.description}</p>
+                        <p className="text-xs text-muted-foreground pl-0 sm:pl-4 italic">{woodStain.description}</p>
                       )}
                     </div>
                   </div>
@@ -244,26 +260,26 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                       <span className="text-xl">🧵</span>
                       <h4>Fabric Upholstery</h4>
                     </div>
-                    <div className="pl-8 space-y-2">
-                      <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-50/50 to-background dark:from-blue-950/10 dark:to-background rounded-xl border border-blue-200/30 dark:border-blue-800/30">
-                        <div className="flex items-center gap-3">
+                    <div className="pl-4 sm:pl-8 space-y-2">
+                      <div className="flex items-start sm:items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-50/50 to-background dark:from-blue-950/10 dark:to-background rounded-xl border border-blue-200/30 dark:border-blue-800/30">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           {upholstery.color && (
                             <div 
-                              className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-blue-400/20"
+                              className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-blue-400/20 flex-shrink-0"
                               style={{ backgroundColor: upholstery.color }}
                               title={upholstery.name}
                             />
                           )}
-                          <div>
-                            <div className="text-sm font-semibold">{upholstery.name}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold truncate">{upholstery.name}</div>
                             {upholstery.color && (
-                              <div className="text-xs text-muted-foreground font-mono mt-0.5">{upholstery.color}</div>
+                              <div className="text-xs text-muted-foreground font-mono mt-0.5 break-all">{upholstery.color}</div>
                             )}
                           </div>
                         </div>
                       </div>
                       {upholstery.description && (
-                        <p className="text-xs text-muted-foreground pl-4 italic">{upholstery.description}</p>
+                        <p className="text-xs text-muted-foreground pl-0 sm:pl-4 italic">{upholstery.description}</p>
                       )}
                     </div>
                   </div>
@@ -274,20 +290,20 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                   <div className="space-y-3" data-testid={`section-hardware-${item.id}`}>
                     <div className="flex items-center gap-2 text-sm font-bold text-primary">
                       <span className="text-xl">⚙️</span>
-                      <h4>Hardware Finish</h4>
+                      <h4 className="text-sm sm:text-base">Hardware Finish (Metal Type + Finish Color)</h4>
                     </div>
-                    <div className="pl-8 space-y-2">
-                      <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-slate-50/50 to-background dark:from-slate-950/10 dark:to-background rounded-xl border border-slate-200/30 dark:border-slate-800/30">
-                        <div className="flex items-center gap-3">
+                    <div className="pl-4 sm:pl-8 space-y-2">
+                      <div className="flex items-start sm:items-center justify-between py-3 px-4 bg-gradient-to-r from-slate-50/50 to-background dark:from-slate-950/10 dark:to-background rounded-xl border border-slate-200/30 dark:border-slate-800/30">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           {hardwareFinish.color && (
                             <div 
-                              className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-slate-400/20"
+                              className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-slate-400/20 flex-shrink-0"
                               style={{ backgroundColor: hardwareFinish.color }}
                               title={hardwareFinish.name}
                             />
                           )}
-                          <div>
-                            <div className="text-sm font-semibold">{hardwareFinish.name}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold truncate">{hardwareFinish.name}</div>
                             {hardwareFinish.description && (
                               <div className="text-xs text-muted-foreground mt-0.5">{hardwareFinish.description}</div>
                             )}
@@ -303,14 +319,14 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                   <div className="space-y-3" data-testid={`section-surface-finish-${item.id}`}>
                     <div className="flex items-center gap-2 text-sm font-bold text-primary">
                       <span className="text-xl">✨</span>
-                      <h4>Surface Finish</h4>
+                      <h4 className="text-sm sm:text-base">Surface Finish (Matte / Glossy / Satin)</h4>
                     </div>
-                    <div className="pl-8 space-y-2">
+                    <div className="pl-4 sm:pl-8 space-y-2">
                       <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-yellow-50/50 to-background dark:from-yellow-950/10 dark:to-background rounded-xl border border-yellow-200/30 dark:border-yellow-800/30">
                         <span className="text-sm font-semibold">{surfaceFinish.name}</span>
                       </div>
                       {surfaceFinish.description && (
-                        <p className="text-xs text-muted-foreground pl-4 italic">{surfaceFinish.description}</p>
+                        <p className="text-xs text-muted-foreground pl-0 sm:pl-4 italic">{surfaceFinish.description}</p>
                       )}
                     </div>
                   </div>
@@ -326,7 +342,7 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                         <h4>Dimensions</h4>
                       </div>
                       <div className="pl-8">
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           {config.dimensions.width && (
                             <div className="text-center p-4 bg-gradient-to-br from-indigo-50/70 to-background dark:from-indigo-950/20 dark:to-background rounded-xl border border-indigo-200/40 dark:border-indigo-800/40">
                               <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Width</div>
@@ -358,11 +374,11 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                     <div className="space-y-3" data-testid={`section-notes-${item.id}`}>
                       <div className="flex items-center gap-2 text-sm font-bold text-primary">
                         <span className="text-xl">📝</span>
-                        <h4>Additional Notes / Custom Requests</h4>
+                        <h4 className="text-sm sm:text-base">Additional Notes / Custom Requests</h4>
                       </div>
-                      <div className="pl-8">
+                      <div className="pl-4 sm:pl-8">
                         <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10 border-l-4 border-amber-400 dark:border-amber-600 rounded-lg shadow-sm">
-                          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{config.additionalNotes}</p>
+                          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed break-words">{config.additionalNotes}</p>
                         </div>
                       </div>
                     </div>
@@ -383,7 +399,9 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
           <TabsContent value="preview" className="mt-2">
             <div className="space-y-4">
               <div className="text-center">
-                <h4 className="text-base font-bold mb-1.5">Product Visualization</h4>
+                <h4 className="text-base font-bold mb-1.5">
+                  {productModelUrl ? '3D Preview' : 'Visual Preview'}
+                </h4>
                 <p className="text-xs text-muted-foreground mb-6">
                   Configured product as per customer specifications
                 </p>
