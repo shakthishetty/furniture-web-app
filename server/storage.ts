@@ -234,6 +234,10 @@ export interface IStorage {
   // Stage Update Replies operations
   createStageUpdateReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply>;
   getStageUpdateReplies(updateId: string): Promise<StageUpdateReply[]>;
+  
+  // Customer Questions operations (admin-customer communication)
+  getAllCustomerQuestions(): Promise<any[]>;
+  createCustomerQuestionReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply>;
 
   // Manufacturing Process with full details
   getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 
@@ -1965,6 +1969,61 @@ export class DatabaseStorage implements IStorage {
       .orderBy(stageUpdateReplies.createdAt);
     
     return replies;
+  }
+
+  // Customer Questions operations
+  async getAllCustomerQuestions(): Promise<any[]> {
+    // Get all customer questions (isCustomerQuestion: true) with order and user details
+    const customerUpdates = await db
+      .select({
+        update: stageUpdates,
+        stage: manufacturingStages,
+        process: manufacturingProcesses,
+        order: orders,
+        user: users,
+      })
+      .from(stageUpdates)
+      .leftJoin(manufacturingStages, eq(stageUpdates.stageId, manufacturingStages.id))
+      .leftJoin(manufacturingProcesses, eq(manufacturingStages.processId, manufacturingProcesses.id))
+      .leftJoin(orders, eq(manufacturingProcesses.orderId, orders.id))
+      .leftJoin(users, eq(orders.userId, users.id))
+      .where(eq(stageUpdates.isCustomerQuestion, true))
+      .orderBy(desc(stageUpdates.createdAt));
+
+    // Fetch replies for each question
+    const updateIds = customerUpdates.map(item => item.update.id);
+    
+    // Handle empty array case to prevent inArray error
+    let repliesByUpdate: Record<string, StageUpdateReply[]> = {};
+    if (updateIds.length > 0) {
+      const allReplies = await db
+        .select()
+        .from(stageUpdateReplies)
+        .where(inArray(stageUpdateReplies.updateId, updateIds))
+        .orderBy(stageUpdateReplies.createdAt);
+
+      repliesByUpdate = allReplies.reduce((acc, reply) => {
+        if (!acc[reply.updateId]) acc[reply.updateId] = [];
+        acc[reply.updateId].push(reply);
+        return acc;
+      }, {} as Record<string, StageUpdateReply[]>);
+    }
+
+    return customerUpdates.map(item => ({
+      id: item.update.id,
+      message: item.update.message,
+      createdAt: item.update.createdAt,
+      authorRole: item.update.authorRole,
+      orderId: item.order?.id || '',
+      orderNumber: item.order?.orderNumber || '',
+      customerName: item.user?.name || 'Unknown Customer',
+      userId: item.user?.id || '',
+      replies: repliesByUpdate[item.update.id] || [],
+    }));
+  }
+
+  async createCustomerQuestionReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply> {
+    return this.createStageUpdateReply(replyData);
   }
 
   async getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 

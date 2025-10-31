@@ -1569,4 +1569,69 @@ router.delete("/direct-manufacturers/:id", requireAdmin, async (req, res) => {
   }
 });
 
+// Customer Questions Routes - for admin-customer communication
+router.get("/customer-questions", requireAdmin, async (req, res) => {
+  try {
+    // Fetch all customer questions (isCustomerQuestion: true) with replies
+    const questions = await storage.getAllCustomerQuestions();
+    res.json({ questions });
+  } catch (error) {
+    console.error("Error fetching customer questions:", error);
+    res.status(500).json({ error: "Failed to fetch customer questions" });
+  }
+});
+
+router.post("/customer-questions/reply", requireAdmin, async (req, res) => {
+  try {
+    const { questionId, message } = req.body;
+    
+    if (!questionId || !message) {
+      return res.status(400).json({ error: "Question ID and message are required" });
+    }
+    
+    // Create reply to customer question
+    const reply = await storage.createCustomerQuestionReply({
+      updateId: questionId,
+      message: message.trim(),
+      authorUserId: req.user?.userId!,
+      authorRole: "admin",
+      isCustomerQuestion: false, // Reply from admin
+    });
+    
+    // Create notification for the customer
+    try {
+      const update = await storage.getStageUpdate(questionId);
+      if (update) {
+        const stage = await storage.getManufacturingStage(update.stageId);
+        if (stage) {
+          const process = await storage.getManufacturingProcess(stage.processId);
+          if (process) {
+            const order = await storage.getOrder(process.orderId);
+            if (order) {
+              await storage.createNotification({
+                userId: order.userId,
+                orderId: order.id,
+                processId: process.id,
+                stageId: stage.id,
+                type: 'admin_message',
+                title: 'Admin Response to Your Question',
+                message: `Admin replied: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
+                isRead: false
+              });
+            }
+          }
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to create notification for admin reply:', notificationError);
+    }
+    
+    console.log(`Admin ${req.user?.userId} replied to customer question ${questionId}`);
+    res.status(201).json(reply);
+  } catch (error) {
+    console.error("Error replying to customer question:", error);
+    res.status(500).json({ error: "Failed to send reply" });
+  }
+});
+
 export default router;

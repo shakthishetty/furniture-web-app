@@ -22,6 +22,7 @@ import {
   StageUpdateComposer,
   useManufacturerDashboardSSE
 } from "@/components/manufacturing";
+import { FloatingAdminChat } from "@/components/FloatingAdminChat";
 import { 
   Settings, 
   Plus, 
@@ -1063,11 +1064,10 @@ export default function AdminManufacturing() {
           
           {selectedProcess && (
             <Tabs defaultValue="timeline" className="h-full overflow-hidden">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline & Progress</TabsTrigger>
                 <TabsTrigger value="updates" data-testid="tab-updates">Updates & Communication</TabsTrigger>
                 <TabsTrigger value="approvals" data-testid="tab-approvals">Approvals</TabsTrigger>
-                <TabsTrigger value="management" data-testid="tab-management">Management</TabsTrigger>
               </TabsList>
               
               <TabsContent value="timeline" className="overflow-auto h-[60vh] mt-4">
@@ -1216,105 +1216,6 @@ export default function AdminManufacturing() {
                       <p className="text-sm">All stages are either pending, in progress, or already approved.</p>
                     </div>
                   )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="management" className="overflow-auto h-[60vh] mt-4">
-                <div className="space-y-6">
-                  {/* Process Information */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Process Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Current Status</Label>
-                          <div className="mt-1">{getStatusBadge(selectedProcess.status)}</div>
-                        </div>
-                        <div>
-                          <Label>Started</Label>
-                          <div className="mt-1 text-sm">{formatDate(selectedProcess.startedAt)}</div>
-                        </div>
-                        <div>
-                          <Label>Estimated Completion</Label>
-                          <div className="mt-1 text-sm">{formatDate(selectedProcess.estimatedCompletionDate)}</div>
-                        </div>
-                        <div>
-                          <Label>Assigned Manufacturer</Label>
-                          <div className="mt-1">
-                            {selectedProcess.assignedManufacturer ? (
-                              <div className="flex items-center gap-2">
-                                <UserCheck className="h-3 w-3 text-green-600" />
-                                <span className="text-sm">
-                                  {selectedProcess.assignedManufacturer.name}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs"
-                                  onClick={() => handleAssignManufacturer(selectedProcess.id, selectedProcess.assignedManufacturer?.id)}
-                                >
-                                  Reassign
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <UserX className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">Unassigned</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs"
-                                  onClick={() => handleAssignManufacturer(selectedProcess.id)}
-                                >
-                                  Assign
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Quick Actions */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsCreateStageDialogOpen(true)}
-                          data-testid="add-stage-button"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Stage
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAssignManufacturer(selectedProcess.id, selectedProcess.assignedManufacturer?.id)}
-                          data-testid="manage-assignment-button"
-                        >
-                          <User className="h-3 w-3 mr-1" />
-                          Manage Assignment
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => refetchProcesses()}
-                          data-testid="refresh-process-button"
-                        >
-                          <RefreshCw className="h-3 w-3 mr-1" />
-                          Refresh Data
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               </TabsContent>
             </Tabs>
@@ -1520,6 +1421,9 @@ export default function AdminManufacturing() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Floating Admin Chat for customer communication */}
+      <FloatingAdminChat />
     </div>
   );
 }
