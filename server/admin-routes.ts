@@ -1589,9 +1589,15 @@ router.post("/customer-questions/reply", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Question ID and message are required" });
     }
     
-    // Create reply to customer question
+    // Get the customer question reply to find the parent update ID
+    const customerQuestion = await storage.getStageUpdateReply(questionId);
+    if (!customerQuestion) {
+      return res.status(404).json({ error: "Customer question not found" });
+    }
+    
+    // Create admin reply to the same parent update
     const reply = await storage.createCustomerQuestionReply({
-      updateId: questionId,
+      updateId: customerQuestion.updateId, // Use the same parent update as the customer question
       message: message.trim(),
       authorUserId: req.user?.userId!,
       authorRole: "admin",
@@ -1600,7 +1606,7 @@ router.post("/customer-questions/reply", requireAdmin, async (req, res) => {
     
     // Create notification for the customer
     try {
-      const update = await storage.getStageUpdate(questionId);
+      const update = await storage.getStageUpdate(customerQuestion.updateId);
       if (update) {
         const stage = await storage.getManufacturingStage(update.stageId);
         if (stage) {

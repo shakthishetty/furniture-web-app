@@ -1973,57 +1973,89 @@ export class DatabaseStorage implements IStorage {
 
   // Customer Questions operations
   async getAllCustomerQuestions(): Promise<any[]> {
-    // Get all customer questions (isCustomerQuestion: true) with order and user details
-    const customerUpdates = await db
+    // Customer questions are stored as stageUpdateReplies with isCustomerQuestion: true
+    // We need to join through: replies -> updates -> stages -> processes -> orders -> users
+    const customerQuestions = await db
       .select({
+        question: stageUpdateReplies,
         update: stageUpdates,
         stage: manufacturingStages,
         process: manufacturingProcesses,
         order: orders,
         user: users,
       })
-      .from(stageUpdates)
+      .from(stageUpdateReplies)
+      .leftJoin(stageUpdates, eq(stageUpdateReplies.updateId, stageUpdates.id))
       .leftJoin(manufacturingStages, eq(stageUpdates.stageId, manufacturingStages.id))
       .leftJoin(manufacturingProcesses, eq(manufacturingStages.processId, manufacturingProcesses.id))
       .leftJoin(orders, eq(manufacturingProcesses.orderId, orders.id))
       .leftJoin(users, eq(orders.userId, users.id))
-      .where(eq(stageUpdates.isCustomerQuestion, true))
-      .orderBy(desc(stageUpdates.createdAt));
+      .where(eq(stageUpdateReplies.isCustomerQuestion, true))
+      .orderBy(desc(stageUpdateReplies.createdAt));
 
-    // Fetch replies for each question
-    const updateIds = customerUpdates.map(item => item.update.id);
+    // Fetch admin replies for each customer question
+    const questionIds = customerQuestions.map(item => item.question.id);
     
     // Handle empty array case to prevent inArray error
-    let repliesByUpdate: Record<string, StageUpdateReply[]> = {};
-    if (updateIds.length > 0) {
+    let repliesByQuestion: Record<string, StageUpdateReply[]> = {};
+    if (questionIds.length > 0) {
+      // Get replies to the same parent update that are NOT customer questions (admin replies)
       const allReplies = await db
         .select()
         .from(stageUpdateReplies)
-        .where(inArray(stageUpdateReplies.updateId, updateIds))
+        .where(
+          and(
+            inArray(stageUpdateReplies.updateId, customerQuestions.map(q => q.question.updateId)),
+            eq(stageUpdateReplies.isCustomerQuestion, false)
+          )
+        )
         .orderBy(stageUpdateReplies.createdAt);
 
-      repliesByUpdate = allReplies.reduce((acc, reply) => {
-        if (!acc[reply.updateId]) acc[reply.updateId] = [];
-        acc[reply.updateId].push(reply);
-        return acc;
-      }, {} as Record<string, StageUpdateReply[]>);
+      // Group replies by the customer question they're responding to
+      // Since all replies to the same update are in the same thread, 
+      // we need to match them by updateId
+      customerQuestions.forEach(item => {
+        const questionUpdateId = item.question.updateId;
+        const questionCreatedAt = item.question.createdAt || new Date(0);
+        const relatedReplies = allReplies.filter(r => {
+          const replyCreatedAt = r.createdAt || new Date(0);
+          return r.updateId === questionUpdateId && replyCreatedAt > questionCreatedAt;
+        });
+        repliesByQuestion[item.question.id] = relatedReplies;
+      });
     }
 
-    return customerUpdates.map(item => ({
-      id: item.update.id,
-      message: item.update.message,
-      createdAt: item.update.createdAt,
-      authorRole: item.update.authorRole,
-      orderId: item.order?.id || '',
-      orderNumber: item.order?.orderNumber || '',
-      customerName: item.user?.name || 'Unknown Customer',
-      userId: item.user?.id || '',
-      replies: repliesByUpdate[item.update.id] || [],
-    }));
+    return customerQuestions.map(item => {
+      const userName = item.user?.firstName 
+        ? `${item.user.firstName}${item.user.lastName ? ' ' + item.user.lastName : ''}`
+        : 'Unknown Customer';
+      
+      return {
+        id: item.question.id,
+        message: item.question.message,
+        createdAt: item.question.createdAt,
+        authorRole: item.question.authorRole,
+        orderId: item.order?.id || '',
+        orderNumber: item.order?.orderNumber || '',
+        customerName: userName,
+        userId: item.user?.id || '',
+        replies: repliesByQuestion[item.question.id] || [],
+      };
+    });
   }
 
   async createCustomerQuestionReply(replyData: CreateStageUpdateReplyRequest): Promise<StageUpdateReply> {
     return this.createStageUpdateReply(replyData);
+  }
+
+  async getStageUpdateReply(replyId: string): Promise<StageUpdateReply | undefined> {
+    const [reply] = await db
+      .select()
+      .from(stageUpdateReplies)
+      .where(eq(stageUpdateReplies.id, replyId))
+      .limit(1);
+    
+    return reply;
   }
 
   async getManufacturingProcessWithDetails(id: string): Promise<(ManufacturingProcess & { 
