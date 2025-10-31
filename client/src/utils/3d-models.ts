@@ -105,6 +105,71 @@ export function storeOriginalColors(furniture: THREE.Group) {
   });
 }
 
+// Apply upholstery color only to fabric/seat/back materials (not wood)
+export function applyUpholstery(furniture: THREE.Group, color: string | number) {
+  furniture.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const material = child.material;
+      const materials = Array.isArray(material) ? material : [material];
+      
+      materials.forEach((mat: any) => {
+        if (mat && mat.color) {
+          const materialName = mat.name?.toLowerCase() || '';
+          const meshName = (child.name || '').toLowerCase();
+          
+          // Apply only to fabric/seat/back materials
+          const isFabric = 
+            materialName.includes('fabric') || 
+            materialName.includes('leather') || 
+            materialName.includes('upholstery') ||
+            materialName.includes('cushion') ||
+            materialName.includes('textile') ||
+            materialName.includes('woven') ||
+            materialName.includes('rope') ||
+            materialName.includes('cord') ||
+            materialName.includes('weave') ||
+            meshName.includes('fabric') || 
+            meshName.includes('leather') || 
+            meshName.includes('upholstery') ||
+            meshName.includes('cushion') ||
+            meshName.includes('seat_pad') ||
+            meshName.includes('seat') ||
+            meshName.includes('back_rest') ||
+            meshName.includes('back') ||
+            meshName.includes('backrest') ||
+            meshName.includes('woven') ||
+            meshName.includes('rope') ||
+            meshName.includes('cord') ||
+            meshName.includes('weave') ||
+            meshName.includes('pad') ||
+            meshName.includes('panel');
+          
+          if (isFabric) {
+            if (typeof color === 'string') {
+              mat.color.setHex(parseInt(color.replace('#', '0x')));
+            } else {
+              mat.color.setHex(color);
+            }
+            
+            // Set appropriate PBR properties for fabric
+            if (mat.roughness !== undefined) {
+              mat.roughness = 0.8; // Fabrics are generally more diffuse
+            }
+            if (mat.metalness !== undefined) {
+              mat.metalness = 0.0; // Fabrics should not be metallic
+            }
+            
+            mat.needsUpdate = true;
+            
+            // Mark this material as upholstery so wood stain knows to skip it
+            (mat as any).isUpholstery = true;
+          }
+        }
+      });
+    }
+  });
+}
+
 // Apply wood stain only to wood materials (not fabric/leather/upholstery)
 export function applyWoodStain(furniture: THREE.Group, color: string | number) {
   furniture.traverse((child) => {
@@ -126,16 +191,31 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             materialName.includes('upholstery') ||
             materialName.includes('cushion') ||
             materialName.includes('textile') ||
+            materialName.includes('woven') ||
+            materialName.includes('rope') ||
+            materialName.includes('cord') ||
+            materialName.includes('weave') ||
             meshName.includes('fabric') || 
             meshName.includes('leather') || 
             meshName.includes('upholstery') ||
             meshName.includes('cushion') ||
             meshName.includes('seat_pad') ||
             meshName.includes('seat') ||
-            meshName.includes('back_rest');
+            meshName.includes('back_rest') ||
+            meshName.includes('back') ||
+            meshName.includes('backrest') ||
+            meshName.includes('woven') ||
+            meshName.includes('rope') ||
+            meshName.includes('cord') ||
+            meshName.includes('weave') ||
+            meshName.includes('pad') ||
+            meshName.includes('panel');
           
-          // Only apply to wood materials
-          if (!isFabric) {
+          // Also check if material is marked as upholstery
+          const isMarkedAsUpholstery = (mat as any).isUpholstery === true;
+          
+          // Only apply to wood materials (skip fabric and marked upholstery)
+          if (!isFabric && !isMarkedAsUpholstery) {
             if (typeof color === 'string') {
               mat.color.setHex(parseInt(color.replace('#', '0x')));
             } else {
@@ -194,11 +274,25 @@ export function resetWoodToOriginal(furniture: THREE.Group) {
             materialName.includes('upholstery') ||
             materialName.includes('cushion') ||
             materialName.includes('textile') ||
+            materialName.includes('woven') ||
+            materialName.includes('rope') ||
+            materialName.includes('cord') ||
+            materialName.includes('weave') ||
             meshName.includes('fabric') || 
             meshName.includes('leather') || 
             meshName.includes('upholstery') ||
             meshName.includes('cushion') ||
-            meshName.includes('seat_pad');
+            meshName.includes('seat_pad') ||
+            meshName.includes('seat') ||
+            meshName.includes('back_rest') ||
+            meshName.includes('back') ||
+            meshName.includes('backrest') ||
+            meshName.includes('woven') ||
+            meshName.includes('rope') ||
+            meshName.includes('cord') ||
+            meshName.includes('weave') ||
+            meshName.includes('pad') ||
+            meshName.includes('panel');
           
           // Only reset wood materials to original
           if (!isFabric) {

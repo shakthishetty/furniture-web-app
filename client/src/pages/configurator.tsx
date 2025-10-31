@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, RotateCcw, Share2, ShoppingCart, Star, Info } from "lucide-react";
 import * as THREE from 'three';
-import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel, storeOriginalColors, applyWoodStain, resetWoodToOriginal } from "@/utils/3d-models";
+import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions, createFallbackModel, storeOriginalColors, applyWoodStain, applyUpholstery, resetWoodToOriginal } from "@/utils/3d-models";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/hooks/useAuth";
@@ -363,7 +363,16 @@ export default function Configurator() {
         applyWoodStain(furnitureRef.current, selectedStain.color);
       }
     }
-  }, [configuration, materials, product, woodStains]);
+
+    // Apply upholstery color to fabric/seat/back parts only (not wood)
+    if (configuration.upholstery && upholsteryOptions.length > 0) {
+      const selectedUpholstery = upholsteryOptions.find((fabric: any) => fabric.id === configuration.upholstery);
+      if (selectedUpholstery && selectedUpholstery.color) {
+        // Apply only to fabric materials, not wood
+        applyUpholstery(furnitureRef.current, selectedUpholstery.color);
+      }
+    }
+  }, [configuration, materials, product, woodStains, upholsteryOptions]);
 
   // Resize canvas when switching to 360° view
   useEffect(() => {
