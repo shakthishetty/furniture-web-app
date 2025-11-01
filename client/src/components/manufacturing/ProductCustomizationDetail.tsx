@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Calendar, Maximize2, Box } from "lucide-react";
 import { Model3DViewer } from "@/components/Model3DViewer";
+import { apiRequest } from "@/lib/queryClient";
 
 interface OrderItem {
   id: string;
@@ -53,7 +54,7 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
 
   // Fetch product details including 3D model URL with proper error handling
   useEffect(() => {
-    fetch(`/api/configurator/products/${item.productId}`)
+    apiRequest("GET", `/api/configurator/products/${item.productId}`)
       .then(res => {
         if (!res.ok) {
           console.warn(`Failed to fetch product details for ${item.productId}`);
@@ -95,7 +96,7 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
     setLoadingMaterials(true);
     Promise.all(
       materialIds.map(id => 
-        fetch(`/api/configurator/materials/${id}`)
+        apiRequest("GET", `/api/configurator/materials/${id}`)
           .then(res => res.ok ? res.json() : null)
           .catch(() => null)
       )
