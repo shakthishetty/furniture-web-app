@@ -1301,29 +1301,34 @@ router.post("/manufacturing/updates/:updateId/replies", requireAdmin, async (req
           global.broadcastNewReply(stage.processId, reply);
         }
         
-        // Create customer notification for admin reply
-        try {
-          const process = await storage.getManufacturingProcess(stage.processId);
-          if (process) {
-            const order = await storage.getOrder(process.orderId);
-            if (order) {
-              await storage.createNotification({
-                userId: order.userId,
-                orderId: order.id,
-                processId: process.id,
-                stageId: stage.id,
-                type: 'admin_message',
-                title: 'Admin Response',
-                message: `Administrator responded: ${reply.message.substring(0, 100)}${reply.message.length > 100 ? '...' : ''}`,
-                isRead: false
-              });
-              
-              console.log(`Created notification for customer ${order.userId} about admin reply ${reply.id}`);
+        // Only create customer notification if admin is replying to a customer's question
+        // Don't notify customer for admin-to-manufacturer communications
+        if (update.authorRole === 'customer') {
+          try {
+            const process = await storage.getManufacturingProcess(stage.processId);
+            if (process) {
+              const order = await storage.getOrder(process.orderId);
+              if (order) {
+                await storage.createNotification({
+                  userId: order.userId,
+                  orderId: order.id,
+                  processId: process.id,
+                  stageId: stage.id,
+                  type: 'admin_message',
+                  title: 'Admin Response',
+                  message: `Administrator responded: ${reply.message.substring(0, 100)}${reply.message.length > 100 ? '...' : ''}`,
+                  isRead: false
+                });
+                
+                console.log(`Created notification for customer ${order.userId} about admin reply ${reply.id}`);
+              }
             }
+          } catch (notificationError) {
+            console.error('Failed to create customer notification for admin reply:', notificationError);
+            // Don't fail the request if notification fails
           }
-        } catch (notificationError) {
-          console.error('Failed to create customer notification for admin reply:', notificationError);
-          // Don't fail the request if notification fails
+        } else {
+          console.log(`Skipped customer notification - admin replying to ${update.authorRole} update`);
         }
       }
     }
