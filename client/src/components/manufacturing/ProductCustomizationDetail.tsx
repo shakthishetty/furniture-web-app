@@ -63,8 +63,10 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
       })
       .then(product => {
         // Only set if model URL exists, otherwise leave as null to trigger fallback
-        if (product?.model3dUrl) {
-          setProductModelUrl(product.model3dUrl);
+        // Check both camelCase and snake_case field names for compatibility
+        const modelUrl = product?.product?.model3dUrl || product?.product?.model_3d_url;
+        if (modelUrl) {
+          setProductModelUrl(modelUrl);
         } else {
           setProductModelUrl(null); // Explicitly set null to trigger fallback
         }
@@ -81,8 +83,8 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
       config.woodType,
       config.woodStain,
       config.upholstery,
-      config.hardwareFinish,
-      config.surfaceFinish
+      config.hardware,  // Changed from hardwareFinish
+      config.finish     // Changed from surfaceFinish
     ].filter(Boolean);
 
     if (materialIds.length === 0) {
@@ -112,8 +114,8 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
   const woodType = getMaterial(config.woodType);
   const woodStain = getMaterial(config.woodStain);
   const upholstery = getMaterial(config.upholstery);
-  const hardwareFinish = getMaterial(config.hardwareFinish);
-  const surfaceFinish = getMaterial(config.surfaceFinish);
+  const hardwareFinish = getMaterial(config.hardware);  // Changed from config.hardwareFinish
+  const surfaceFinish = getMaterial(config.finish);     // Changed from config.surfaceFinish
 
   const hasCustomizations = woodType || woodStain || upholstery || hardwareFinish || surfaceFinish || config.dimensions;
 
