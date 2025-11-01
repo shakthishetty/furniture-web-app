@@ -15,7 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Clock, HelpCircle, MessageSquare, Package, Wrench } from "lucide-react";
-import type { SupportTicket } from "@shared/schema";
+import type { SupportTicket, Faq } from "@shared/schema";
 
 const supportFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -28,33 +28,6 @@ const supportFormSchema = z.object({
 });
 
 type SupportFormValues = z.infer<typeof supportFormSchema>;
-
-const faqItems = [
-  {
-    question: "How long does it take to process my custom furniture order?",
-    answer: "Custom furniture orders typically take 4-8 weeks from approval to delivery, depending on the complexity of the design and current production capacity. You can track your order's progress in real-time through your order tracking page.",
-  },
-  {
-    question: "Can I modify my order after it has been placed?",
-    answer: "Modifications can be made within 24 hours of placing your order. After production has started, changes may not be possible. Please contact our support team immediately if you need to make changes.",
-  },
-  {
-    question: "What payment methods do you accept?",
-    answer: "We accept all major credit cards (Visa, Mastercard, American Express) through Stripe, as well as PayPal. All payments are processed securely.",
-  },
-  {
-    question: "Do you ship internationally?",
-    answer: "Currently, we ship within the United States and Canada. For international shipping inquiries, please contact our sales team.",
-  },
-  {
-    question: "What is your return and refund policy?",
-    answer: "Due to the custom nature of our furniture, returns are evaluated on a case-by-case basis. Cancellations made before production starts are eligible for a full refund. Please review our complete policy in the terms and conditions.",
-  },
-  {
-    question: "How do I track my manufacturing progress?",
-    answer: "Once your order is confirmed, you'll receive a tracking link via email. You can also access real-time updates, photos, and communicate with your manufacturer through the order tracking page in your account.",
-  },
-];
 
 const categoryIcons = {
   sales: Package,
@@ -88,6 +61,10 @@ export default function Support() {
       orderId: "",
       processId: "",
     },
+  });
+
+  const { data: faqsData, isLoading: faqsLoading } = useQuery<{ faqs: Faq[] }>({
+    queryKey: ["/api/faqs"],
   });
 
   const { data: ticketsData } = useQuery<{ tickets: SupportTicket[] }>({
@@ -363,18 +340,26 @@ export default function Support() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  {faqItems.map((item, index) => (
-                    <AccordionItem key={index} value={`item-${index}`}>
-                      <AccordionTrigger className="text-left text-foreground dark:text-white" data-testid={`faq-question-${index}`}>
-                        {item.question}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground dark:text-gray-300" data-testid={`faq-answer-${index}`}>
-                        {item.answer}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+                {faqsLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading FAQs...</div>
+                ) : faqsData?.faqs && faqsData.faqs.length > 0 ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    {faqsData.faqs.map((faq) => (
+                      <AccordionItem key={faq.id} value={faq.id}>
+                        <AccordionTrigger className="text-left text-foreground dark:text-white" data-testid={`faq-question-${faq.id}`}>
+                          {faq.question}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-muted-foreground dark:text-gray-300" data-testid={`faq-answer-${faq.id}`}>
+                          {faq.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                ) : (
+                  <p className="text-center text-muted-foreground dark:text-gray-400 py-8">
+                    No FAQs available at the moment.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>

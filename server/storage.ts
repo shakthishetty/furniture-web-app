@@ -51,6 +51,9 @@ import {
   type SupportTicket,
   type CreateSupportTicketRequest,
   type UpdateSupportTicketRequest,
+  type Faq,
+  type CreateFaqRequest,
+  type UpdateFaqRequest,
   users, 
   sessions,
   products,
@@ -73,6 +76,7 @@ import {
   manufacturerProfiles,
   manufacturers,
   customerNotifications,
+  faqs,
   supportTickets
 } from "@shared/schema";
 import { db } from "./db";
@@ -277,6 +281,13 @@ export interface IStorage {
   getSupportTicket(id: string): Promise<SupportTicket | undefined>;
   updateSupportTicket(id: string, updates: UpdateSupportTicketRequest): Promise<SupportTicket | undefined>;
   deleteSupportTicket(id: string): Promise<boolean>;
+
+  // FAQ operations
+  createFaq(faqData: CreateFaqRequest): Promise<Faq>;
+  getFaqs(options?: { category?: string; isActive?: boolean }): Promise<Faq[]>;
+  getFaq(id: string): Promise<Faq | undefined>;
+  updateFaq(id: string, updates: UpdateFaqRequest): Promise<Faq | undefined>;
+  deleteFaq(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2454,6 +2465,68 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(supportTickets)
       .where(eq(supportTickets.id, id));
+    
+    return true;
+  }
+
+  // FAQ operations
+  async createFaq(faqData: CreateFaqRequest): Promise<Faq> {
+    const [faq] = await db
+      .insert(faqs)
+      .values(faqData)
+      .returning();
+    
+    return faq;
+  }
+
+  async getFaqs(options?: { category?: string; isActive?: boolean }): Promise<Faq[]> {
+    const conditions = [];
+    
+    if (options?.category) {
+      conditions.push(eq(faqs.category, options.category));
+    }
+    if (options?.isActive !== undefined) {
+      conditions.push(eq(faqs.isActive, options.isActive));
+    }
+    
+    const query = db
+      .select()
+      .from(faqs)
+      .orderBy(faqs.displayOrder, desc(faqs.createdAt));
+    
+    const faqList = conditions.length > 0
+      ? await query.where(and(...conditions))
+      : await query;
+    
+    return faqList;
+  }
+
+  async getFaq(id: string): Promise<Faq | undefined> {
+    const [faq] = await db
+      .select()
+      .from(faqs)
+      .where(eq(faqs.id, id));
+    
+    return faq;
+  }
+
+  async updateFaq(id: string, updates: UpdateFaqRequest): Promise<Faq | undefined> {
+    const [faq] = await db
+      .update(faqs)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(faqs.id, id))
+      .returning();
+    
+    return faq;
+  }
+
+  async deleteFaq(id: string): Promise<boolean> {
+    const result = await db
+      .delete(faqs)
+      .where(eq(faqs.id, id));
     
     return true;
   }

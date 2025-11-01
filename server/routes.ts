@@ -9,6 +9,7 @@ import adminRoutes from "./admin-routes";
 import manufacturerRoutes from "./manufacturer-routes";
 import notificationRoutes from "./notification-routes";
 import supportRoutes from "./support-routes";
+import faqRoutes from "./faq-routes";
 import customizationRoutes from "./customization-routes";
 import { initializeSampleData } from "./seed-data";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -42,6 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Support ticket routes
   app.use('/api/support', supportRoutes);
+  
+  // FAQ routes
+  app.use('/api/faqs', faqRoutes);
   
   // Customization management routes (admin only)
   app.use('/api/admin/customizations', verifyAuth, requireAdmin, customizationRoutes);

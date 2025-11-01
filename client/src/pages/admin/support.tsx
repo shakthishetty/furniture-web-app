@@ -4,14 +4,15 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, Calendar, User, MessageSquare } from "lucide-react";
-import type { SupportTicket } from "@shared/schema";
+import { Mail, Phone, Calendar, User, MessageSquare, Plus, Trash2, Edit } from "lucide-react";
+import type { SupportTicket, Faq, CreateFaqRequest, UpdateFaqRequest } from "@shared/schema";
 
 const categoryLabels: Record<string, string> = {
   sales: "Sales Inquiry",
@@ -40,6 +41,10 @@ export default function AdminSupport() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [showFaqDialog, setShowFaqDialog] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<Faq | null>(null);
+  const [faqQuestion, setFaqQuestion] = useState("");
+  const [faqAnswer, setFaqAnswer] = useState("");
 
   const { data: ticketsData, isLoading } = useQuery<{ tickets: SupportTicket[] }>({
     queryKey: ["/api/support/all", statusFilter, categoryFilter],
@@ -51,6 +56,10 @@ export default function AdminSupport() {
       const response = await apiRequest("GET", url);
       return await response.json();
     },
+  });
+
+  const { data: faqsData } = useQuery<{ faqs: Faq[] }>({
+    queryKey: ["/api/faqs/all"],
   });
 
   const updateTicketMutation = useMutation({
@@ -74,6 +83,59 @@ export default function AdminSupport() {
       });
     },
   });
+
+  const createFaqMutation = useMutation({
+    mutationFn: async (data: CreateFaqRequest) => {
+      const response = await apiRequest("POST", "/api/faqs", data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "FAQ created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/faqs/all"] });
+      setShowFaqDialog(false);
+      setFaqQuestion("");
+      setFaqAnswer("");
+    },
+  });
+
+  const updateFaqMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateFaqRequest }) => {
+      const response = await apiRequest("PATCH", `/api/faqs/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "FAQ updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/faqs/all"] });
+      setEditingFaq(null);
+      setShowFaqDialog(false);
+      setFaqQuestion("");
+      setFaqAnswer("");
+    },
+  });
+
+  const deleteFaqMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/faqs/${id}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "FAQ deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/faqs/all"] });
+    },
+  });
+
+  const handleSaveFaq = () => {
+    if (!faqQuestion || !faqAnswer) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+
+    if (editingFaq) {
+      updateFaqMutation.mutate({ id: editingFaq.id, data: { question: faqQuestion, answer: faqAnswer } });
+    } else {
+      createFaqMutation.mutate({ question: faqQuestion, answer: faqAnswer, category: "general", isActive: true });
+    }
+  };
 
   const tickets = ticketsData?.tickets || [];
 
@@ -267,6 +329,75 @@ export default function AdminSupport() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* FAQ Management Section */}
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Manage FAQs</CardTitle>
+              <CardDescription>Create and manage frequently asked questions</CardDescription>
+            </div>
+            <Button onClick={() => { setEditingFaq(null); setFaqQuestion(""); setFaqAnswer(""); setShowFaqDialog(true); }} data-testid="button-add-faq">
+              <Plus className="h-4 w-4 mr-2" /> Add FAQ
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {faqsData?.faqs && faqsData.faqs.length > 0 ? (
+              faqsData.faqs.map((faq) => (
+                <Card key={faq.id} className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold mb-2">{faq.question}</h3>
+                      <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                      <div className="mt-2 flex gap-2">
+                        <Badge variant={faq.isActive ? "default" : "secondary"}>{faq.isActive ? "Active" : "Inactive"}</Badge>
+                        {faq.category && <Badge variant="outline">{faq.category}</Badge>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <Button size="sm" variant="outline" onClick={() => { setEditingFaq(faq); setFaqQuestion(faq.question); setFaqAnswer(faq.answer); setShowFaqDialog(true); }} data-testid={`button-edit-faq-${faq.id}`}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteFaqMutation.mutate(faq.id)} data-testid={`button-delete-faq-${faq.id}`}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No FAQs created yet. Click "Add FAQ" to create one.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* FAQ Dialog */}
+      <Dialog open={showFaqDialog} onOpenChange={setShowFaqDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingFaq ? "Edit FAQ" : "Add New FAQ"}</DialogTitle>
+            <DialogDescription>Fill in the question and answer for the FAQ</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="faq-question">Question</Label>
+              <Input id="faq-question" value={faqQuestion} onChange={(e) => setFaqQuestion(e.target.value)} placeholder="Enter the question" data-testid="input-faq-question" />
+            </div>
+            <div>
+              <Label htmlFor="faq-answer">Answer</Label>
+              <Textarea id="faq-answer" value={faqAnswer} onChange={(e) => setFaqAnswer(e.target.value)} placeholder="Enter the answer" rows={4} data-testid="input-faq-answer" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowFaqDialog(false)}>Cancel</Button>
+              <Button onClick={handleSaveFaq} data-testid="button-save-faq">{editingFaq ? "Update" : "Create"} FAQ</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Ticket Detail Dialog */}
       {selectedTicket && (

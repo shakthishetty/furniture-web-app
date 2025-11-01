@@ -851,3 +851,38 @@ export const updateSupportTicketSchema = z.object({
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type CreateSupportTicketRequest = z.infer<typeof createSupportTicketSchema>;
 export type UpdateSupportTicketRequest = z.infer<typeof updateSupportTicketSchema>;
+
+// FAQ Table
+export const faqs = pgTable("faqs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  question: varchar("question", { length: 500 }).notNull(),
+  answer: text("answer").notNull(),
+  category: varchar("category").default("general"), // general, orders, shipping, returns, etc.
+  displayOrder: integer("display_order").default(0), // For custom sorting
+  isActive: boolean("is_active").default(true), // To hide/show FAQs
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// FAQ schemas
+export const createFaqSchema = createInsertSchema(faqs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  question: z.string().min(10, "Question must be at least 10 characters"),
+  answer: z.string().min(20, "Answer must be at least 20 characters"),
+});
+
+export const updateFaqSchema = z.object({
+  question: z.string().min(10, "Question must be at least 10 characters").optional(),
+  answer: z.string().min(20, "Answer must be at least 20 characters").optional(),
+  category: z.string().optional(),
+  displayOrder: z.number().optional(),
+  isActive: z.boolean().optional(),
+});
+
+// FAQ types
+export type Faq = typeof faqs.$inferSelect;
+export type CreateFaqRequest = z.infer<typeof createFaqSchema>;
+export type UpdateFaqRequest = z.infer<typeof updateFaqSchema>;
