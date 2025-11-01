@@ -1466,6 +1466,34 @@ router.post("/manufacturing/stages/:stageId/reject", requireAdmin, async (req, r
       (global as any).broadcastStageRejected(stage.processId, rejectedStage);
     }
 
+    // Send manufacturer notification when stage is rejected
+    try {
+      if (stage) {
+        const process = await storage.getManufacturingProcess(stage.processId);
+        if (process && process.assignedManufacturerId) {
+          const order = await storage.getOrder(process.orderId);
+          if (order) {
+            // Create notification for manufacturer
+            await storage.createNotification({
+              userId: process.assignedManufacturerId,
+              orderId: order.id,
+              processId: process.id,
+              stageId: stage.id,
+              type: 'stage_rejected',
+              title: `${stage.name} Rejected`,
+              message: `Stage rejected: ${rejectionReason}`,
+              isRead: false
+            });
+            
+            console.log(`Created notification for manufacturer ${process.assignedManufacturerId} about stage rejection`);
+          }
+        }
+      }
+    } catch (notificationError) {
+      console.error('Failed to create manufacturer notification for stage rejection:', notificationError);
+      // Don't fail the request if notification fails
+    }
+
     console.log(`Admin ${adminUserId} rejected stage ${req.params.stageId}: ${rejectionReason}`);
     res.status(200).json({
       message: "Stage rejected successfully",
