@@ -28,6 +28,8 @@ Preferred communication style: Simple, everyday language.
 - **Responsive Design**: Mobile-first approach with Tailwind's responsive utilities.
 
 ## Core Features & Implementations
+- **Admin Authentication**: Separate admin login system with hardcoded credentials (furniture@gmail.com / password) that doesn't affect customer login flow. All admin routes are protected and redirect to /admin-login if not authenticated.
+- **Manufacturer Notifications**: When an admin assigns a manufacturer to an order, the manufacturer receives a notification with the order number and product names.
 - **Discount System**: Comprehensive CRUD operations for percentage and flat discounts, with validation rules (min order value, usage limits, validity periods) and checkout integration.
 - **Automatic Product Status**: Calculates product availability (Active, Partial, Out of Stock, Draft) based on stock levels and customization setup completeness. Admin views include color-coded badges, progress bars, and missing setup indicators.
 - **Manufacturing Tracking System**:
@@ -37,7 +39,7 @@ Preferred communication style: Simple, everyday language.
     - **Customer Portal**: Real-time order tracking, timeline visualization, photo gallery, and direct communication with manufacturers.
 - **Enhanced Product Customization Visualization**: Interactive 3D preview using Three.js with robust fallback chain (3D model → product image → placeholder). Displays detailed material options with visual enhancements (icons, color swatches) and dimensions summary.
 - **Shared Component Library**: Reusable UI components (Timeline, UpdateCard, PhotoGrid, ReplyThread, ProductCustomizationDetail).
-- **Security**: Role-based authentication and access control.
+- **Security**: Role-based authentication and access control with separate admin authentication system.
 - **Type Safety**: Full TypeScript integration across frontend and backend, with shared schemas using Drizzle-Zod.
 
 # External Dependencies

@@ -1,36 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 export function useAdminAuth() {
-  // TEMPORARY: Bypass authentication for development
-  const mockAdminUser = {
-    id: "temp-admin",
-    email: "admin@temp.com",
-    isAdmin: true,
-    name: "Temp Admin"
-  };
-
-  return {
-    adminUser: mockAdminUser,
-    isLoading: false,
-    isAdmin: true,
-    isAuthenticated: true,
-    error: null,
-  };
-
-  /* ORIGINAL CODE - COMMENTED OUT FOR DEVELOPMENT
+  // Check if user is authenticated as admin by checking localStorage
   const { data: adminUser, isLoading, error } = useQuery({
-    queryKey: ["/api/admin/auth/me"],
+    queryKey: ["/api/admin/auth/check"],
     queryFn: async () => {
+      const token = localStorage.getItem("accessToken");
+      const user = localStorage.getItem("user");
+      
+      if (!token || !user) {
+        return null;
+      }
+      
       try {
-        const response = await apiRequest("GET", "/api/admin/auth/me");
-        return response.json();
-      } catch (error: any) {
-        if (error.message?.includes("401") || error.message?.includes("403")) {
-          // Return null for unauthorized/forbidden - user is not admin
-          return null;
+        const parsedUser = JSON.parse(user);
+        
+        // Decode JWT to check if it's admin
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        if (payload.isAdmin === true && payload.role === 'admin') {
+          return parsedUser;
         }
-        throw error;
+        
+        return null;
+      } catch (e) {
+        return null;
       }
     },
     retry: false,
@@ -40,9 +34,8 @@ export function useAdminAuth() {
   return {
     adminUser,
     isLoading,
-    isAdmin: !!adminUser && adminUser.isAdmin,
+    isAdmin: !!adminUser,
     isAuthenticated: !!adminUser,
     error,
   };
-  */
 }

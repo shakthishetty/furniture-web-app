@@ -97,11 +97,16 @@ function AdminSidebar() {
 
   const handleLogout = async () => {
     try {
+      // Clear admin tokens
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      
       await fetch("/api/auth/logout", { method: "POST" });
-      setLocation("/");
+      setLocation("/admin-login");
     } catch (error) {
       console.error("Logout error:", error);
-      setLocation("/");
+      setLocation("/admin-login");
     }
   };
 
@@ -196,13 +201,16 @@ function UnauthorizedState() {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { adminUser, isLoading, isAdmin } = useAdminAuth();
+  const [, setLocation] = useLocationHook();
+
+  // Redirect to admin login if not authenticated
+  if (!isLoading && (!isAdmin || !adminUser)) {
+    setLocation("/admin-login");
+    return null;
+  }
 
   if (isLoading) {
     return <LoadingState />;
-  }
-
-  if (!isAdmin || !adminUser) {
-    return <UnauthorizedState />;
   }
 
   return (

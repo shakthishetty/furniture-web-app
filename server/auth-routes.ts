@@ -137,6 +137,59 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Admin login endpoint with hardcoded credentials
+router.post('/admin-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Hardcoded admin credentials
+    const ADMIN_EMAIL = 'furniture@gmail.com';
+    const ADMIN_PASSWORD = 'password';
+    
+    // Validate credentials
+    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+      return res.status(401).json({ error: 'Invalid admin credentials' });
+    }
+
+    // Create a special admin user object
+    const adminUser = {
+      id: 'admin-001',
+      email: ADMIN_EMAIL,
+      firstName: 'Admin',
+      lastName: 'User',
+      emailVerified: true,
+    };
+
+    // Generate tokens with admin privileges
+    const accessToken = generateAccessToken({ 
+      userId: adminUser.id, 
+      email: adminUser.email, 
+      isAdmin: true,
+      role: 'admin'
+    });
+    const refreshToken = generateRefreshToken({ 
+      userId: adminUser.id, 
+      email: adminUser.email, 
+      isAdmin: true,
+      role: 'admin'
+    });
+    
+    // Store refresh token
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await storage.createSession(adminUser.id, refreshToken, expiresAt);
+
+    res.json({
+      message: 'Admin login successful',
+      user: adminUser,
+      accessToken,
+      refreshToken,
+    });
+  } catch (error: any) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Refresh token endpoint
 router.post('/refresh', async (req, res) => {
   try {

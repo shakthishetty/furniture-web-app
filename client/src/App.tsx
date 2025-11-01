@@ -47,6 +47,7 @@ import ManufacturerSupport from "@/pages/manufacturer/support";
 import ManufacturerSettings from "@/pages/manufacturer/settings";
 import ManufacturerRegistration from "@/pages/manufacturer-registration";
 import ManufacturerLogin from "@/pages/manufacturer-login";
+import AdminLogin from "@/pages/admin-login";
 import Support from "@/pages/support";
 
 function AdminRouter() {
@@ -88,6 +89,7 @@ function ManufacturerRouter() {
 function Router() {
   return (
     <Switch>
+      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin" nest component={AdminRouter} />
       <Route path="/manufacturer" nest component={ManufacturerRouter} />
       <Route path="/" component={Home} />
@@ -121,8 +123,8 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isAdminRoute = location.startsWith("/admin");
-  const isManufacturerRoute = location.startsWith("/manufacturer");
+  const isAdminRoute = location.startsWith("/admin") && location !== "/admin-login";
+  const isManufacturerRoute = location.startsWith("/manufacturer") && location !== "/manufacturer-login";
 
   return (
     <QueryClientProvider client={queryClient}>
