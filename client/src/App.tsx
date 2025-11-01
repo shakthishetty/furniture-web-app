@@ -48,6 +48,7 @@ import ManufacturerSettings from "@/pages/manufacturer/settings";
 import ManufacturerRegistration from "@/pages/manufacturer-registration";
 import ManufacturerLogin from "@/pages/manufacturer-login";
 import AdminLogin from "@/pages/admin-login";
+import AdminLoginTest from "@/pages/admin-login-test";
 import Support from "@/pages/support";
 
 function AdminRouter() {
@@ -89,6 +90,7 @@ function ManufacturerRouter() {
 function Router() {
   return (
     <Switch>
+      <Route path="/admin-login-test" component={AdminLoginTest} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin" nest component={AdminRouter} />
       <Route path="/manufacturer" nest component={ManufacturerRouter} />
