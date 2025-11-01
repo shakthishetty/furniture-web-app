@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest, materials, productMaterials } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, stageApprovalSchema, stageRejectionSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest, materials, productMaterials } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
 import { sendStageUpdateEmail } from "./utils/email";
@@ -19,15 +19,7 @@ const orderStatusUpdateSchema = z.object({
 });
 
 // Note: adminDiscountUpdateSchema removed - using updateDiscountSchema from shared/schema.ts instead
-
-// Stage approval workflow validation schemas
-const stageApprovalSchema = z.object({
-  approvalComment: z.string().max(500).optional()
-});
-
-const stageRejectionSchema = z.object({
-  rejectionReason: z.string().min(1, "Rejection reason is required").max(500, "Rejection reason too long")
-});
+// Note: stageApprovalSchema and stageRejectionSchema imported from shared/schema.ts
 
 // Helper to validate URLs, object storage paths, and local upload paths
 const urlOrPathSchema = z.string().refine(
@@ -1355,7 +1347,7 @@ router.post("/manufacturing/stages/:stageId/approve", requireAdmin, async (req, 
       });
     }
 
-    const { approvalComment } = validation.data;
+    const { comment: approvalComment } = validation.data;
     const adminUserId = req.user?.userId;
 
     if (!adminUserId) {
@@ -1454,7 +1446,7 @@ router.post("/manufacturing/stages/:stageId/reject", requireAdmin, async (req, r
       });
     }
 
-    const { rejectionReason } = validation.data;
+    const { reason: rejectionReason } = validation.data;
     const adminUserId = req.user?.userId;
 
     if (!adminUserId) {
