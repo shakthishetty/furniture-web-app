@@ -849,8 +849,8 @@ export default function ManufacturerProcessDetail() {
                           </Button>
                         )}
 
-                        {/* Submission Button for Completed Stages */}
-                        {stage.status === 'completed' && (
+                        {/* Submission Button for Completed Stages (not yet approved) */}
+                        {stage.status === 'completed' && !stage.approvedAt && (
                           <Button 
                             size="sm" 
                             onClick={() => handleSubmitForApproval(stage.id)}
