@@ -4,7 +4,7 @@ import { requireAdmin, verifyAuth } from "./utils/auth";
 import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, stageApprovalSchema, stageRejectionSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest, materials, productMaterials } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
-import { sendStageUpdateEmail, sendManufacturerNotificationEmail } from "./utils/email";
+import { sendStageUpdateEmail } from "./utils/email";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -1005,20 +1005,14 @@ router.post("/manufacturing/processes/:id/assign", requireAdmin, async (req, res
 
     const { manufacturerId } = validation.data;
 
-    // Validate manufacturer profile exists and is approved if not null
+    // Validate direct manufacturer exists and is active if not null
     if (manufacturerId) {
-      const manufacturerProfile = await storage.getManufacturerProfileById(manufacturerId);
-      if (!manufacturerProfile) {
+      const manufacturer = await storage.getDirectManufacturer(manufacturerId);
+      if (!manufacturer) {
         return res.status(404).json({ error: "Manufacturer not found" });
       }
-      if (!manufacturerProfile.isApproved) {
-        return res.status(400).json({ error: "Manufacturer is not approved" });
-      }
-      
-      // Check if user account is active
-      const user = await storage.getUserById(manufacturerProfile.userId);
-      if (!user || user.status !== 'active') {
-        return res.status(400).json({ error: "Manufacturer account is not active" });
+      if (!manufacturer.isActive) {
+        return res.status(400).json({ error: "Manufacturer is not active" });
       }
     }
 
@@ -1035,45 +1029,6 @@ router.post("/manufacturing/processes/:id/assign", requireAdmin, async (req, res
         orderId: updatedProcess.orderId,
         status: `assigned_to_${manufacturerId || 'unassigned'}`
       });
-    }
-
-    // Send notification to manufacturer when assigned to a new order
-    if (manufacturerId) {
-      try {
-        const manufacturerProfile = await storage.getManufacturerProfileById(manufacturerId);
-        const order = await storage.getOrder(updatedProcess.orderId);
-        
-        if (manufacturerProfile && order) {
-          const user = await storage.getUserById(manufacturerProfile.userId);
-          
-          if (user) {
-            // Create in-app notification
-            await storage.createNotification({
-              userId: manufacturerProfile.userId,
-              orderId: updatedProcess.orderId,
-              processId: updatedProcess.id,
-              type: 'new_order',
-              title: 'New Order Assigned',
-              message: `You have been assigned to manufacture order #${order.orderNumber}`,
-              isRead: false,
-            });
-
-            // Send email notification
-            await sendManufacturerNotificationEmail(
-              user.email,
-              manufacturerProfile.companyName,
-              order.orderNumber,
-              `You have been assigned to manufacture this order. Please review the order details and begin the manufacturing process.`,
-              'stage_assigned'
-            );
-            
-            console.log(`Notification sent to manufacturer ${manufacturerProfile.companyName} for order ${order.orderNumber}`);
-          }
-        }
-      } catch (notificationError) {
-        console.error('Failed to send manufacturer notification:', notificationError);
-        // Don't fail the assignment if notification fails
-      }
     }
 
     console.log(`Admin ${req.user?.userId} assigned process ${req.params.id} to manufacturer ${manufacturerId}`);
