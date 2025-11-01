@@ -397,7 +397,7 @@ export default function ManufacturerProcessDetail() {
             The requested manufacturing process could not be found or you don't have access to it.
           </p>
           <Button asChild data-testid="button-back-to-processes">
-            <Link href="/manufacturer/processes">
+            <Link href="~/manufacturer/processes">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Processes
             </Link>
@@ -412,7 +412,7 @@ export default function ManufacturerProcessDetail() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" asChild data-testid="button-back">
-          <Link href="/manufacturer/processes">
+          <Link href="~/manufacturer/processes">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Link>

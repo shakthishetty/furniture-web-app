@@ -68,7 +68,7 @@ export default function ManufacturerNotifications() {
 
     // Navigate to the order/process
     if (notification.processId) {
-      setLocation(`/manufacturer/processes/${notification.processId}`);
+      setLocation(`~/manufacturer/processes/${notification.processId}`);
     }
   };
 
