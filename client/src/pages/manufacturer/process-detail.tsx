@@ -334,8 +334,8 @@ export default function ManufacturerProcessDetail() {
   const isStageUnlocked = (stage: any) => {
     if (!process?.stages) return false;
     
-    // Stages that are awaiting approval or approved cannot be edited
-    if (stage.status === 'awaiting_approval' || stage.status === 'approved') {
+    // Stages that are awaiting approval or already approved cannot be edited
+    if (stage.status === 'awaiting_approval' || stage.approvedAt) {
       return false;
     }
     
@@ -345,9 +345,9 @@ export default function ManufacturerProcessDetail() {
     // First stage is always unlocked (unless awaiting approval or approved)
     if (currentStageIndex === 0) return true;
     
-    // For subsequent stages, check if previous stage is approved
+    // For subsequent stages, check if previous stage is approved (has approvedAt timestamp)
     const prevStage = sortedStages[currentStageIndex - 1];
-    return prevStage.status === 'approved';
+    return !!prevStage.approvedAt;
   };
 
   const getStageUnlockMessage = (stage: any) => {
@@ -357,7 +357,7 @@ export default function ManufacturerProcessDetail() {
     if (stage.status === 'awaiting_approval') {
       return "This stage is awaiting admin approval. You cannot make changes until it's approved or rejected.";
     }
-    if (stage.status === 'approved') {
+    if (stage.approvedAt) {
       return "This stage has been approved and is now locked. All work on this stage is complete.";
     }
     
@@ -368,7 +368,7 @@ export default function ManufacturerProcessDetail() {
     
     const prevStage = sortedStages[currentStageIndex - 1];
     
-    if (prevStage.status === 'approved') {
+    if (prevStage.approvedAt) {
       return "";
     } else if (prevStage.status === 'awaiting_approval') {
       return `Waiting for admin approval on "${prevStage.name}" before you can start this stage.`;
@@ -798,7 +798,7 @@ export default function ManufacturerProcessDetail() {
                                 <Lock className="h-4 w-4 text-muted-foreground" />
                               </span>
                             )}
-                            {isStageUnlocked(stage) && stage.status !== 'approved' && stage.position > 1 && (
+                            {isStageUnlocked(stage) && !stage.approvedAt && stage.position > 1 && (
                               <span title="Stage unlocked">
                                 <LockOpen className="h-4 w-4 text-green-600" />
                               </span>
