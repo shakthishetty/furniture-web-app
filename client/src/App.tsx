@@ -73,10 +73,10 @@ function ManufacturerRouter() {
     <ManufacturerLayout>
       <Switch>
         <Route path="/" component={ManufacturerDashboard} />
-        <Route path="processes" component={ManufacturerProcesses} />
-        <Route path="processes/:id" component={ManufacturerProcessDetail} />
-        <Route path="notifications" component={ManufacturerNotifications} />
-        <Route path="support" component={ManufacturerSupport} />
+        <Route path="/processes" component={ManufacturerProcesses} />
+        <Route path="/processes/:id" component={ManufacturerProcessDetail} />
+        <Route path="/notifications" component={ManufacturerNotifications} />
+        <Route path="/support" component={ManufacturerSupport} />
         <Route component={() => <div>Manufacturer Page Not Found</div>} />
       </Switch>
     </ManufacturerLayout>
