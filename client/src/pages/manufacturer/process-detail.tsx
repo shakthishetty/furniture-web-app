@@ -953,7 +953,7 @@ export default function ManufacturerProcessDetail() {
                     )}
 
                     {/* Submission Requirements for Completed Stages */}
-                    {stage.status === 'completed' && !canSubmitForApproval(stage) && (
+                    {stage.status === 'completed' && !stage.approvedAt && !canSubmitForApproval(stage) && (
                       <div className="space-y-3">
                         <Separator />
                         <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -975,7 +975,7 @@ export default function ManufacturerProcessDetail() {
                     )}
 
                     {/* Sequential Workflow Notice */}
-                    {stage.status === 'completed' && canSubmitForApproval(stage) && !isSequentialSubmissionAllowed(stage) && (
+                    {stage.status === 'completed' && !stage.approvedAt && canSubmitForApproval(stage) && !isSequentialSubmissionAllowed(stage) && (
                       <div className="space-y-3">
                         <Separator />
                         <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
