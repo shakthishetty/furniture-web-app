@@ -32,7 +32,9 @@ import {
   Calendar,
   User,
   Upload,
-  Camera
+  Camera,
+  Lock,
+  LockOpen
 } from "lucide-react";
 import { Link } from "wouter";
 import type { 
@@ -327,6 +329,54 @@ export default function ManufacturerProcessDetail() {
     }
     
     return canSubmitForApproval(stage);
+  };
+
+  const isStageUnlocked = (stage: any) => {
+    if (!process?.stages) return false;
+    
+    // Stages that are awaiting approval or approved cannot be edited
+    if (stage.status === 'awaiting_approval' || stage.status === 'approved') {
+      return false;
+    }
+    
+    const sortedStages = [...process.stages].sort((a, b) => a.position - b.position);
+    const currentStageIndex = sortedStages.findIndex(s => s.id === stage.id);
+    
+    // First stage is always unlocked (unless awaiting approval or approved)
+    if (currentStageIndex === 0) return true;
+    
+    // For subsequent stages, check if previous stage is approved
+    const prevStage = sortedStages[currentStageIndex - 1];
+    return prevStage.status === 'approved';
+  };
+
+  const getStageUnlockMessage = (stage: any) => {
+    if (!process?.stages) return "";
+    
+    // Special message for stages awaiting approval or approved
+    if (stage.status === 'awaiting_approval') {
+      return "This stage is awaiting admin approval. You cannot make changes until it's approved or rejected.";
+    }
+    if (stage.status === 'approved') {
+      return "This stage has been approved and is now locked. All work on this stage is complete.";
+    }
+    
+    const sortedStages = [...process.stages].sort((a, b) => a.position - b.position);
+    const currentStageIndex = sortedStages.findIndex(s => s.id === stage.id);
+    
+    if (currentStageIndex === 0) return "";
+    
+    const prevStage = sortedStages[currentStageIndex - 1];
+    
+    if (prevStage.status === 'approved') {
+      return "";
+    } else if (prevStage.status === 'awaiting_approval') {
+      return `Waiting for admin approval on "${prevStage.name}" before you can start this stage.`;
+    } else if (prevStage.status === 'rejected') {
+      return `"${prevStage.name}" was rejected and needs to be resubmitted before you can start this stage.`;
+    } else {
+      return `Complete and get approval for "${prevStage.name}" before starting this stage.`;
+    }
   };
 
   const handleStageStatusChange = (stageId: string, newStatus: string) => {
@@ -723,17 +773,37 @@ export default function ManufacturerProcessDetail() {
             {[...process.stages]
               .sort((a, b) => a.position - b.position)
               .map((stage) => (
-                <Card key={stage.id} className="border-2 border-muted hover:border-muted-foreground/20 transition-colors" data-testid={`stage-${stage.id}`}>
+                <Card key={stage.id} className={`border-2 transition-colors ${
+                  !isStageUnlocked(stage) 
+                    ? 'border-muted bg-muted/20 opacity-75' 
+                    : 'border-muted hover:border-muted-foreground/20'
+                }`} data-testid={`stage-${stage.id}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
+                          !isStageUnlocked(stage)
+                            ? 'bg-gray-200 text-gray-500'
+                            : 'bg-primary/10 text-primary'
+                        }`}>
                           {stage.position}
                         </div>
                         <div>
-                          <CardTitle className="text-base font-semibold">
-                            {stage.name}
-                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-base font-semibold">
+                              {stage.name}
+                            </CardTitle>
+                            {!isStageUnlocked(stage) && (
+                              <span title="Stage locked">
+                                <Lock className="h-4 w-4 text-muted-foreground" />
+                              </span>
+                            )}
+                            {isStageUnlocked(stage) && stage.status !== 'approved' && stage.position > 1 && (
+                              <span title="Stage unlocked">
+                                <LockOpen className="h-4 w-4 text-green-600" />
+                              </span>
+                            )}
+                          </div>
                           {stage.notes && (
                             <CardDescription className="text-xs mt-1">{stage.notes}</CardDescription>
                           )}
@@ -748,9 +818,13 @@ export default function ManufacturerProcessDetail() {
                           <Button 
                             size="sm" 
                             onClick={() => handleStageStatusChange(stage.id, 'in_progress')}
-                            disabled={updateStageMutation.isPending}
-                            className="ml-2 bg-blue-600 hover:bg-blue-700 text-white"
-                            title="Start working on this stage"
+                            disabled={updateStageMutation.isPending || !isStageUnlocked(stage)}
+                            className={`ml-2 ${
+                              isStageUnlocked(stage)
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                            title={!isStageUnlocked(stage) ? "Complete previous stage first" : "Start working on this stage"}
                             data-testid={`button-start-stage-${stage.id}`}
                           >
                             {updateStageMutation.isPending ? "Starting..." : "Start Stage"}
@@ -762,9 +836,13 @@ export default function ManufacturerProcessDetail() {
                           <Button 
                             size="sm" 
                             onClick={() => handleStageStatusChange(stage.id, 'completed')}
-                            disabled={updateStageMutation.isPending}
-                            className="ml-2 bg-green-600 hover:bg-green-700 text-white"
-                            title="Mark this stage as completed"
+                            disabled={updateStageMutation.isPending || !isStageUnlocked(stage)}
+                            className={`ml-2 ${
+                              isStageUnlocked(stage)
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                            title={!isStageUnlocked(stage) ? "Stage is locked" : "Mark this stage as completed"}
                             data-testid={`button-complete-stage-${stage.id}`}
                           >
                             {updateStageMutation.isPending ? "Completing..." : "Complete Stage"}
@@ -811,6 +889,21 @@ export default function ManufacturerProcessDetail() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4 pt-0">
+                    {/* Stage Locked Warning */}
+                    {!isStageUnlocked(stage) && (
+                      <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <Lock className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-gray-900 dark:text-gray-100">Stage Locked</h4>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {getStageUnlockMessage(stage)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Stage Timeline */}
                     {stage.startedAt && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -930,24 +1023,36 @@ export default function ManufacturerProcessDetail() {
                     )}
 
                     {/* Add Update Form */}
-                    <div className="space-y-3">
-                      <Separator />
-                      <div className="bg-muted/30 p-4 rounded-lg">
-                        <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
-                          <Camera className="h-4 w-4 text-primary" />
-                          Add Progress Update
-                        </Label>
-                        <StageUpdateComposer
-                          processId={process.id}
-                          stageId={stage.id}
-                          userRole="manufacturer"
-                          placeholder={`Share progress on ${stage.name.toLowerCase()}... Upload photos to show current state!`}
-                          compact={true}
-                          showTitle={false}
-                          data-testid={`update-composer-${stage.id}`}
-                        />
+                    {isStageUnlocked(stage) ? (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div className="bg-muted/30 p-4 rounded-lg">
+                          <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                            <Camera className="h-4 w-4 text-primary" />
+                            Add Progress Update
+                          </Label>
+                          <StageUpdateComposer
+                            processId={process.id}
+                            stageId={stage.id}
+                            userRole="manufacturer"
+                            placeholder={`Share progress on ${stage.name.toLowerCase()}... Upload photos to show current state!`}
+                            compact={true}
+                            showTitle={false}
+                            data-testid={`update-composer-${stage.id}`}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Separator />
+                        <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                            <Lock className="h-4 w-4" />
+                            <span className="text-sm font-medium">Progress updates locked until previous stage is approved</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
