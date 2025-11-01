@@ -1042,7 +1042,7 @@ export default function ManufacturerProcessDetail() {
                           />
                         </div>
                       </div>
-                    ) : (
+                    ) : !stage.approvedAt && !stage.status.includes('approval') && (
                       <div className="space-y-3">
                         <Separator />
                         <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
