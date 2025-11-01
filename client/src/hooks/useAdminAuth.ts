@@ -1,29 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
 
 export function useAdminAuth() {
-  // Check if user is authenticated as admin by checking localStorage
+  // Validate admin authentication with backend
   const { data: adminUser, isLoading, error } = useQuery({
-    queryKey: ["/api/admin/auth/check"],
+    queryKey: ["/api/auth/admin/me"],
     queryFn: async () => {
-      const token = localStorage.getItem("accessToken");
-      const user = localStorage.getItem("user");
+      const token = localStorage.getItem("adminAccessToken");
       
-      if (!token || !user) {
+      if (!token) {
         return null;
       }
       
       try {
-        const parsedUser = JSON.parse(user);
+        // Call backend to validate admin token
+        const response = await fetch("/api/auth/admin/me", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
         
-        // Decode JWT to check if it's admin
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        if (payload.isAdmin === true && payload.role === 'admin') {
-          return parsedUser;
+        if (!response.ok) {
+          // Clear invalid tokens
+          localStorage.removeItem("adminAccessToken");
+          localStorage.removeItem("adminRefreshToken");
+          localStorage.removeItem("adminUser");
+          return null;
         }
         
-        return null;
+        const data = await response.json();
+        return data;
       } catch (e) {
+        // Clear tokens on error
+        localStorage.removeItem("adminAccessToken");
+        localStorage.removeItem("adminRefreshToken");
+        localStorage.removeItem("adminUser");
         return null;
       }
     },

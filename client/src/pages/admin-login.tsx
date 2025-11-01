@@ -22,13 +22,12 @@ export default function AdminLogin() {
       return response.json();
     },
     onSuccess: async (data) => {
-      await resetAuthState(queryClient);
+      // Use separate storage keys for admin to not affect customer login
+      localStorage.setItem("adminAccessToken", data.accessToken);
+      localStorage.setItem("adminRefreshToken", data.refreshToken);
+      localStorage.setItem("adminUser", JSON.stringify(data.user));
       
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/admin/me'] });
       
       setLocation("/admin");
     },

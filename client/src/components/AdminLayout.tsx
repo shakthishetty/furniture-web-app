@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation, Link, useLocation as useLocationHook } from "wouter";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { 
@@ -97,12 +98,11 @@ function AdminSidebar() {
 
   const handleLogout = async () => {
     try {
-      // Clear admin tokens
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+      // Clear admin tokens (separate from customer tokens)
+      localStorage.removeItem("adminAccessToken");
+      localStorage.removeItem("adminRefreshToken");
+      localStorage.removeItem("adminUser");
       
-      await fetch("/api/auth/logout", { method: "POST" });
       setLocation("/admin-login");
     } catch (error) {
       console.error("Logout error:", error);
@@ -203,14 +203,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { adminUser, isLoading, isAdmin } = useAdminAuth();
   const [, setLocation] = useLocationHook();
 
-  // Redirect to admin login if not authenticated
-  if (!isLoading && (!isAdmin || !adminUser)) {
-    setLocation("/admin-login");
-    return null;
-  }
+  // Redirect to admin login if not authenticated (using useEffect to avoid React errors)
+  useEffect(() => {
+    if (!isLoading && (!isAdmin || !adminUser)) {
+      setLocation("/admin-login");
+    }
+  }, [isLoading, isAdmin, adminUser, setLocation]);
 
   if (isLoading) {
     return <LoadingState />;
+  }
+
+  if (!isAdmin || !adminUser) {
+    return null; // Will redirect via useEffect
   }
 
   return (

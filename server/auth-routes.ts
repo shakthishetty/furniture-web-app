@@ -190,6 +190,30 @@ router.post('/admin-login', async (req, res) => {
   }
 });
 
+// Admin auth verification endpoint
+router.get('/admin/me', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin from the JWT token
+    if (!req.user?.isAdmin || req.user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorized as admin' });
+    }
+
+    // Return admin user info
+    res.json({
+      id: req.user.userId,
+      email: req.user.email,
+      firstName: 'Admin',
+      lastName: 'User',
+      emailVerified: true,
+      isAdmin: true,
+      role: 'admin',
+    });
+  } catch (error: any) {
+    console.error('Admin auth verification error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Refresh token endpoint
 router.post('/refresh', async (req, res) => {
   try {
