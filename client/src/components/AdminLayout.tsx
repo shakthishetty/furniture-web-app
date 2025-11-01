@@ -1,6 +1,6 @@
-import { useEffect } from "react";
 import { useLocation, Link, useLocation as useLocationHook } from "wouter";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useEffect } from "react";
 import { 
   SidebarProvider, 
   Sidebar, 
