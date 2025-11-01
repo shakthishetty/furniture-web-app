@@ -251,7 +251,7 @@ export default function ManufacturerDashboard() {
                       </div>
                     </div>
                     <Button asChild variant="outline" size="sm" data-testid={`button-view-${process.processId}`}>
-                      <Link href={`/manufacturer/processes/${process.processId}`}>
+                      <Link href={`processes/${process.processId}`}>
                         <Eye className="h-3 w-3 mr-1" />
                         View
                       </Link>
@@ -299,7 +299,7 @@ export default function ManufacturerDashboard() {
                       </div>
                     </div>
                     <Button asChild variant="outline" size="sm" data-testid={`button-view-activity-${activity.processId}`}>
-                      <Link href={`/manufacturer/processes/${activity.processId}`}>
+                      <Link href={`processes/${activity.processId}`}>
                         <Eye className="h-3 w-3 mr-1" />
                         View
                       </Link>
@@ -328,13 +328,13 @@ export default function ManufacturerDashboard() {
         <CardContent>
           <div className="flex flex-wrap gap-3">
             <Button asChild data-testid="button-view-all-processes">
-              <Link href="/manufacturer/processes">
+              <Link href="processes">
                 <Package className="h-4 w-4 mr-2" />
                 View All Processes
               </Link>
             </Button>
             <Button variant="outline" asChild data-testid="button-view-active-processes">
-              <Link href="/manufacturer/processes?status=in_progress">
+              <Link href="processes?status=in_progress">
                 <Activity className="h-4 w-4 mr-2" />
                 Active Processes
               </Link>
