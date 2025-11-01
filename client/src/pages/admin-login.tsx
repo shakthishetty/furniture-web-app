@@ -1,13 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { apiRequest } from "@/lib/queryClient";
-import { Shield, LogIn } from "lucide-react";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -15,21 +9,12 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Clear any existing admin session when visiting login page
-  useEffect(() => {
-    localStorage.removeItem("adminAccessToken");
-    localStorage.removeItem("adminRefreshToken");
-    localStorage.removeItem("adminUser");
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/admin/me'] });
-  }, [queryClient]);
-
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       const response = await apiRequest("POST", "/api/auth/admin-login", credentials);
       return response.json();
     },
     onSuccess: async (data) => {
-      // Use separate storage keys for admin to not affect customer login
       localStorage.setItem("adminAccessToken", data.accessToken);
       localStorage.setItem("adminRefreshToken", data.refreshToken);
       localStorage.setItem("adminUser", JSON.stringify(data.user));
@@ -46,79 +31,109 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#254127] text-white">
-              <Shield className="h-6 w-6" />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', padding: '3rem 1rem' }}>
+      <div style={{ maxWidth: '28rem', width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ 
+              height: '3rem', 
+              width: '3rem', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              borderRadius: '0.5rem', 
+              backgroundColor: '#254127', 
+              color: 'white',
+              fontSize: '1.5rem'
+            }}>
+              🛡️
             </div>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
             Admin Portal
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
             Sign in to access the admin dashboard
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Admin Sign In</CardTitle>
-            <CardDescription>
-              Enter your admin credentials to continue
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  data-testid="input-admin-email"
-                  className="mt-1"
-                  placeholder="furniture@gmail.com"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  data-testid="input-admin-password"
-                  className="mt-1"
-                  placeholder="Enter password"
-                />
-              </div>
+        <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)', padding: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>Admin Sign In</h3>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+            Enter your admin credentials to continue
+          </p>
 
-              {loginMutation.error && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    {(loginMutation.error as any)?.message || "Invalid admin credentials. Please try again."}
-                  </AlertDescription>
-                </Alert>
-              )}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label htmlFor="email" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                data-testid="input-admin-email"
+                placeholder="furniture@gmail.com"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                }}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="password" style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                data-testid="input-admin-password"
+                placeholder="Enter password"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                }}
+              />
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-[#254127] hover:bg-[#1a2f1b]"
-                disabled={loginMutation.isPending}
-                data-testid="button-admin-login"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                {loginMutation.isPending ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            {loginMutation.error && (
+              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '0.375rem', color: '#991b1b', fontSize: '0.875rem' }}>
+                {(loginMutation.error as any)?.message || "Invalid admin credentials. Please try again."}
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={loginMutation.isPending}
+              data-testid="button-admin-login"
+              style={{
+                width: '100%',
+                padding: '0.625rem 1rem',
+                backgroundColor: loginMutation.isPending ? '#9ca3af' : '#254127',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: loginMutation.isPending ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loginMutation.isPending ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
