@@ -191,18 +191,7 @@ router.get("/", requireAuth, async (req, res) => {
 // Get all support tickets (admin only)
 router.get("/all", requireAdmin, async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const user = await storage.getUser(userId);
-    
-    if (user?.role !== 'admin') {
-      return res.status(403).json({ error: "Unauthorized - Admin access required" });
-    }
-
+    // requireAdmin middleware already verified admin access, no need to check again
     const tickets = await storage.getSupportTickets({
       status: req.query.status as string,
       category: req.query.category as string,
