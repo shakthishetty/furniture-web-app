@@ -1021,6 +1021,33 @@ router.post("/manufacturing/processes/:id/assign", requireAdmin, async (req, res
       return res.status(404).json({ error: "Manufacturing process not found" });
     }
 
+    // Create notification for manufacturer if assigned (not unassigned)
+    if (manufacturerId) {
+      try {
+        // Get order details for notification message
+        const order = await storage.getOrder(updatedProcess.orderId);
+        const orderItems = await storage.getOrderItems(updatedProcess.orderId);
+        
+        const productNames = orderItems.map((item: any) => item.productName).join(', ');
+        const orderNumber = order?.orderNumber || updatedProcess.orderId;
+        
+        await storage.createNotification({
+          userId: manufacturerId,
+          orderId: updatedProcess.orderId,
+          processId: updatedProcess.id,
+          type: 'new_assignment',
+          title: 'New Order Assigned',
+          message: `You have been assigned to a new manufacturing order #${orderNumber}. Products: ${productNames}`,
+          isRead: false,
+        });
+        
+        console.log(`Created notification for manufacturer ${manufacturerId} for process ${updatedProcess.id}`);
+      } catch (notificationError) {
+        console.error('Failed to create manufacturer notification:', notificationError);
+        // Don't fail the request if notification creation fails
+      }
+    }
+
     // Broadcast assignment change to SSE connections
     if (global.broadcastManufacturingUpdate) {
       global.broadcastManufacturingUpdate(updatedProcess.id, {

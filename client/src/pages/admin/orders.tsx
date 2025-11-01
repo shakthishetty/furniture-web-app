@@ -496,6 +496,9 @@ export default function AdminOrders() {
                                 productId: item.productId,
                                 productName: item.productName,
                                 productImage: item.productImage || null,
+                                quantity: item.quantity,
+                                unitPrice: item.price.toString(),
+                                totalPrice: item.total.toString(),
                                 customConfiguration: customConfig
                               }}
                             />
