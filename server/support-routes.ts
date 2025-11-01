@@ -112,6 +112,66 @@ async function sendAdminNotificationEmail(
   return await sendEmail(adminEmail, `New Support Ticket: ${category} - ${subject}`, html);
 }
 
+// Send ticket resolution email to customer
+async function sendTicketResolutionEmail(
+  userEmail: string,
+  userName: string,
+  ticketId: string,
+  subject: string,
+  category: string,
+  status: string
+): Promise<boolean> {
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+  const ticketUrl = `${baseUrl}/support`;
+  
+  const statusTitle = status === 'resolved' ? 'Resolved' : 'Updated';
+  const statusMessage = status === 'resolved' 
+    ? 'Your support ticket has been resolved by our team.'
+    : `Your support ticket status has been updated to: ${status.replace('_', ' ')}`;
+  
+  const html = `
+    <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+      <div style="background-color: #254127; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Teak Theory Support</h1>
+      </div>
+      
+      <div style="padding: 30px 20px;">
+        <h2 style="color: #254127;">Hello ${userName},</h2>
+        
+        <p>${statusMessage}</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Ticket ID:</strong> ${ticketId}</p>
+          <p style="margin: 5px 0;"><strong>Category:</strong> ${category}</p>
+          <p style="margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
+          <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #16a34a; font-weight: bold;">${status.replace('_', ' ')}</span></p>
+        </div>
+        
+        ${status === 'resolved' 
+          ? '<p>If you have any further questions or concerns, please don\'t hesitate to submit a new support request.</p>'
+          : '<p>Our team is actively working on your request. We\'ll keep you updated on any progress.</p>'
+        }
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${ticketUrl}" 
+             style="background-color: #254127; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Your Tickets
+          </a>
+        </div>
+      </div>
+      
+      <hr style="margin: 30px 20px; border: none; border-top: 1px solid #eee;">
+      <div style="padding: 0 20px 20px;">
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          This email was sent from Teak Theory Support
+        </p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail(userEmail, `Support Ticket ${statusTitle} - #${ticketId}`, html);
+}
+
 // Create a new support ticket (auth optional - verifyAuth provides user context if available)
 router.post("/", verifyAuth, async (req, res) => {
   try {
@@ -275,11 +335,37 @@ router.patch("/:id", requireAdmin, async (req, res) => {
   try {
     const ticketId = req.params.id;
 
+    // Get the old ticket data to check for status changes
+    const oldTicket = await storage.getSupportTicket(ticketId);
+    if (!oldTicket) {
+      return res.status(404).json({ error: "Support ticket not found" });
+    }
+
     const validatedData = updateSupportTicketSchema.parse(req.body);
     const ticket = await storage.updateSupportTicket(ticketId, validatedData);
 
     if (!ticket) {
       return res.status(404).json({ error: "Support ticket not found" });
+    }
+
+    // Send email notification if status changed to resolved or closed
+    if (validatedData.status && oldTicket.status !== validatedData.status) {
+      if (validatedData.status === 'resolved' || validatedData.status === 'closed') {
+        try {
+          await sendTicketResolutionEmail(
+            ticket.email,
+            ticket.name,
+            ticket.id,
+            ticket.subject,
+            ticket.category,
+            validatedData.status
+          );
+          console.log(`Sent resolution email to ${ticket.email} for ticket ${ticket.id}`);
+        } catch (emailError) {
+          console.error('Failed to send resolution email:', emailError);
+          // Don't fail the request if email fails
+        }
+      }
     }
 
     res.json({ ticket });
