@@ -87,7 +87,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
         })),
         shippingAddressId: selectedAddress,
         billingAddressId: selectedAddress,
-        discountCode: appliedDiscount?.discount?.code,
+        discountCode: appliedDiscount?.discount?.discountCode,
         paymentMethod: "stripe",
       };
 
@@ -126,7 +126,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
             currency: 'usd',
             product_data: {
               name: discountAmount > 0 
-                ? `${item.productName} (${appliedDiscount?.discount?.code} applied)`
+                ? `${item.productName} (${appliedDiscount?.discount?.discountCode} applied)`
                 : item.productName,
               images: item.imageUrl ? [item.imageUrl] : [],
             },
@@ -320,7 +320,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-green-900">
-                            {appliedDiscount.discount.code}
+                            {appliedDiscount.discount.discountCode}
                           </p>
                           <p className="text-sm text-green-700">
                             Saved ${appliedDiscount.discountAmount.toFixed(2)}

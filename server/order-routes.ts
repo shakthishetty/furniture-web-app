@@ -387,7 +387,7 @@ export function registerOrderRoutes(app: Express): void {
 
       const discountedSubtotal = subtotal - discountAmount;
       const taxAmount = calculateTax(discountedSubtotal);
-      const shippingAmount = calculateShipping(discountedSubtotal);
+      const shippingAmount = calculateShipping(subtotal); // Use original subtotal for free shipping threshold
       const totalAmount = discountedSubtotal + taxAmount + shippingAmount;
 
       // Create order in database
@@ -396,10 +396,12 @@ export function registerOrderRoutes(app: Express): void {
         ...orderData,
         userId,
         orderNumber,
-        subtotal: discountedSubtotal,
+        subtotal: subtotal, // Store original subtotal before discount
         totalAmount,
         discountAmount,
         discountId,
+        taxAmount: taxAmount,
+        shippingAmount: shippingAmount,
       });
 
       let paymentResponse;
