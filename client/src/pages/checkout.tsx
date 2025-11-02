@@ -446,7 +446,7 @@ export default function Checkout() {
   const [location, setLocation] = useLocation();
   const { cart, clearCart } = useCart();
 
-  const checkoutItems: CheckoutItem[] = cart.map(item => ({
+  const checkoutItems: CheckoutItem[] = (cart || []).map(item => ({
     productId: item.product.id,
     configurationId: item.configurationId,
     customConfiguration: item.customization,
