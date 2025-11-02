@@ -444,17 +444,17 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
 
 export default function Checkout() {
   const [location, setLocation] = useLocation();
-  const { cart, clearCart } = useCart();
+  const { items, clearCart } = useCart();
 
-  const checkoutItems: CheckoutItem[] = (cart || []).map(item => ({
-    productId: item.product.id,
+  const checkoutItems: CheckoutItem[] = (items || []).map(item => ({
+    productId: item.productId,
     configurationId: item.configurationId,
-    customConfiguration: item.customization,
+    customConfiguration: item.customConfiguration,
     quantity: item.quantity,
-    productName: item.product.name,
-    unitPrice: item.customPrice || parseFloat(item.product.price),
-    totalPrice: (item.customPrice || parseFloat(item.product.price)) * item.quantity,
-    imageUrl: item.product.imageUrl || undefined,
+    productName: item.name,
+    unitPrice: item.price,
+    totalPrice: item.price * item.quantity,
+    imageUrl: item.imageUrl || undefined,
   }));
 
   if (checkoutItems.length === 0) {
