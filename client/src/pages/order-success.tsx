@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useCart } from "@/hooks/useCart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Loader2, Package } from "lucide-react";
@@ -8,12 +9,18 @@ import { CheckCircle, Loader2, Package } from "lucide-react";
 export default function OrderSuccess() {
   const [, setLocation] = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const { clearCart } = useCart();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('session_id');
     setSessionId(id);
-  }, []);
+    
+    // Clear the cart after successful payment
+    if (id) {
+      clearCart();
+    }
+  }, [clearCart]);
 
   const { data: order, isLoading } = useQuery<any>({
     queryKey: ["/api/orders/session", sessionId],
