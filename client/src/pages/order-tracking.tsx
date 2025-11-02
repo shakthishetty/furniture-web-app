@@ -177,7 +177,7 @@ export default function OrderTracking() {
     onSuccess: (reply, { updateId }) => {
       toast({
         title: "Reply Posted",
-        description: "Your message has been sent to the manufacturer.",
+        description: "Message was successfully sent.",
       });
       
       // Invalidate queries to refresh data
@@ -210,7 +210,7 @@ export default function OrderTracking() {
     onSuccess: () => {
       toast({
         title: "Question Sent",
-        description: "Your question has been sent to the manufacturer.",
+        description: "Message was successfully sent.",
       });
       setQuestionText("");
       // Refresh tracking data
