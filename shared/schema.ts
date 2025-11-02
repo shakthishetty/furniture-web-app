@@ -351,6 +351,7 @@ export const orders = pgTable("orders", {
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   
   // Payment tracking
+  stripeSessionId: varchar("stripe_session_id"),
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   stripeChargeId: varchar("stripe_charge_id"),
   paypalOrderId: varchar("paypal_order_id"),

@@ -16,14 +16,7 @@ import { Plus, MapPin, CreditCard, Tag, AlertCircle, CheckCircle } from "lucide-
 import AddressForm from "@/components/AddressForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import type { Address } from "@shared/schema";
-
-// Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
 
 interface CheckoutItem {
   productId: string;
@@ -41,63 +34,6 @@ interface CheckoutProps {
   onSuccess?: () => void;
 }
 
-// Stripe Payment Form Component
-function StripePaymentForm({ 
-  totalAmount, 
-  onPaymentSuccess,
-  onPaymentError 
-}: { 
-  totalAmount: number;
-  onPaymentSuccess: (paymentIntentId: string) => void;
-  onPaymentError: (error: string) => void;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setIsProcessing(true);
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + "/orders",
-      },
-      redirect: "if_required",
-    });
-
-    setIsProcessing(false);
-
-    if (error) {
-      onPaymentError(error.message || "Payment failed");
-    } else {
-      // Payment succeeded
-      onPaymentSuccess("payment_success");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      <Button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full"
-        size="lg"
-        data-testid="button-complete-payment"
-      >
-        {isProcessing ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
-      </Button>
-    </form>
-  );
-}
-
 function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -107,20 +43,7 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [orderId, setOrderId] = useState<string | null>(null);
-  
-  // Payment mode selection
-  const [useRealPayment, setUseRealPayment] = useState(stripePromise !== null);
-  
-  // Dummy payment form fields (for demo mode)
-  const [paymentMethod, setPaymentMethod] = useState("credit_card");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [cardholderName, setCardholderName] = useState("");
 
   // Fetch user addresses
   const { data: addresses = [] } = useQuery<Address[]>({

@@ -50,40 +50,45 @@ function calculateShipping(subtotal: number): number {
 }
 
 export function registerOrderRoutes(app: Express): void {
-  // ========== STRIPE PAYMENT INTENT ==========
+  // ========== STRIPE CHECKOUT SESSION ==========
   
-  // Create payment intent for Stripe checkout
-  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
+  // Create Stripe checkout session and redirect to hosted checkout
+  app.post("/api/create-checkout-session", requireAuth, async (req, res) => {
     try {
       if (!stripe) {
         return res.status(500).json({ message: "Stripe is not configured" });
       }
 
-      const { amount, orderId } = req.body;
+      const { orderId, lineItems } = req.body;
       
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ message: "Invalid amount" });
+      if (!orderId || !lineItems || lineItems.length === 0) {
+        return res.status(400).json({ message: "Invalid order data" });
       }
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd",
-        automatic_payment_methods: {
-          enabled: true,
-        },
+      // Get the base URL for success/cancel redirects
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : `http://localhost:${process.env.PORT || 5000}`;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: `${baseUrl}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/checkout`,
         metadata: {
-          orderId: orderId || "",
+          orderId: orderId,
           userId: req.user?.userId || ""
         }
       });
 
       res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
+        sessionId: session.id,
+        url: session.url
       });
     } catch (error: any) {
-      console.error("Error creating payment intent:", error);
-      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ message: "Error creating checkout session: " + error.message });
     }
   });
 
@@ -114,43 +119,33 @@ export function registerOrderRoutes(app: Express): void {
     // Handle the event
     try {
       switch (event.type) {
-        case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object as Stripe.PaymentIntent;
-          console.log('PaymentIntent succeeded:', paymentIntent.id);
+        case 'checkout.session.completed':
+          const session = event.data.object as Stripe.Checkout.Session;
+          console.log('Checkout session completed:', session.id);
           
-          // Find order by payment intent ID
-          const order = await storage.getOrderByPaymentIntentId(paymentIntent.id);
+          // Get order ID from metadata
+          const orderId = session.metadata?.orderId;
           
-          if (order) {
+          if (orderId) {
             // Update order payment status
-            await storage.updateOrderPayment(order.id, {
-              stripePaymentIntentId: paymentIntent.id,
+            await storage.updateOrderPayment(orderId, {
+              stripeSessionId: session.id,
+              stripePaymentIntentId: session.payment_intent as string || undefined,
               paymentStatus: "paid"
             });
             
             // Update order status to paid
-            await storage.updateOrderStatus(order.id, "paid");
+            await storage.updateOrderStatus(orderId, "paid");
+            
+            // Get order to check for discount
+            const order = await storage.getOrder(orderId);
             
             // Increment discount usage count for successful payment
-            if (order.discountId) {
+            if (order && order.discountId) {
               await storage.incrementDiscountUsage(order.discountId);
             }
             
-            console.log(`Order ${order.orderNumber} marked as paid`);
-          }
-          break;
-
-        case 'payment_intent.payment_failed':
-          const failedPaymentIntent = event.data.object as Stripe.PaymentIntent;
-          console.log('PaymentIntent failed:', failedPaymentIntent.id);
-          
-          const failedOrder = await storage.getOrderByPaymentIntentId(failedPaymentIntent.id);
-          if (failedOrder) {
-            await storage.updateOrderPayment(failedOrder.id, {
-              stripePaymentIntentId: failedPaymentIntent.id,
-              paymentStatus: "failed"
-            });
-            console.log(`Order ${failedOrder.orderNumber} payment failed`);
+            console.log(`Order ${orderId} marked as paid via session ${session.id}`);
           }
           break;
 

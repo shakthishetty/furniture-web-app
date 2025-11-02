@@ -178,7 +178,7 @@ export interface IStorage {
   getOrderByPaymentIntentId(paymentIntentId: string): Promise<Order | undefined>;
   getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined>;
   updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined>;
-  updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined>;
+  updateOrderPayment(id: string, paymentData: { stripeSessionId?: string; stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined>;
   cancelOrder(id: string, cancelData: CancelOrderRequest): Promise<Order | undefined>;
 
   // Order Item operations
@@ -913,10 +913,11 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
-  async updateOrderPayment(id: string, paymentData: { stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined> {
+  async updateOrderPayment(id: string, paymentData: { stripeSessionId?: string; stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined> {
     const [order] = await db
       .update(orders)
       .set({ 
+        stripeSessionId: paymentData.stripeSessionId,
         stripePaymentIntentId: paymentData.stripePaymentIntentId,
         stripeChargeId: paymentData.stripeChargeId,
         paymentStatus: paymentData.paymentStatus,
