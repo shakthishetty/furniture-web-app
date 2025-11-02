@@ -400,8 +400,8 @@ export function registerOrderRoutes(app: Express): void {
         totalAmount,
         discountAmount,
         discountId,
-        taxAmount: taxAmount,
-        shippingAmount: shippingAmount,
+        taxAmount,
+        shippingAmount,
       });
 
       let paymentResponse;

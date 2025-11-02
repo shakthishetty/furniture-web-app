@@ -172,6 +172,8 @@ export interface IStorage {
     totalAmount: number;
     discountAmount?: number;
     discountId?: string | null;
+    taxAmount?: number;
+    shippingAmount?: number;
   }): Promise<Order>;
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
@@ -834,6 +836,8 @@ export class DatabaseStorage implements IStorage {
     totalAmount: number;
     discountAmount?: number;
     discountId?: string | null;
+    taxAmount?: number;
+    shippingAmount?: number;
   }): Promise<Order> {
     const [order] = await db
       .insert(orders)
@@ -847,8 +851,10 @@ export class DatabaseStorage implements IStorage {
         shippingAddressId: orderData.shippingAddressId,
         billingAddressId: orderData.billingAddressId || orderData.shippingAddressId,
         discountCodeUsed: orderData.discountCode,
-        discountAmount: orderData.discountAmount ? orderData.discountAmount.toString() : null,
+        discountAmount: orderData.discountAmount != null ? orderData.discountAmount.toString() : null,
         discountId: orderData.discountId || null,
+        taxAmount: orderData.taxAmount != null ? orderData.taxAmount.toString() : null,
+        shippingAmount: orderData.shippingAmount != null ? orderData.shippingAmount.toString() : null,
       })
       .returning();
     
