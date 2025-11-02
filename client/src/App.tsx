@@ -26,6 +26,7 @@ import Search from "@/pages/search";
 import Wishlist from "@/pages/wishlist";
 import Favourites from "@/pages/favourites";
 import Checkout from "@/pages/checkout";
+import OrderSuccess from "@/pages/order-success";
 import Orders from "@/pages/orders";
 import Cart from "@/pages/cart";
 import OrderTracking from "@/pages/order-tracking";
@@ -114,6 +115,7 @@ function Router() {
       <Route path="/wishlist" component={Wishlist} />
       <Route path="/favourites" component={Favourites} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/order-success" component={OrderSuccess} />
       <Route path="/orders" component={Orders} />
       <Route path="/orders/:orderId/tracking" component={OrderTracking} />
       <Route path="/cart" component={Cart} />
