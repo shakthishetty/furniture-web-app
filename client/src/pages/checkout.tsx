@@ -16,7 +16,14 @@ import { Plus, MapPin, CreditCard, Tag, AlertCircle, CheckCircle } from "lucide-
 import AddressForm from "@/components/AddressForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import type { Address } from "@shared/schema";
+
+// Initialize Stripe
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 interface CheckoutItem {
   productId: string;
@@ -34,6 +41,63 @@ interface CheckoutProps {
   onSuccess?: () => void;
 }
 
+// Stripe Payment Form Component
+function StripePaymentForm({ 
+  totalAmount, 
+  onPaymentSuccess,
+  onPaymentError 
+}: { 
+  totalAmount: number;
+  onPaymentSuccess: (paymentIntentId: string) => void;
+  onPaymentError: (error: string) => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.origin + "/orders",
+      },
+      redirect: "if_required",
+    });
+
+    setIsProcessing(false);
+
+    if (error) {
+      onPaymentError(error.message || "Payment failed");
+    } else {
+      // Payment succeeded
+      onPaymentSuccess("payment_success");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full"
+        size="lg"
+        data-testid="button-complete-payment"
+      >
+        {isProcessing ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
+      </Button>
+    </form>
+  );
+}
+
 function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -45,14 +109,18 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
   
-  // Dummy payment form fields
+  // Payment mode selection
+  const [useRealPayment, setUseRealPayment] = useState(stripePromise !== null);
+  
+  // Dummy payment form fields (for demo mode)
   const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
   const [cardholderName, setCardholderName] = useState("");
-  const [simulateFailure, setSimulateFailure] = useState(false);
 
   // Fetch user addresses
   const { data: addresses = [] } = useQuery<Address[]>({
@@ -100,17 +168,9 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
     },
   });
 
-  // Complete order with dummy payment
-  const completeOrderMutation = useMutation({
+  // Create order and get payment intent for Stripe
+  const createOrderMutation = useMutation({
     mutationFn: async () => {
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Always succeed for demo purposes
-      // if (simulateFailure) {
-      //   throw new Error("Payment declined. Please try a different card.");
-      // }
-      
       const orderData = {
         items: items.map(item => ({
           productId: item.productId,
@@ -121,8 +181,8 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
         shippingAddressId: selectedAddress,
         billingAddressId: selectedAddress,
         discountCode: appliedDiscount?.discount?.code,
-        paymentMethod: "dummy_payment",
-        paymentDetails: {
+        paymentMethod: useRealPayment ? "stripe" : "dummy_payment",
+        paymentDetails: useRealPayment ? null : {
           method: paymentMethod,
           cardLast4: cardNumber.slice(-4),
           cardType: "Visa",
@@ -133,22 +193,45 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
       return response.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: "Order placed successfully!",
-        description: `Order #${data.orderNumber} has been created.`,
-      });
-      // Invalidate orders cache so the new order appears immediately
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      onSuccess?.();
+      if (useRealPayment && data.paymentIntent) {
+        // For Stripe payments, set client secret for Stripe Elements
+        setClientSecret(data.paymentIntent.clientSecret);
+        setOrderId(data.order.id);
+      } else {
+        // For dummy payments, show success immediately
+        toast({
+          title: "Order placed successfully!",
+          description: `Order #${data.order.orderNumber} has been created.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+        onSuccess?.();
+      }
     },
     onError: (error: any) => {
       toast({
-        title: "Payment failed",
+        title: "Order creation failed",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
   });
+
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Payment successful!",
+      description: "Your order has been placed.",
+    });
+    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+    onSuccess?.();
+  };
+
+  const handlePaymentError = (errorMessage: string) => {
+    toast({
+      title: "Payment failed",
+      description: errorMessage,
+      variant: "destructive",
+    });
+  };
 
   const handleApplyDiscount = () => {
     if (discountCode.trim()) {
@@ -176,18 +259,20 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
-    if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
-      toast({
-        title: "Incomplete payment information",
-        description: "Please fill in all payment fields.",
-        variant: "destructive",
-      });
-      return;
+    // For demo mode, validate fields
+    if (!useRealPayment) {
+      if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+        toast({
+          title: "Incomplete payment information",
+          description: "Please fill in all payment fields.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsProcessing(true);
-    completeOrderMutation.mutate();
+    createOrderMutation.mutate();
     setIsProcessing(false);
   };
 
@@ -329,102 +414,156 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
             </Card>
 
             {/* Payment */}
-            {showPaymentForm && (
+            {showPaymentForm && !clientSecret && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
                     Payment Information
                   </CardTitle>
-                  <p className="text-sm text-orange-600 flex items-center gap-1 mt-2">
-                    <AlertCircle className="h-4 w-4" />
-                    This is a demo checkout - no real payments will be processed
-                  </p>
+                  {!useRealPayment && (
+                    <p className="text-sm text-orange-600 flex items-center gap-1 mt-2">
+                      <AlertCircle className="h-4 w-4" />
+                      This is a demo checkout - no real payments will be processed
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handlePayment} className="space-y-4">
-                    <div>
-                      <Label htmlFor="payment-method">Payment Method</Label>
-                      <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="credit_card">Credit Card</SelectItem>
-                          <SelectItem value="debit_card">Debit Card</SelectItem>
-                          <SelectItem value="paypal">PayPal (Demo)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  {/* Payment Mode Toggle */}
+                  {stripePromise && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={useRealPayment}
+                          onChange={(e) => setUseRealPayment(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm font-medium">Use real Stripe payment (test mode)</span>
+                      </Label>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {useRealPayment 
+                          ? "You will be charged using Stripe test mode. Use test card: 4242 4242 4242 4242"
+                          : "Demo mode - order will be created without real payment processing"}
+                      </p>
                     </div>
+                  )}
 
-                    {paymentMethod !== "paypal" && (
+                  <form onSubmit={handlePayment} className="space-y-4">
+                    {!useRealPayment && (
                       <>
                         <div>
-                          <Label htmlFor="cardholder-name">Cardholder Name</Label>
-                          <Input
-                            id="cardholder-name"
-                            placeholder="John Doe"
-                            value={cardholderName}
-                            onChange={(e) => setCardholderName(e.target.value)}
-                          />
+                          <Label htmlFor="payment-method">Payment Method</Label>
+                          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="credit_card">Credit Card</SelectItem>
+                              <SelectItem value="debit_card">Debit Card</SelectItem>
+                              <SelectItem value="paypal">PayPal (Demo)</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
-                        <div>
-                          <Label htmlFor="card-number">Card Number</Label>
-                          <Input
-                            id="card-number"
-                            placeholder="4242 4242 4242 4242"
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(e.target.value)}
-                            maxLength={19}
-                          />
-                        </div>
+                        {paymentMethod !== "paypal" && (
+                          <>
+                            <div>
+                              <Label htmlFor="cardholder-name">Cardholder Name</Label>
+                              <Input
+                                id="cardholder-name"
+                                placeholder="John Doe"
+                                value={cardholderName}
+                                onChange={(e) => setCardholderName(e.target.value)}
+                              />
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="expiry">Expiry Date</Label>
-                            <Input
-                              id="expiry"
-                              placeholder="MM/YY"
-                              value={expiryDate}
-                              onChange={(e) => setExpiryDate(e.target.value)}
-                              maxLength={5}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="cvv">CVV</Label>
-                            <Input
-                              id="cvv"
-                              placeholder="123"
-                              value={cvv}
-                              onChange={(e) => setCvv(e.target.value)}
-                              maxLength={4}
-                            />
-                          </div>
+                            <div>
+                              <Label htmlFor="card-number">Card Number</Label>
+                              <Input
+                                id="card-number"
+                                placeholder="4242 4242 4242 4242"
+                                value={cardNumber}
+                                onChange={(e) => setCardNumber(e.target.value)}
+                                maxLength={19}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="expiry">Expiry Date</Label>
+                                <Input
+                                  id="expiry"
+                                  placeholder="MM/YY"
+                                  value={expiryDate}
+                                  onChange={(e) => setExpiryDate(e.target.value)}
+                                  maxLength={5}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="cvv">CVV</Label>
+                                <Input
+                                  id="cvv"
+                                  placeholder="123"
+                                  value={cvv}
+                                  onChange={(e) => setCvv(e.target.value)}
+                                  maxLength={4}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium mb-2 text-green-700">Demo Payment</h4>
+                          <p className="text-sm text-green-600">
+                            ✅ This is a demo - all payments will succeed automatically!
+                          </p>
                         </div>
                       </>
                     )}
 
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium mb-2 text-green-700">Demo Payment</h4>
-                      <p className="text-sm text-green-600">
-                        ✅ This is a demo - all payments will succeed automatically!
-                      </p>
-                    </div>
-
                     <Button
                       type="submit"
-                      disabled={isProcessing || completeOrderMutation.isPending}
+                      disabled={isProcessing || createOrderMutation.isPending}
                       className="w-full"
                       size="lg"
+                      data-testid="button-complete-order"
                     >
-                      {isProcessing || completeOrderMutation.isPending ? (
+                      {isProcessing || createOrderMutation.isPending ? (
                         "Processing..."
+                      ) : useRealPayment ? (
+                        `Continue to Payment - $${totalAmount.toFixed(2)}`
                       ) : (
                         `Complete Order - $${totalAmount.toFixed(2)}`
                       )}
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Stripe Payment Elements */}
+            {showPaymentForm && clientSecret && stripePromise && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Complete Payment
+                  </CardTitle>
+                  <p className="text-sm text-blue-600 flex items-center gap-1 mt-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Secure payment powered by Stripe
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <StripePaymentForm
+                      totalAmount={totalAmount}
+                      onPaymentSuccess={handlePaymentSuccess}
+                      onPaymentError={handlePaymentError}
+                    />
+                  </Elements>
                 </CardContent>
               </Card>
             )}

@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { storage } from "./storage";
 import { requireAuth } from "./utils/auth";
 import {
@@ -18,7 +18,9 @@ import {
 import Stripe from "stripe";
 
 // Initialize Stripe (will be conditional based on available secrets)
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
 
 // Utility functions
 function generateOrderNumber(): string {
@@ -48,6 +50,121 @@ function calculateShipping(subtotal: number): number {
 }
 
 export function registerOrderRoutes(app: Express): void {
+  // ========== STRIPE PAYMENT INTENT ==========
+  
+  // Create payment intent for Stripe checkout
+  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const { amount, orderId } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          orderId: orderId || "",
+          userId: req.user?.userId || ""
+        }
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Stripe webhook endpoint - handle payment confirmations
+  // Note: Raw body parsing is configured globally in server/index.ts for this route
+  app.post("/api/stripe/webhook", async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!sig || !webhookSecret) {
+      console.error("Missing stripe signature or webhook secret");
+      return res.status(400).send("Webhook signature missing");
+    }
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      console.error("Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    try {
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          console.log('PaymentIntent succeeded:', paymentIntent.id);
+          
+          // Find order by payment intent ID
+          const order = await storage.getOrderByPaymentIntentId(paymentIntent.id);
+          
+          if (order) {
+            // Update order payment status
+            await storage.updateOrderPayment(order.id, {
+              stripePaymentIntentId: paymentIntent.id,
+              paymentStatus: "paid"
+            });
+            
+            // Update order status to paid
+            await storage.updateOrderStatus(order.id, "paid");
+            
+            // Increment discount usage count for successful payment
+            if (order.discountId) {
+              await storage.incrementDiscountUsage(order.discountId);
+            }
+            
+            console.log(`Order ${order.orderNumber} marked as paid`);
+          }
+          break;
+
+        case 'payment_intent.payment_failed':
+          const failedPaymentIntent = event.data.object as Stripe.PaymentIntent;
+          console.log('PaymentIntent failed:', failedPaymentIntent.id);
+          
+          const failedOrder = await storage.getOrderByPaymentIntentId(failedPaymentIntent.id);
+          if (failedOrder) {
+            await storage.updateOrderPayment(failedOrder.id, {
+              stripePaymentIntentId: failedPaymentIntent.id,
+              paymentStatus: "failed"
+            });
+            console.log(`Order ${failedOrder.orderNumber} payment failed`);
+          }
+          break;
+
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      res.status(500).json({ message: "Webhook processing failed" });
+    }
+  });
+
   // ========== ADDRESS MANAGEMENT ==========
   
   // Get user addresses (demo-friendly)
