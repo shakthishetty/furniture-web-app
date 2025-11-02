@@ -54,8 +54,8 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
 
   const applyDiscountMutation = useMutation({
     mutationFn: async (code: string) => {
-      const response = await apiRequest("POST", "/api/discounts/validate", {
-        discountCode: code,
+      const response = await apiRequest("POST", "/api/discount/apply", {
+        code: code,
         subtotal
       });
       return response.json();
