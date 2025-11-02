@@ -82,6 +82,12 @@ export function registerOrderRoutes(app: Express): void {
         }
       });
 
+      // Save the session ID to the order immediately
+      await storage.updateOrderPayment(orderId, {
+        stripeSessionId: session.id,
+        paymentStatus: "pending"
+      });
+
       res.json({ 
         sessionId: session.id,
         url: session.url
@@ -89,6 +95,28 @@ export function registerOrderRoutes(app: Express): void {
     } catch (error: any) {
       console.error("Error creating checkout session:", error);
       res.status(500).json({ message: "Error creating checkout session: " + error.message });
+    }
+  });
+
+  // Get order by Stripe session ID
+  app.get("/api/orders/session/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID is required" });
+      }
+
+      const order = await storage.getOrderBySessionId(sessionId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found for this session" });
+      }
+
+      res.json(order);
+    } catch (error: any) {
+      console.error("Error fetching order by session ID:", error);
+      res.status(500).json({ message: "Error fetching order: " + error.message });
     }
   });
 

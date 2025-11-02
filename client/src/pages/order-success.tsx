@@ -15,12 +15,10 @@ export default function OrderSuccess() {
     setSessionId(id);
   }, []);
 
-  const { data: orders, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/orders"],
+  const { data: order, isLoading } = useQuery<any>({
+    queryKey: ["/api/orders/session", sessionId],
     enabled: !!sessionId,
   });
-
-  const latestOrder = orders && orders.length > 0 ? orders[0] : null;
 
   if (isLoading || !sessionId) {
     return (
@@ -50,15 +48,15 @@ export default function OrderSuccess() {
               <p className="text-gray-600 mb-2">
                 Thank you for your order. Your payment has been processed successfully.
               </p>
-              {latestOrder && (
+              {order && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Order Number</p>
                   <p className="text-xl font-bold text-gray-900" data-testid="text-order-number">
-                    {latestOrder.orderNumber}
+                    {order.orderNumber}
                   </p>
                   <p className="text-sm text-gray-600 mt-3 mb-1">Total Amount</p>
                   <p className="text-lg font-semibold text-gray-900" data-testid="text-order-total">
-                    ${parseFloat(latestOrder.totalAmount).toFixed(2)}
+                    ${parseFloat(order.totalAmount).toFixed(2)}
                   </p>
                 </div>
               )}

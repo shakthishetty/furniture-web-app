@@ -93,17 +93,75 @@ function CheckoutForm({ items, onSuccess }: CheckoutProps) {
       const orderResponse = await apiRequest("POST", "/api/orders", orderData);
       const orderResult = await orderResponse.json();
       
-      const lineItems = items.map(item => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: item.productName,
-            images: item.imageUrl ? [item.imageUrl] : [],
+      // Build line items to match exact order total
+      const lineItems = [];
+      
+      // Calculate exact amounts in cents
+      const subtotalCents = Math.round(subtotal * 100);
+      const discountCents = Math.round(discountAmount * 100);
+      const taxCents = Math.round(((subtotal - discountAmount) * 0.085) * 100);
+      const shippingCents = subtotal >= 500 ? 0 : 5000; // $50
+      const expectedTotalCents = subtotalCents - discountCents + taxCents + shippingCents;
+      
+      // Add product line items with proportional discount
+      let accumulatedProductCents = 0;
+      items.forEach((item, index) => {
+        const isLastItem = index === items.length - 1;
+        const itemSubtotalCents = Math.round(item.totalPrice * 100);
+        
+        let discountedItemCents;
+        if (isLastItem) {
+          // Last item gets the remainder to ensure exact total
+          discountedItemCents = (subtotalCents - discountCents) - accumulatedProductCents;
+        } else {
+          // Apply proportional discount and round
+          const discountFactor = discountAmount > 0 ? (subtotal - discountAmount) / subtotal : 1;
+          discountedItemCents = Math.round(itemSubtotalCents * discountFactor);
+          accumulatedProductCents += discountedItemCents;
+        }
+        
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: discountAmount > 0 
+                ? `${item.productName} (${appliedDiscount?.discount?.code} applied)`
+                : item.productName,
+              images: item.imageUrl ? [item.imageUrl] : [],
+            },
+            unit_amount: Math.round(discountedItemCents / item.quantity),
           },
-          unit_amount: Math.round(item.unitPrice * 100),
-        },
-        quantity: item.quantity,
-      }));
+          quantity: item.quantity,
+        });
+      });
+      
+      // Add tax line item
+      if (taxCents > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Tax (8.5%)',
+            },
+            unit_amount: taxCents,
+          },
+          quantity: 1,
+        });
+      }
+      
+      // Add shipping line item
+      if (shippingCents > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Shipping',
+            },
+            unit_amount: shippingCents,
+          },
+          quantity: 1,
+        });
+      }
 
       const sessionResponse = await apiRequest("POST", "/api/create-checkout-session", {
         orderId: orderResult.order.id,

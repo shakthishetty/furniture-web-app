@@ -176,6 +176,7 @@ export interface IStorage {
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
   getOrderByPaymentIntentId(paymentIntentId: string): Promise<Order | undefined>;
+  getOrderBySessionId(sessionId: string): Promise<Order | undefined>;
   getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined>;
   updateOrderStatus(id: string, status: string, comment?: string): Promise<Order | undefined>;
   updateOrderPayment(id: string, paymentData: { stripeSessionId?: string; stripePaymentIntentId?: string; stripeChargeId?: string; paymentStatus: string }): Promise<Order | undefined>;
@@ -869,6 +870,12 @@ export class DatabaseStorage implements IStorage {
   async getOrderByPaymentIntentId(paymentIntentId: string): Promise<Order | undefined> {
     const [order] = await db.select().from(orders)
       .where(eq(orders.stripePaymentIntentId, paymentIntentId));
+    return order;
+  }
+
+  async getOrderBySessionId(sessionId: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders)
+      .where(eq(orders.stripeSessionId, sessionId));
     return order;
   }
 
