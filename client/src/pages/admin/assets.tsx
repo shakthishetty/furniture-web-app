@@ -352,54 +352,64 @@ export default function AdminAssets() {
               <Label htmlFor="create-type">Type</Label>
               {!isCustomType ? (
                 <div className="space-y-2">
-                  <Select
-                    value={newAsset.type}
-                    onValueChange={(value) => {
-                      if (value === "custom") {
+                  <div className="flex gap-2">
+                    <Select
+                      value={newAsset.type}
+                      onValueChange={(value) => {
+                        setNewAsset({ ...newAsset, type: value });
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-type" className="flex-1">
+                        <SelectValue placeholder="Select a type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {defaultTypeOptions[activeTab]?.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="default"
+                      onClick={() => {
                         setIsCustomType(true);
                         setNewAsset({ ...newAsset, type: '' });
-                      } else {
-                        setNewAsset({ ...newAsset, type: value });
-                      }
-                    }}
-                  >
-                    <SelectTrigger data-testid="select-type">
-                      <SelectValue placeholder="Select a type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {defaultTypeOptions[activeTab]?.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">+ Add Custom Type</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      }}
+                      data-testid="button-add-custom"
+                    >
+                      + Add Custom Type
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Input
-                    id="create-type"
-                    value={customType}
-                    onChange={(e) => {
-                      setCustomType(e.target.value);
-                      setNewAsset({ ...newAsset, type: e.target.value });
-                    }}
-                    placeholder="Enter custom type"
-                    data-testid="input-custom-type"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setIsCustomType(false);
-                      setCustomType('');
-                      setNewAsset({ ...newAsset, type: '' });
-                    }}
-                    data-testid="button-back-to-select"
-                  >
-                    Back to dropdown
-                  </Button>
+                  <div className="flex gap-2">
+                    <Input
+                      id="create-type"
+                      value={customType}
+                      onChange={(e) => {
+                        setCustomType(e.target.value);
+                        setNewAsset({ ...newAsset, type: e.target.value });
+                      }}
+                      placeholder="Enter custom type"
+                      data-testid="input-custom-type"
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="default"
+                      onClick={() => {
+                        setIsCustomType(false);
+                        setCustomType('');
+                        setNewAsset({ ...newAsset, type: '' });
+                      }}
+                      data-testid="button-back-to-select"
+                    >
+                      Back to Dropdown
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -474,53 +484,63 @@ export default function AdminAssets() {
                 <Label htmlFor="edit-type">Type</Label>
                 {!isCustomEditType ? (
                   <div className="space-y-2">
-                    <Select
-                      value={editingAsset.type}
-                      onValueChange={(value) => {
-                        if (value === "custom") {
+                    <div className="flex gap-2">
+                      <Select
+                        value={editingAsset.type}
+                        onValueChange={(value) => {
+                          setEditingAsset({ ...editingAsset, type: value });
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-edit-type" className="flex-1">
+                          <SelectValue placeholder="Select a type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {defaultTypeOptions[editingAsset.category]?.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="default"
+                        onClick={() => {
                           setIsCustomEditType(true);
                           setCustomEditType(editingAsset.type);
-                        } else {
-                          setEditingAsset({ ...editingAsset, type: value });
-                        }
-                      }}
-                    >
-                      <SelectTrigger data-testid="select-edit-type">
-                        <SelectValue placeholder="Select a type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {defaultTypeOptions[editingAsset.category]?.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="custom">+ Add Custom Type</SelectItem>
-                      </SelectContent>
-                    </Select>
+                        }}
+                        data-testid="button-edit-add-custom"
+                      >
+                        + Add Custom Type
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Input
-                      id="edit-type"
-                      value={customEditType}
-                      onChange={(e) => {
-                        setCustomEditType(e.target.value);
-                        setEditingAsset({ ...editingAsset, type: e.target.value });
-                      }}
-                      placeholder="Enter custom type"
-                      data-testid="input-edit-custom-type"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsCustomEditType(false);
-                        setCustomEditType('');
-                      }}
-                      data-testid="button-edit-back-to-select"
-                    >
-                      Back to dropdown
-                    </Button>
+                    <div className="flex gap-2">
+                      <Input
+                        id="edit-type"
+                        value={customEditType}
+                        onChange={(e) => {
+                          setCustomEditType(e.target.value);
+                          setEditingAsset({ ...editingAsset, type: e.target.value });
+                        }}
+                        placeholder="Enter custom type"
+                        data-testid="input-edit-custom-type"
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="default"
+                        onClick={() => {
+                          setIsCustomEditType(false);
+                          setCustomEditType('');
+                        }}
+                        data-testid="button-edit-back-to-select"
+                      >
+                        Back to Dropdown
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -32,6 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Manufacturer Notifications**: When an admin assigns a manufacturer to an order, the manufacturer receives a notification with the order number and product names.
 - **Discount System**: Comprehensive CRUD operations for percentage and flat discounts, with validation rules (min order value, usage limits, validity periods) and checkout integration.
 - **Automatic Product Status**: Calculates product availability (Active, Partial, Out of Stock, Draft) based on stock levels and customization setup completeness. Admin views include color-coded badges, progress bars, and missing setup indicators.
+- **Assets Management System**: Admin panel for managing furniture materials across 5 categories (Wood, Stain, Upholstery, Hardware, Finish). Features include: category-specific tabs, predefined type dropdowns (e.g., Teak, Oak, Mahogany for Wood), custom type input option visible next to dropdown, image upload for each asset, and full CRUD operations (create, read, update, delete) with proper validation and error handling.
 - **Manufacturing Tracking System**:
     - **Three Portals**: Admin, Manufacturer, and Customer with role-based access.
     - **Admin Portal**: Process management, manufacturer assignment, bulk operations, dashboard, advanced filtering, and real-time updates via SSE.
