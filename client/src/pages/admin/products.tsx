@@ -93,6 +93,49 @@ interface ProductFormData {
   pdfUrl?: string;
   inStock: boolean;
   stock?: number;
+  woodId?: string;
+  stainId?: string;
+  upholsteryId?: string;
+  hardwareId?: string;
+  finishId?: string;
+}
+
+interface Asset {
+  id: string;
+  category: string;
+  name: string;
+  type: string;
+  color?: string;
+  imageUrl?: string;
+}
+
+// Component to render asset option with thumbnail
+function AssetOption({ asset, icon }: { asset: Asset; icon: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {asset.imageUrl ? (
+        <img 
+          src={asset.imageUrl} 
+          alt={asset.name}
+          className="w-8 h-8 object-cover rounded border"
+        />
+      ) : (
+        <div className="w-8 h-8 flex items-center justify-center bg-muted rounded border text-lg">
+          {icon}
+        </div>
+      )}
+      {asset.color && (
+        <div 
+          className="w-6 h-6 rounded border border-gray-300"
+          style={{ backgroundColor: asset.color }}
+        />
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium truncate">{asset.name}</div>
+        <div className="text-xs text-muted-foreground truncate">{asset.type}</div>
+      </div>
+    </div>
+  );
 }
 
 // Component to show customization status for each product
@@ -194,6 +237,47 @@ export default function AdminProducts() {
     queryKey: ["/api/admin/categories"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/admin/categories?isActive=true");
+      return response.json();
+    },
+  });
+
+  // Fetch assets by category
+  const { data: woodAssets } = useQuery<{ assets: Asset[] }>({
+    queryKey: ["/api/admin/assets", "wood"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/assets?category=wood");
+      return response.json();
+    },
+  });
+
+  const { data: stainAssets } = useQuery<{ assets: Asset[] }>({
+    queryKey: ["/api/admin/assets", "stain"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/assets?category=stain");
+      return response.json();
+    },
+  });
+
+  const { data: upholsteryAssets } = useQuery<{ assets: Asset[] }>({
+    queryKey: ["/api/admin/assets", "upholstery"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/assets?category=upholstery");
+      return response.json();
+    },
+  });
+
+  const { data: hardwareAssets } = useQuery<{ assets: Asset[] }>({
+    queryKey: ["/api/admin/assets", "hardware"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/assets?category=hardware");
+      return response.json();
+    },
+  });
+
+  const { data: finishAssets } = useQuery<{ assets: Asset[] }>({
+    queryKey: ["/api/admin/assets", "finish"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/assets?category=finish");
       return response.json();
     },
   });
@@ -1292,6 +1376,160 @@ export default function AdminProducts() {
                     </Button>
                   </div>
                 )}
+              </div>
+            </div>
+            
+            {/* Material Selection Section */}
+            <div className="space-y-4">
+              <Separator />
+              <h3 className="text-lg font-medium">Material Selection</h3>
+              <p className="text-sm text-muted-foreground">Select the materials used in this product from your Assets library.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Wood Type Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="create-wood">Wood Type</Label>
+                  <Select 
+                    value={newProduct.woodId || ''} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, woodId: value || undefined })}
+                  >
+                    <SelectTrigger data-testid="select-create-wood">
+                      <SelectValue placeholder="Select wood type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {woodAssets?.assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          🪵 {asset.name} — {asset.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {newProduct.woodId && woodAssets?.assets.find(a => a.id === newProduct.woodId) && (
+                    <div className="mt-2 p-2 border rounded bg-muted/50">
+                      <AssetOption 
+                        asset={woodAssets.assets.find(a => a.id === newProduct.woodId)!} 
+                        icon="🪵"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Stain Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="create-stain">Stain</Label>
+                  <Select 
+                    value={newProduct.stainId || ''} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, stainId: value || undefined })}
+                  >
+                    <SelectTrigger data-testid="select-create-stain">
+                      <SelectValue placeholder="Select stain" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {stainAssets?.assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          🎨 {asset.name} — {asset.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {newProduct.stainId && stainAssets?.assets.find(a => a.id === newProduct.stainId) && (
+                    <div className="mt-2 p-2 border rounded bg-muted/50">
+                      <AssetOption 
+                        asset={stainAssets.assets.find(a => a.id === newProduct.stainId)!} 
+                        icon="🎨"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Upholstery Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="create-upholstery">Upholstery</Label>
+                  <Select 
+                    value={newProduct.upholsteryId || ''} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, upholsteryId: value || undefined })}
+                  >
+                    <SelectTrigger data-testid="select-create-upholstery">
+                      <SelectValue placeholder="Select upholstery" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {upholsteryAssets?.assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          🛋️ {asset.name} — {asset.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {newProduct.upholsteryId && upholsteryAssets?.assets.find(a => a.id === newProduct.upholsteryId) && (
+                    <div className="mt-2 p-2 border rounded bg-muted/50">
+                      <AssetOption 
+                        asset={upholsteryAssets.assets.find(a => a.id === newProduct.upholsteryId)!} 
+                        icon="🛋️"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Hardware Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="create-hardware">Hardware</Label>
+                  <Select 
+                    value={newProduct.hardwareId || ''} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, hardwareId: value || undefined })}
+                  >
+                    <SelectTrigger data-testid="select-create-hardware">
+                      <SelectValue placeholder="Select hardware" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {hardwareAssets?.assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          🔩 {asset.name} — {asset.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {newProduct.hardwareId && hardwareAssets?.assets.find(a => a.id === newProduct.hardwareId) && (
+                    <div className="mt-2 p-2 border rounded bg-muted/50">
+                      <AssetOption 
+                        asset={hardwareAssets.assets.find(a => a.id === newProduct.hardwareId)!} 
+                        icon="🔩"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Finish Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="create-finish">Finish</Label>
+                  <Select 
+                    value={newProduct.finishId || ''} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, finishId: value || undefined })}
+                  >
+                    <SelectTrigger data-testid="select-create-finish">
+                      <SelectValue placeholder="Select finish" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {finishAssets?.assets.map((asset) => (
+                        <SelectItem key={asset.id} value={asset.id}>
+                          ✨ {asset.name} — {asset.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {newProduct.finishId && finishAssets?.assets.find(a => a.id === newProduct.finishId) && (
+                    <div className="mt-2 p-2 border rounded bg-muted/50">
+                      <AssetOption 
+                        asset={finishAssets.assets.find(a => a.id === newProduct.finishId)!} 
+                        icon="✨"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
