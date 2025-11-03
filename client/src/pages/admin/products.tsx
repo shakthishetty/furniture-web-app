@@ -201,9 +201,9 @@ export default function AdminProducts() {
 
   // Fetch available materials from Assets for customization
   const { data: availableMaterialsData } = useQuery<{ materials: any[] }>({
-    queryKey: ["/api/admin/materials/all"],
+    queryKey: ["/api/admin/customizations/materials/all"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/materials/all");
+      const response = await apiRequest("GET", "/api/admin/customizations/materials/all");
       return response.json();
     },
     enabled: isCreateDialogOpen, // Only fetch when dialog is open

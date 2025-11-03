@@ -94,24 +94,29 @@ export default function AdminAssets() {
   const currentTabConfig = TAB_CONFIG.find((tab) => tab.id === activeTab) || TAB_CONFIG[0];
 
   const { data: materialsData, isLoading } = useQuery<MaterialsResponse>({
-    queryKey: ["/api/admin/materials/all", currentTabConfig.subType],
+    queryKey: ["/api/admin/customizations/materials/all", currentTabConfig.subType],
     queryFn: async () => {
       const params = new URLSearchParams({
         subType: currentTabConfig.subType,
       });
-      const response = await apiRequest("GET", `/api/admin/materials/all?${params.toString()}`);
+      const response = await apiRequest("GET", `/api/admin/customizations/materials/all?${params.toString()}`);
       return response.json();
     },
   });
 
   const createMaterialMutation = useMutation({
     mutationFn: async (data: MaterialFormData) => {
-      const response = await apiRequest("POST", "/api/admin/materials", data);
-      const result = await response.json();
-      return result;
+      try {
+        const response = await apiRequest("POST", "/api/admin/customizations/materials", data);
+        const result = await response.json();
+        return result;
+      } catch (error: any) {
+        console.error("Material creation error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/customizations/materials/all"] });
       toast({
         title: "Success",
         description: "Material created successfully",
@@ -120,7 +125,7 @@ export default function AdminAssets() {
       resetNewMaterial();
     },
     onError: (error: any) => {
-      console.error("Create material error:", error);
+      console.error("Create material mutation error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create material",
@@ -131,11 +136,11 @@ export default function AdminAssets() {
 
   const updateMaterialMutation = useMutation({
     mutationFn: async ({ materialId, data }: { materialId: string; data: Partial<Material> }) => {
-      const response = await apiRequest("PATCH", `/api/admin/materials/${materialId}`, data);
+      const response = await apiRequest("PATCH", `/api/admin/customizations/materials/${materialId}`, data);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/customizations/materials/all"] });
       toast({
         title: "Success",
         description: "Material updated successfully",
@@ -154,11 +159,11 @@ export default function AdminAssets() {
 
   const deleteMaterialMutation = useMutation({
     mutationFn: async (materialId: string) => {
-      const response = await apiRequest("DELETE", `/api/admin/materials/${materialId}`);
-      return response;
+      const response = await apiRequest("DELETE", `/api/admin/customizations/materials/${materialId}`);
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/customizations/materials/all"] });
       toast({
         title: "Success",
         description: "Material deleted successfully",
