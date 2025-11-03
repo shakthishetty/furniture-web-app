@@ -453,7 +453,13 @@ export default function AdminProducts() {
       imageUrl: productData.imageUrl,
       pdfUrl: (productData as any).pdfUrl,
       inStock: productData.inStock,
-      stock: productData.stock
+      stock: productData.stock,
+      // Include material array fields
+      woodIds: (productData as any).woodIds,
+      stainIds: (productData as any).stainIds,
+      upholsteryIds: (productData as any).upholsteryIds,
+      hardwareIds: (productData as any).hardwareIds,
+      finishIds: (productData as any).finishIds
     };
     
     // Remove undefined values
