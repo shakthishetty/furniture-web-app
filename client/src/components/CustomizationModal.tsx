@@ -1,29 +1,30 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, 
+  Trash2, 
+  Edit2, 
+  Save, 
+  X, 
   TreeDeciduous, 
   Droplet, 
   Sofa, 
   Wrench, 
   Sparkles,
   Package,
-  Rocket,
-  ImageIcon,
-  Info
+  Rocket
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CustomizationModalProps {
   productId: string;
@@ -50,27 +51,32 @@ interface Material {
   sortOrder: number;
 }
 
-interface AvailableMaterial {
-  id: string;
+interface MaterialFormData {
   name: string;
   type: string;
   subType: string;
-  description: string;
+  description?: string;
   priceModifier: string;
   priceMultiplier: string;
-  textureUrl: string;
-  color: string;
+  color?: string;
   stock: number;
-  isAvailable: boolean;
 }
 
 export function CustomizationModal({ productId, productName, open, onOpenChange }: CustomizationModalProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("wood-types");
-  const [showMaterialSelector, setShowMaterialSelector] = useState(false);
-  const [selectorSubType, setSelectorSubType] = useState("");
-  const [selectorTitle, setSelectorTitle] = useState("");
-  const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const [showAddMaterial, setShowAddMaterial] = useState(false);
+  const [newMaterial, setNewMaterial] = useState<MaterialFormData>({
+    name: "",
+    type: "wood",
+    subType: "wood-type",
+    description: "",
+    priceModifier: "0",
+    priceMultiplier: "1.0",
+    color: "",
+    stock: 0
+  });
 
   // Fetch customizations for this product
   const { data: customizationsData, isLoading } = useQuery<{ materials: Record<string, Material[]>, allMaterials: Material[] }>({
@@ -84,61 +90,58 @@ export function CustomizationModal({ productId, productName, open, onOpenChange 
     enabled: open,
   });
 
-  // Fetch available materials from centralized library
-  const { data: availableMaterialsData, isLoading: isLoadingAvailableMaterials } = useQuery<{ materials: AvailableMaterial[] }>({
-    queryKey: ['/api/admin/materials/all', selectorSubType],
-    enabled: showMaterialSelector && !!selectorSubType,
-  });
-
-  // Get materials that aren't already assigned to this product
-  const unassignedMaterials = availableMaterialsData?.materials.filter(
-    (availableMaterial) => {
-      const alreadyAssigned = customizationsData?.allMaterials.some(
-        (assigned) => assigned.materialId === availableMaterial.id
-      );
-      return !alreadyAssigned;
-    }
-  ) || [];
-
-  // Assign materials mutation
-  const assignMaterialsMutation = useMutation({
-    mutationFn: async (materialIds: string[]) => {
-      const response = await apiRequest("POST", `/api/admin/customizations/${productId}/materials`, {
-        materialIds
-      });
+  // Create material mutation
+  const createMaterialMutation = useMutation({
+    mutationFn: async (data: MaterialFormData) => {
+      const response = await apiRequest("POST", "/api/admin/customizations/materials", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (material) => {
+      // Now assign this material to the product
+      await apiRequest("POST", `/api/admin/customizations/${productId}/materials`, {
+        materialIds: [material.id]
+      });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customizations', productId] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customizations', productId, 'status'] });
       toast({
         title: "Success",
-        description: `${selectedMaterialIds.length} material(s) added successfully`,
+        description: "Material added successfully",
       });
-      setShowMaterialSelector(false);
-      setSelectedMaterialIds([]);
+      setShowAddMaterial(false);
+      setNewMaterial({
+        name: "",
+        type: "wood",
+        subType: "wood-type",
+        description: "",
+        priceModifier: "0",
+        priceMultiplier: "1.0",
+        color: "",
+        stock: 0
+      });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to assign materials",
+        description: error.message || "Failed to add material",
         variant: "destructive",
       });
     },
   });
 
-  // Update material stock mutation
+  // Update material mutation
   const updateMaterialMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<AvailableMaterial> }) => {
-      const response = await apiRequest("PATCH", `/api/admin/materials/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Material> }) => {
+      const response = await apiRequest("PATCH", `/api/admin/customizations/materials/${id}`, data);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customizations', productId] });
       toast({
         title: "Success",
-        description: "Material stock updated successfully",
+        description: "Material updated successfully",
       });
+      setEditingMaterial(null);
     },
     onError: (error: any) => {
       toast({
@@ -184,38 +187,15 @@ export function CustomizationModal({ productId, productName, open, onOpenChange 
     },
   });
 
+  const handleAddMaterial = () => {
+    createMaterialMutation.mutate(newMaterial);
+  };
+
   const handleUpdateStock = (materialId: string, stock: number) => {
     updateMaterialMutation.mutate({ 
       id: materialId, 
-      data: { stock: stock }
+      data: { stock: stock } as any
     });
-  };
-
-  const handleOpenMaterialSelector = (subType: string, title: string) => {
-    setSelectorSubType(subType);
-    setSelectorTitle(title);
-    setSelectedMaterialIds([]);
-    setShowMaterialSelector(true);
-  };
-
-  const handleAssignMaterials = () => {
-    if (selectedMaterialIds.length === 0) {
-      toast({
-        title: "No materials selected",
-        description: "Please select at least one material to add",
-        variant: "destructive",
-      });
-      return;
-    }
-    assignMaterialsMutation.mutate(selectedMaterialIds);
-  };
-
-  const toggleMaterialSelection = (materialId: string) => {
-    setSelectedMaterialIds((prev) =>
-      prev.includes(materialId)
-        ? prev.filter((id) => id !== materialId)
-        : [...prev, materialId]
-    );
   };
 
   const renderMaterialSection = (subType: string, title: string, icon: any) => {
@@ -233,7 +213,15 @@ export function CustomizationModal({ productId, productName, open, onOpenChange 
           </div>
           <Button
             size="sm"
-            onClick={() => handleOpenMaterialSelector(subType, title)}
+            onClick={() => {
+              let materialType = 'hardware';
+              if (subType.includes('wood')) materialType = 'wood';
+              else if (subType === 'upholstery') materialType = 'fabric';
+              else if (subType.includes('hardware') || subType.includes('surface')) materialType = 'hardware';
+              
+              setNewMaterial({ ...newMaterial, subType, type: materialType });
+              setShowAddMaterial(true);
+            }}
             data-testid={`button-add-${subType}`}
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -364,125 +352,103 @@ export function CustomizationModal({ productId, productName, open, onOpenChange 
         </DialogContent>
       </Dialog>
 
-      {/* Material Selector Dialog */}
-      <Dialog open={showMaterialSelector} onOpenChange={setShowMaterialSelector}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      {/* Add Material Dialog */}
+      <Dialog open={showAddMaterial} onOpenChange={setShowAddMaterial}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Select {selectorTitle}</DialogTitle>
+            <DialogTitle>Add New Material</DialogTitle>
             <DialogDescription>
-              Choose materials from your library to assign to this product
+              Add a new customization option for this product
             </DialogDescription>
           </DialogHeader>
 
-          {isLoadingAvailableMaterials ? (
-            <div className="space-y-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <Skeleton className="h-20 w-20" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={newMaterial.name}
+                onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
+                placeholder="e.g., Natural Teak, Matte Black"
+                data-testid="input-material-name"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="priceModifier">Price Modifier</Label>
+              <Input
+                id="priceModifier"
+                value={newMaterial.priceModifier}
+                onChange={(e) => setNewMaterial({ ...newMaterial, priceModifier: e.target.value })}
+                placeholder="e.g., 150 or 15%"
+                data-testid="input-price-modifier"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Enter flat amount (150) or percentage (15%)</p>
+            </div>
+
+            {newMaterial.subType === 'wood-stain' && (
+              <div>
+                <Label htmlFor="color">Color (for swatches)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="color"
+                    type="color"
+                    value={newMaterial.color || '#000000'}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
+                    className="w-20"
+                    data-testid="input-color"
+                  />
+                  <Input
+                    value={newMaterial.color || ''}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
+                    placeholder="#000000"
+                    className="flex-1"
+                  />
                 </div>
-              ))}
-            </div>
-          ) : unassignedMaterials.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No materials available</h3>
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                {availableMaterialsData?.materials.length === 0
-                  ? "Please add materials in the Assets section first."
-                  : "All available materials have already been assigned to this product."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
-                {unassignedMaterials.map((material) => (
-                  <div
-                    key={material.id}
-                    className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedMaterialIds.includes(material.id)
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-primary/50"
-                    }`}
-                    onClick={() => toggleMaterialSelection(material.id)}
-                    data-testid={`material-option-${material.id}`}
-                  >
-                    <Checkbox
-                      checked={selectedMaterialIds.includes(material.id)}
-                      onCheckedChange={() => toggleMaterialSelection(material.id)}
-                      data-testid={`checkbox-material-${material.id}`}
-                    />
-                    
-                    {material.textureUrl ? (
-                      <img
-                        src={material.textureUrl}
-                        alt={material.name}
-                        className="w-20 h-20 object-cover rounded border"
-                      />
-                    ) : material.color ? (
-                      <div
-                        className="w-20 h-20 rounded border-2"
-                        style={{ backgroundColor: material.color }}
-                      />
-                    ) : (
-                      <div className="w-20 h-20 bg-muted flex items-center justify-center rounded border">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                    )}
-
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{material.name}</h4>
-                      {material.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{material.description}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-2">
-                        {material.priceModifier && material.priceModifier !== "0" && (
-                          <Badge variant="secondary" className="text-xs">
-                            +${material.priceModifier}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          Stock: {material.stock}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
+            )}
 
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Need to add a new material? Go to <strong>Assets</strong> in the sidebar to manage your material library.
-                </AlertDescription>
-              </Alert>
+            <div>
+              <Label htmlFor="stock">Initial Stock</Label>
+              <Input
+                id="stock"
+                type="number"
+                value={newMaterial.stock}
+                onChange={(e) => setNewMaterial({ ...newMaterial, stock: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+                data-testid="input-stock"
+              />
             </div>
-          )}
 
-          <DialogFooter className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              {selectedMaterialIds.length > 0 && `${selectedMaterialIds.length} material(s) selected`}
+            <div>
+              <Label htmlFor="description">Description (optional)</Label>
+              <Input
+                id="description"
+                value={newMaterial.description || ''}
+                onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })}
+                placeholder="Additional details"
+                data-testid="input-description"
+              />
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowMaterialSelector(false)}
-                data-testid="button-cancel-selector"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAssignMaterials}
-                disabled={selectedMaterialIds.length === 0 || assignMaterialsMutation.isPending}
-                data-testid="button-assign-materials"
-              >
-                Add Selected Materials
-              </Button>
-            </div>
-          </DialogFooter>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddMaterial(false)}
+              data-testid="button-cancel-add"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddMaterial}
+              disabled={!newMaterial.name || createMaterialMutation.isPending}
+              data-testid="button-save-material"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Add Material
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

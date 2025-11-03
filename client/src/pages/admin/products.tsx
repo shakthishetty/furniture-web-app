@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box, Trash2, Settings, TreeDeciduous, Sofa, Wrench, Droplet, Sparkles, Check } from "lucide-react";
+import { Search, Edit2, Package, Eye, Plus, Upload, FileText, Box, Trash2, Settings, TreeDeciduous, Sofa, Wrench } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -160,7 +160,6 @@ export default function AdminProducts() {
     inStock: true,
     stock: 0
   });
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState({
     name: '',
     description: '',
@@ -199,16 +198,6 @@ export default function AdminProducts() {
     },
   });
 
-  // Fetch available materials from Assets for customization
-  const { data: availableMaterialsData } = useQuery<{ materials: any[] }>({
-    queryKey: ["/api/admin/customizations/materials/all"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/customizations/materials/all");
-      return response.json();
-    },
-    enabled: isCreateDialogOpen, // Only fetch when dialog is open
-  });
-
   const updateProductMutation = useMutation({
     mutationFn: async ({ productId, data }: { productId: string; data: Partial<Product> }) => {
       const response = await apiRequest("PATCH", `/api/admin/products/${productId}`, data);
@@ -234,25 +223,15 @@ export default function AdminProducts() {
 
   // Create product mutation
   const createProductMutation = useMutation({
-    mutationFn: async ({ productData, materialIds }: { productData: ProductFormData; materialIds: string[] }) => {
-      // First create the product
-      const productResponse = await apiRequest("POST", "/api/admin/products", productData);
-      const newProduct = await productResponse.json();
-      
-      // Then assign materials if any were selected
-      if (materialIds.length > 0) {
-        await apiRequest("POST", `/api/admin/customizations/${newProduct.id}/materials`, {
-          materialIds
-        });
-      }
-      
-      return newProduct;
+    mutationFn: async (data: ProductFormData) => {
+      const response = await apiRequest("POST", "/api/admin/products", data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
       toast({
         title: "Success",
-        description: "Product created successfully with materials assigned",
+        description: "Product created successfully",
       });
       setIsCreateDialogOpen(false);
       setNewProduct({
@@ -264,7 +243,6 @@ export default function AdminProducts() {
         inStock: true,
         stock: 0
       });
-      setSelectedMaterials([]);
     },
     onError: (error: any) => {
       toast({
@@ -401,10 +379,7 @@ export default function AdminProducts() {
 
   const handleCreateProduct = () => {
     const transformedData = transformProductData(newProduct);
-    createProductMutation.mutate({
-      productData: transformedData as any,
-      materialIds: selectedMaterials
-    });
+    createProductMutation.mutate(transformedData as any);
   };
 
   // File upload helper functions are now handled inside SimpleUploader component
@@ -1318,100 +1293,6 @@ export default function AdminProducts() {
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Customization Options Section */}
-            <div className="space-y-4">
-              <Separator />
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Customization Options</h3>
-                <Badge variant="secondary">{selectedMaterials.length} selected</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Select materials from your Assets library to add customization options to this product
-              </p>
-
-              {availableMaterialsData?.materials && (
-                <div className="grid grid-cols-1 gap-3">
-                  {/* Group materials by subType */}
-                  {[
-                    { subType: 'wood-type', label: 'Wood Types', icon: TreeDeciduous },
-                    { subType: 'wood-stain', label: 'Wood Stains', icon: Droplet },
-                    { subType: 'upholstery', label: 'Fabrics', icon: Sofa },
-                    { subType: 'hardware', label: 'Hardware', icon: Wrench },
-                    { subType: 'surface-finish', label: 'Surface Finishes', icon: Sparkles }
-                  ].map(({ subType, label, icon: Icon }) => {
-                    const materialsForType = availableMaterialsData.materials.filter(
-                      (m: any) => m.subType === subType && m.isAvailable
-                    );
-
-                    if (materialsForType.length === 0) return null;
-
-                    return (
-                      <div key={subType} className="border rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-2 font-medium text-sm">
-                          <Icon className="h-4 w-4" />
-                          {label}
-                          <Badge variant="outline" className="ml-auto">
-                            {materialsForType.filter((m: any) => selectedMaterials.includes(m.id)).length}/
-                            {materialsForType.length}
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {materialsForType.map((material: any) => {
-                            const isSelected = selectedMaterials.includes(material.id);
-                            return (
-                              <div
-                                key={material.id}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setSelectedMaterials(selectedMaterials.filter(id => id !== material.id));
-                                  } else {
-                                    setSelectedMaterials([...selectedMaterials, material.id]);
-                                  }
-                                }}
-                                className={`
-                                  relative flex items-center gap-2 p-2 border rounded cursor-pointer transition-all
-                                  ${isSelected 
-                                    ? 'bg-primary/10 border-primary ring-1 ring-primary' 
-                                    : 'hover:bg-accent hover:border-accent-foreground'
-                                  }
-                                `}
-                                data-testid={`material-option-${material.id}`}
-                              >
-                                {material.color && (
-                                  <div
-                                    className="w-6 h-6 rounded-full border-2 flex-shrink-0"
-                                    style={{ backgroundColor: material.color }}
-                                  />
-                                )}
-                                {material.textureUrl && !material.color && (
-                                  <img
-                                    src={material.textureUrl}
-                                    alt={material.name}
-                                    className="w-6 h-6 rounded object-cover flex-shrink-0"
-                                  />
-                                )}
-                                <span className="text-sm truncate flex-1">{material.name}</span>
-                                {isSelected && (
-                                  <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {(!availableMaterialsData?.materials || availableMaterialsData.materials.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No materials available in Assets library.</p>
-                  <p className="text-sm">Add materials in the Assets section first to enable customization options.</p>
-                </div>
-              )}
             </div>
           </div>
           

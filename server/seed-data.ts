@@ -1,6 +1,6 @@
 import { storage } from './storage';
 import { db } from './db';
-import { products, materials, configurationOptions, discounts, categories } from '@shared/schema';
+import { products, materials, configurationOptions, discountCodes, categories } from '@shared/schema';
 
 export async function seedSampleData() {
   try {
@@ -110,252 +110,42 @@ export async function seedSampleData() {
       },
     ];
 
-    // Insert sample materials - Indian Market Defaults organized by subType
+    // Insert sample materials
     const sampleMaterials = [
-      // Wood Types (subType: 'wood-type')
       {
-        name: 'Teak Wood',
+        name: 'Natural Teak',
         type: 'wood',
-        subType: 'wood-type',
-        description: 'Premium grade A teak, highly durable and weather-resistant',
+        description: 'Premium grade A teak with natural oil finish',
         priceMultiplier: '1.0',
-        textureUrl: 'https://images.unsplash.com/photo-1611048267451-e6ed903d4a38?w=400',
+        textureUrl: '/textures/teak-natural.jpg',
         color: '#8B4513',
         isAvailable: true,
       },
       {
-        name: 'Sheesham Wood',
+        name: 'Dark Teak',
         type: 'wood',
-        subType: 'wood-type',
-        description: 'Indian rosewood with rich grain patterns',
-        priceMultiplier: '0.85',
-        textureUrl: 'https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?w=400',
+        description: 'Rich dark teak with ebony stain',
+        priceMultiplier: '1.15',
+        textureUrl: '/textures/teak-dark.jpg',
         color: '#654321',
         isAvailable: true,
       },
       {
-        name: 'Oak Wood',
+        name: 'Light Teak',
         type: 'wood',
-        subType: 'wood-type',
-        description: 'Strong hardwood with distinctive grain',
-        priceMultiplier: '1.15',
-        textureUrl: 'https://images.unsplash.com/photo-1623330188915-89f30df5ad2c?w=400',
-        color: '#A0826D',
-        isAvailable: true,
-      },
-      {
-        name: 'Mahogany Wood',
-        type: 'wood',
-        subType: 'wood-type',
-        description: 'Luxurious reddish-brown hardwood',
-        priceMultiplier: '1.25',
-        textureUrl: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=400',
-        color: '#C04000',
-        isAvailable: true,
-      },
-      {
-        name: 'Mango Wood',
-        type: 'wood',
-        subType: 'wood-type',
-        description: 'Sustainable and eco-friendly wood with unique character',
-        priceMultiplier: '0.75',
-        textureUrl: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=400',
+        description: 'Light golden teak with clear finish',
+        priceMultiplier: '1.05',
+        textureUrl: '/textures/teak-light.jpg',
         color: '#DEB887',
         isAvailable: true,
       },
-      
-      // Wood Stains (subType: 'wood-stain')
       {
-        name: 'Natural Finish',
+        name: 'Weathered Teak',
         type: 'wood',
-        subType: 'wood-stain',
-        description: 'Clear protective coat preserving natural wood color',
-        priceMultiplier: '1.0',
-        priceModifier: '0',
-        textureUrl: 'https://images.unsplash.com/photo-1615875221248-e7c47b3f3c2e?w=400',
-        color: '#D2B48C',
-        isAvailable: true,
-      },
-      {
-        name: 'Walnut Stain',
-        type: 'wood',
-        subType: 'wood-stain',
-        description: 'Rich dark brown stain with warm undertones',
-        priceMultiplier: '1.0',
-        priceModifier: '+500',
-        textureUrl: 'https://images.unsplash.com/photo-1541123603104-512919d6a96c?w=400',
-        color: '#5C4033',
-        isAvailable: true,
-      },
-      {
-        name: 'Honey Oak Stain',
-        type: 'wood',
-        subType: 'wood-stain',
-        description: 'Warm golden amber finish',
-        priceMultiplier: '1.0',
-        priceModifier: '+500',
-        textureUrl: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=400',
-        color: '#CC7722',
-        isAvailable: true,
-      },
-      {
-        name: 'Espresso Stain',
-        type: 'wood',
-        subType: 'wood-stain',
-        description: 'Deep dark chocolate brown finish',
-        priceMultiplier: '1.0',
-        priceModifier: '+750',
-        textureUrl: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400',
-        color: '#3B2F2F',
-        isAvailable: true,
-      },
-      {
-        name: 'Wenge Stain',
-        type: 'wood',
-        subType: 'wood-stain',
-        description: 'Contemporary dark finish with subtle grain highlight',
-        priceMultiplier: '1.0',
-        priceModifier: '+750',
-        textureUrl: 'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=400',
-        color: '#645452',
-        isAvailable: true,
-      },
-      
-      // Fabrics (subType: 'upholstery')
-      {
-        name: 'Premium Cotton',
-        type: 'fabric',
-        subType: 'upholstery',
-        description: 'Soft breathable cotton fabric, perfect for daily use',
-        priceMultiplier: '1.0',
-        priceModifier: '0',
-        textureUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400',
-        color: '#F5F5DC',
-        isAvailable: true,
-      },
-      {
-        name: 'Velvet Upholstery',
-        type: 'fabric',
-        subType: 'upholstery',
-        description: 'Luxurious velvet with rich texture and sheen',
-        priceMultiplier: '1.35',
-        priceModifier: '+2000',
-        textureUrl: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=400',
-        color: '#8B7355',
-        isAvailable: true,
-      },
-      {
-        name: 'Linen Fabric',
-        type: 'fabric',
-        subType: 'upholstery',
-        description: 'Natural linen with excellent durability',
-        priceMultiplier: '1.15',
-        priceModifier: '+1000',
-        textureUrl: 'https://images.unsplash.com/photo-1615092296061-e2ccfeb2f3d6?w=400',
-        color: '#E6D2B8',
-        isAvailable: true,
-      },
-      {
-        name: 'Jute Weave',
-        type: 'fabric',
-        subType: 'upholstery',
-        description: 'Eco-friendly jute with rustic charm',
-        priceMultiplier: '0.90',
-        priceModifier: '+500',
-        textureUrl: 'https://images.unsplash.com/photo-1594115524146-e63351a5ace6?w=400',
-        color: '#C9A876',
-        isAvailable: true,
-      },
-      
-      // Hardware (subType: 'hardware')
-      {
-        name: 'Brass Hardware',
-        type: 'metal',
-        subType: 'hardware',
-        description: 'Classic brass fittings with antique finish',
-        priceMultiplier: '1.0',
-        priceModifier: '+1500',
-        textureUrl: 'https://images.unsplash.com/photo-1596920743436-66e30a3d9b2f?w=400',
-        color: '#B5A642',
-        isAvailable: true,
-      },
-      {
-        name: 'Stainless Steel',
-        type: 'metal',
-        subType: 'hardware',
-        description: 'Modern brushed stainless steel hardware',
-        priceMultiplier: '1.0',
-        priceModifier: '+1000',
-        textureUrl: 'https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=400',
-        color: '#C0C0C0',
-        isAvailable: true,
-      },
-      {
-        name: 'Black Matte',
-        type: 'metal',
-        subType: 'hardware',
-        description: 'Contemporary matte black finish',
-        priceMultiplier: '1.0',
-        priceModifier: '+1200',
-        textureUrl: 'https://images.unsplash.com/photo-1551029506-0807df4e2031?w=400',
-        color: '#2C2C2C',
-        isAvailable: true,
-      },
-      {
-        name: 'Antique Copper',
-        type: 'metal',
-        subType: 'hardware',
-        description: 'Vintage copper hardware with patina',
-        priceMultiplier: '1.0',
-        priceModifier: '+1800',
-        textureUrl: 'https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=400',
-        color: '#B87333',
-        isAvailable: true,
-      },
-      
-      // Surface Finishes (subType: 'surface-finish')
-      {
-        name: 'Matte Finish',
-        type: 'finish',
-        subType: 'surface-finish',
-        description: 'Non-reflective smooth matte surface',
-        priceMultiplier: '1.0',
-        priceModifier: '0',
-        textureUrl: 'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=400',
-        color: '#D4C5B9',
-        isAvailable: true,
-      },
-      {
-        name: 'Glossy Finish',
-        type: 'finish',
-        subType: 'surface-finish',
-        description: 'High-shine glossy protective coat',
-        priceMultiplier: '1.0',
-        priceModifier: '+800',
-        textureUrl: 'https://images.unsplash.com/photo-1603909406787-b732c6ea2bd6?w=400',
-        color: '#E8D7C3',
-        isAvailable: true,
-      },
-      {
-        name: 'Semi-Gloss',
-        type: 'finish',
-        subType: 'surface-finish',
-        description: 'Balanced sheen with easy maintenance',
-        priceMultiplier: '1.0',
-        priceModifier: '+600',
-        textureUrl: 'https://images.unsplash.com/photo-1633626520720-e94aa8f29e44?w=400',
-        color: '#DCC9B4',
-        isAvailable: true,
-      },
-      {
-        name: 'Satin Finish',
-        type: 'finish',
-        subType: 'surface-finish',
-        description: 'Smooth low-luster finish',
-        priceMultiplier: '1.0',
-        priceModifier: '+500',
-        textureUrl: 'https://images.unsplash.com/photo-1615875221248-e7c47b3f3c2e?w=400',
-        color: '#E0CEB8',
+        description: 'Naturally weathered teak for outdoor use',
+        priceMultiplier: '1.25',
+        textureUrl: '/textures/teak-weathered.jpg',
+        color: '#A0522D',
         isAvailable: true,
       },
     ];
@@ -478,13 +268,13 @@ export async function seedSampleData() {
     let insertedDiscountCodes: any[] = [];
     for (const discount of sampleDiscountCodes) {
       try {
-        const existing = await storage.getDiscount(discount.discountCode);
+        const existing = await storage.getDiscountCode(discount.code);
         if (!existing) {
-          const insertedDiscount = await storage.createDiscount(discount);
+          const insertedDiscount = await storage.createDiscountCode(discount);
           insertedDiscountCodes.push(insertedDiscount);
         }
       } catch (error) {
-        console.log(`Discount code ${discount.discountCode} may already exist, skipping.`);
+        console.log(`Discount code ${discount.code} may already exist, skipping.`);
       }
     }
 
