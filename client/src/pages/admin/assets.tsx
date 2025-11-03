@@ -195,10 +195,10 @@ export default function AdminAssets() {
         type: currentTabConfig.type,
         subType: currentTabConfig.subType,
         description: preset.description,
-        priceModifier: preset.priceModifier,
+        priceModifier: "0",
         priceMultiplier: "1.0",
-        textureUrl: preset.textureUrl || "",
-        color: preset.color || "#000000",
+        textureUrl: "",
+        color: "#000000",
         isAvailable: true,
       });
     }
@@ -358,18 +358,6 @@ export default function AdminAssets() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {material.priceModifier && material.priceModifier !== "0" && (
-                          <Badge variant="outline" data-testid={`badge-price-modifier-${material.id}`}>
-                            {material.priceModifier.startsWith("+") || material.priceModifier.startsWith("-")
-                              ? material.priceModifier
-                              : `+${material.priceModifier}`}
-                          </Badge>
-                        )}
-                        {material.priceMultiplier && material.priceMultiplier !== "1.0" && material.priceMultiplier !== "1" && (
-                          <Badge variant="outline" data-testid={`badge-price-multiplier-${material.id}`}>
-                            ×{material.priceMultiplier}
-                          </Badge>
-                        )}
                         <Badge
                           variant={material.isAvailable ? "default" : "secondary"}
                           className={material.isAvailable ? "bg-green-100 text-green-800" : ""}
@@ -438,21 +426,13 @@ export default function AdminAssets() {
                 <SelectContent>
                   {(presetsBySubType[currentTabConfig.subType] || []).map((preset) => (
                     <SelectItem key={preset.name} value={preset.name} data-testid={`preset-option-${preset.name}`}>
-                      <div className="flex items-center gap-2">
-                        {preset.color && (
-                          <div
-                            className="w-4 h-4 rounded-full border"
-                            style={{ backgroundColor: preset.color }}
-                          />
-                        )}
-                        <span>{preset.name}</span>
-                      </div>
+                      {preset.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Selecting a preset will auto-fill the form below. You can still customize any field.
+                Selecting a preset will auto-fill the name and description. You can customize any field or create a completely new material.
               </p>
             </div>
 
@@ -477,30 +457,6 @@ export default function AdminAssets() {
                 rows={3}
                 data-testid="input-create-description"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="create-price-modifier">Price Modifier</Label>
-                <Input
-                  id="create-price-modifier"
-                  value={newMaterial.priceModifier}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, priceModifier: e.target.value })}
-                  placeholder="e.g., +150 or +15%"
-                  data-testid="input-create-price-modifier"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="create-price-multiplier">Price Multiplier *</Label>
-                <Input
-                  id="create-price-multiplier"
-                  value={newMaterial.priceMultiplier}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, priceMultiplier: e.target.value })}
-                  placeholder="e.g., 1.2"
-                  data-testid="input-create-price-multiplier"
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -569,7 +525,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleCreateMaterial}
-              disabled={!newMaterial.name || !newMaterial.priceMultiplier || createMaterialMutation.isPending}
+              disabled={!newMaterial.name || createMaterialMutation.isPending}
               data-testid="button-submit-create"
             >
               {createMaterialMutation.isPending ? "Creating..." : "Create Material"}
@@ -611,30 +567,6 @@ export default function AdminAssets() {
                   rows={3}
                   data-testid="input-edit-description"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-price-modifier">Price Modifier</Label>
-                  <Input
-                    id="edit-price-modifier"
-                    value={editingMaterial.priceModifier || ""}
-                    onChange={(e) => setEditingMaterial({ ...editingMaterial, priceModifier: e.target.value })}
-                    placeholder="e.g., +150 or +15%"
-                    data-testid="input-edit-price-modifier"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-price-multiplier">Price Multiplier *</Label>
-                  <Input
-                    id="edit-price-multiplier"
-                    value={editingMaterial.priceMultiplier}
-                    onChange={(e) => setEditingMaterial({ ...editingMaterial, priceMultiplier: e.target.value })}
-                    placeholder="e.g., 1.2"
-                    data-testid="input-edit-price-multiplier"
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -706,7 +638,6 @@ export default function AdminAssets() {
               onClick={handleUpdateMaterial}
               disabled={
                 !editingMaterial?.name ||
-                !editingMaterial?.priceMultiplier ||
                 updateMaterialMutation.isPending
               }
               data-testid="button-submit-edit"
