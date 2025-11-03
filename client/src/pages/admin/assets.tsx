@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit2, Trash2, Image as ImageIcon } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,15 @@ const assetCategories = [
   { value: "finish", label: "Finish" },
 ];
 
+// Default type options for each category
+const defaultTypeOptions: Record<string, string[]> = {
+  wood: ["Teak", "Oak", "Mahogany", "Walnut", "Pine", "Cherry", "Maple", "Bamboo"],
+  stain: ["Natural", "Light Oak", "Dark Walnut", "Ebony", "Cherry", "Mahogany", "Espresso"],
+  upholstery: ["Leather", "Fabric", "Velvet", "Linen", "Cotton", "Microfiber", "Suede"],
+  hardware: ["Brass", "Chrome", "Stainless Steel", "Bronze", "Nickel", "Copper", "Iron"],
+  finish: ["Matte", "Glossy", "Satin", "Oil", "Wax", "Lacquer", "Varnish"],
+};
+
 export default function AdminAssets() {
   const [activeTab, setActiveTab] = useState("wood");
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
@@ -57,6 +67,10 @@ export default function AdminAssets() {
     name: '',
     type: '',
   });
+  const [customType, setCustomType] = useState('');
+  const [isCustomType, setIsCustomType] = useState(false);
+  const [customEditType, setCustomEditType] = useState('');
+  const [isCustomEditType, setIsCustomEditType] = useState(false);
   const { toast } = useToast();
 
   // Fetch assets for the active tab
@@ -82,6 +96,8 @@ export default function AdminAssets() {
       });
       setIsCreateDialogOpen(false);
       setNewAsset({ name: '', type: '' });
+      setCustomType('');
+      setIsCustomType(false);
     },
     onError: (error: any) => {
       toast({
@@ -106,6 +122,8 @@ export default function AdminAssets() {
       });
       setIsEditDialogOpen(false);
       setEditingAsset(null);
+      setCustomEditType('');
+      setIsCustomEditType(false);
     },
     onError: (error: any) => {
       toast({
@@ -332,13 +350,58 @@ export default function AdminAssets() {
             </div>
             <div>
               <Label htmlFor="create-type">Type</Label>
-              <Input
-                id="create-type"
-                value={newAsset.type}
-                onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
-                placeholder="Enter asset type"
-                data-testid="input-type"
-              />
+              {!isCustomType ? (
+                <div className="space-y-2">
+                  <Select
+                    value={newAsset.type}
+                    onValueChange={(value) => {
+                      if (value === "custom") {
+                        setIsCustomType(true);
+                        setNewAsset({ ...newAsset, type: '' });
+                      } else {
+                        setNewAsset({ ...newAsset, type: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-type">
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {defaultTypeOptions[activeTab]?.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">+ Add Custom Type</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    id="create-type"
+                    value={customType}
+                    onChange={(e) => {
+                      setCustomType(e.target.value);
+                      setNewAsset({ ...newAsset, type: e.target.value });
+                    }}
+                    placeholder="Enter custom type"
+                    data-testid="input-custom-type"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsCustomType(false);
+                      setCustomType('');
+                      setNewAsset({ ...newAsset, type: '' });
+                    }}
+                    data-testid="button-back-to-select"
+                  >
+                    Back to dropdown
+                  </Button>
+                </div>
+              )}
             </div>
             <div>
               <Label>Image</Label>
@@ -368,6 +431,8 @@ export default function AdminAssets() {
               onClick={() => {
                 setIsCreateDialogOpen(false);
                 setNewAsset({ name: '', type: '' });
+                setCustomType('');
+                setIsCustomType(false);
               }}
               data-testid="button-cancel"
             >
@@ -407,13 +472,57 @@ export default function AdminAssets() {
               </div>
               <div>
                 <Label htmlFor="edit-type">Type</Label>
-                <Input
-                  id="edit-type"
-                  value={editingAsset.type}
-                  onChange={(e) => setEditingAsset({ ...editingAsset, type: e.target.value })}
-                  placeholder="Enter asset type"
-                  data-testid="input-edit-type"
-                />
+                {!isCustomEditType ? (
+                  <div className="space-y-2">
+                    <Select
+                      value={editingAsset.type}
+                      onValueChange={(value) => {
+                        if (value === "custom") {
+                          setIsCustomEditType(true);
+                          setCustomEditType(editingAsset.type);
+                        } else {
+                          setEditingAsset({ ...editingAsset, type: value });
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-edit-type">
+                        <SelectValue placeholder="Select a type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {defaultTypeOptions[editingAsset.category]?.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">+ Add Custom Type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Input
+                      id="edit-type"
+                      value={customEditType}
+                      onChange={(e) => {
+                        setCustomEditType(e.target.value);
+                        setEditingAsset({ ...editingAsset, type: e.target.value });
+                      }}
+                      placeholder="Enter custom type"
+                      data-testid="input-edit-custom-type"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsCustomEditType(false);
+                        setCustomEditType('');
+                      }}
+                      data-testid="button-edit-back-to-select"
+                    >
+                      Back to dropdown
+                    </Button>
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Image</Label>
@@ -444,6 +553,8 @@ export default function AdminAssets() {
               onClick={() => {
                 setIsEditDialogOpen(false);
                 setEditingAsset(null);
+                setCustomEditType('');
+                setIsCustomEditType(false);
               }}
               data-testid="button-edit-cancel"
             >
