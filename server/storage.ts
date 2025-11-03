@@ -54,6 +54,9 @@ import {
   type Faq,
   type CreateFaqRequest,
   type UpdateFaqRequest,
+  type Asset,
+  type CreateAssetRequest,
+  type UpdateAssetRequest,
   users, 
   sessions,
   products,
@@ -68,6 +71,7 @@ import {
   orderStatusHistory,
   refunds,
   wishlist,
+  assets,
   manufacturingProcesses,
   manufacturingStages,
   stageUpdates,
@@ -198,6 +202,13 @@ export interface IStorage {
   getUserWishlist(userId: string): Promise<WishlistItem[]>;
   removeFromWishlist(userId: string, productId: string): Promise<void>;
   isInWishlist(userId: string, productId: string): Promise<boolean>;
+
+  // Asset operations
+  createAsset(assetData: CreateAssetRequest): Promise<Asset>;
+  getAssets(category?: string): Promise<Asset[]>;
+  getAsset(id: string): Promise<Asset | undefined>;
+  updateAsset(id: string, updates: UpdateAssetRequest): Promise<Asset | undefined>;
+  deleteAsset(id: string): Promise<boolean>;
 
   // Admin operations
   getUserById(id: string): Promise<User | undefined>; // Alias for getUser
@@ -1042,6 +1053,46 @@ export class DatabaseStorage implements IStorage {
     const [item] = await db.select().from(wishlist)
       .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
     return !!item;
+  }
+
+  // Asset operations
+  async createAsset(assetData: CreateAssetRequest): Promise<Asset> {
+    const [asset] = await db
+      .insert(assets)
+      .values(assetData)
+      .returning();
+    return asset;
+  }
+
+  async getAssets(category?: string): Promise<Asset[]> {
+    if (category) {
+      return await db.select().from(assets)
+        .where(eq(assets.category, category))
+        .orderBy(assets.name);
+    }
+    return await db.select().from(assets).orderBy(assets.category, assets.name);
+  }
+
+  async getAsset(id: string): Promise<Asset | undefined> {
+    const [asset] = await db.select().from(assets)
+      .where(eq(assets.id, id));
+    return asset;
+  }
+
+  async updateAsset(id: string, updates: UpdateAssetRequest): Promise<Asset | undefined> {
+    const [asset] = await db
+      .update(assets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(assets.id, id))
+      .returning();
+    return asset;
+  }
+
+  async deleteAsset(id: string): Promise<boolean> {
+    const result = await db
+      .delete(assets)
+      .where(eq(assets.id, id));
+    return true;
   }
 
   // Admin operations

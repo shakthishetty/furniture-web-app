@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage";
 import { requireAdmin, verifyAuth } from "./utils/auth";
-import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, stageApprovalSchema, stageRejectionSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest, materials, productMaterials } from "@shared/schema";
+import { adminUpdateUserSchema, type AdminUpdateUserRequest, createDiscountSchema, updateDiscountSchema, type CreateDiscountRequest, type UpdateDiscountRequest, createCategorySchema, updateCategorySchema, type CreateCategoryRequest, type UpdateCategoryRequest, createAssetSchema, updateAssetSchema, type CreateAssetRequest, type UpdateAssetRequest, createManufacturingProcessSchema, updateManufacturingProcessSchema, createManufacturingStageSchema, updateManufacturingStageSchema, createStageUpdateSchema, createStageUpdateReplySchema, manufacturingStatusUpdateSchema, stageStatusUpdateSchema, manufacturerAssignmentSchema, stageApprovalSchema, stageRejectionSchema, type CreateManufacturingProcessRequest, type UpdateManufacturingProcessRequest, type CreateManufacturingStageRequest, type UpdateManufacturingStageRequest, type CreateStageUpdateRequest, type CreateStageUpdateReplyRequest, type ManufacturingStatusUpdateRequest, type StageStatusUpdateRequest, type ManufacturerAssignmentRequest, materials, productMaterials } from "@shared/schema";
 import { z } from "zod";
 import { ObjectStorageService } from "./objectStorage";
 import { sendStageUpdateEmail } from "./utils/email";
@@ -750,6 +750,93 @@ router.delete("/categories/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error deleting category:", error);
     res.status(500).json({ error: "Failed to delete category" });
+  }
+});
+
+// ====================================
+// Asset Management Routes
+// ====================================
+
+router.get("/assets", requireAdmin, async (req, res) => {
+  try {
+    const category = req.query.category as string | undefined;
+    const assets = await storage.getAssets(category);
+    
+    // Return paginated response to match frontend expectations
+    res.json({
+      assets,
+      total: assets.length,
+      page: 1,
+      limit: assets.length,
+      totalPages: 1
+    });
+  } catch (error) {
+    console.error("Error fetching assets:", error);
+    res.status(500).json({ error: "Failed to fetch assets" });
+  }
+});
+
+router.get("/assets/:id", requireAdmin, async (req, res) => {
+  try {
+    const asset = await storage.getAsset(req.params.id);
+    if (!asset) {
+      return res.status(404).json({ error: "Asset not found" });
+    }
+    res.json(asset);
+  } catch (error) {
+    console.error("Error fetching asset:", error);
+    res.status(500).json({ error: "Failed to fetch asset" });
+  }
+});
+
+router.post("/assets", requireAdmin, async (req, res) => {
+  try {
+    const validation = createAssetSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid asset data", details: validation.error.flatten() });
+    }
+
+    const asset = await storage.createAsset(validation.data);
+    console.log(`Admin ${req.user?.userId} created asset ${asset.id}`);
+    res.status(201).json(asset);
+  } catch (error) {
+    console.error("Error creating asset:", error);
+    res.status(500).json({ error: "Failed to create asset" });
+  }
+});
+
+router.patch("/assets/:id", requireAdmin, async (req, res) => {
+  try {
+    const validation = updateAssetSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid update data", details: validation.error.flatten() });
+    }
+
+    const updatedAsset = await storage.updateAsset(req.params.id, validation.data);
+    if (!updatedAsset) {
+      return res.status(404).json({ error: "Asset not found" });
+    }
+
+    console.log(`Admin ${req.user?.userId} updated asset ${req.params.id}`);
+    res.json(updatedAsset);
+  } catch (error) {
+    console.error("Error updating asset:", error);
+    res.status(500).json({ error: "Failed to update asset" });
+  }
+});
+
+router.delete("/assets/:id", requireAdmin, async (req, res) => {
+  try {
+    const deleted = await storage.deleteAsset(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Asset not found" });
+    }
+
+    console.log(`Admin ${req.user?.userId} deleted asset ${req.params.id}`);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting asset:", error);
+    res.status(500).json({ error: "Failed to delete asset" });
   }
 });
 

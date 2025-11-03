@@ -33,6 +33,7 @@ import OrderTracking from "@/pages/order-tracking";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminProducts from "@/pages/admin/products";
+import AdminAssets from "@/pages/admin/assets";
 import AdminOrders from "@/pages/admin/orders";
 import AdminDiscounts from "@/pages/admin/discounts";
 import AdminAnalytics from "@/pages/admin/analytics";
@@ -59,6 +60,7 @@ function AdminRouter() {
         <Route path="/" component={AdminDashboard} />
         <Route path="/users" component={AdminUsers} />
         <Route path="/products" component={AdminProducts} />
+        <Route path="/assets" component={AdminAssets} />
         <Route path="/orders" component={AdminOrders} />
         <Route path="/manufacturing" component={AdminManufacturing} />
         <Route path="/manufacturers" component={AdminManufacturers} />

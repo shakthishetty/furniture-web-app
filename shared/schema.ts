@@ -448,6 +448,16 @@ export const adminAuditLog = pgTable("admin_audit_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const assets = pgTable("assets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  category: varchar("category").notNull(), // "wood", "stain", "upholstery", "hardware", "finish"
+  name: varchar("name").notNull(),
+  type: varchar("type").notNull(), // e.g., "Hardwood", "Softwood", "Matte", "Gloss", "Fabric", etc.
+  imageUrl: varchar("image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Order Management Schemas
 export const createAddressSchema = createInsertSchema(addresses).omit({
   id: true,
@@ -529,6 +539,7 @@ export type ApplyDiscountRequest = z.infer<typeof applyDiscountSchema>;
 // Admin Types
 export type Shipment = typeof shipments.$inferSelect;
 export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
+export type Asset = typeof assets.$inferSelect;
 
 // Admin Schemas
 export const createShipmentSchema = createInsertSchema(shipments).omit({
@@ -538,6 +549,14 @@ export const createShipmentSchema = createInsertSchema(shipments).omit({
 });
 
 export const updateShipmentSchema = createShipmentSchema.partial();
+
+export const createAssetSchema = createInsertSchema(assets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateAssetSchema = createAssetSchema.partial();
 
 export const adminUpdateUserSchema = z.object({
   isAdmin: z.boolean().optional(),
@@ -566,6 +585,8 @@ export const manufacturerProfileSchema = z.object({
 
 export type CreateShipmentRequest = z.infer<typeof createShipmentSchema>;
 export type UpdateShipmentRequest = z.infer<typeof updateShipmentSchema>;
+export type CreateAssetRequest = z.infer<typeof createAssetSchema>;
+export type UpdateAssetRequest = z.infer<typeof updateAssetSchema>;
 export type AdminUpdateUserRequest = z.infer<typeof adminUpdateUserSchema>;
 export type ManufacturerApplicationRequest = z.infer<typeof manufacturerApplicationSchema>;
 export type ManufacturerProfileRequest = z.infer<typeof manufacturerProfileSchema>;
