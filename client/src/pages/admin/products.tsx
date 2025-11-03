@@ -1390,14 +1390,14 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="create-wood">Wood Type</Label>
                   <Select 
-                    value={newProduct.woodId || ''} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, woodId: value || undefined })}
+                    value={newProduct.woodId || 'none'} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, woodId: value === 'none' ? undefined : value })}
                   >
                     <SelectTrigger data-testid="select-create-wood">
                       <SelectValue placeholder="Select wood type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {woodAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🪵 {asset.name} — {asset.type}
@@ -1419,14 +1419,14 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="create-stain">Stain</Label>
                   <Select 
-                    value={newProduct.stainId || ''} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, stainId: value || undefined })}
+                    value={newProduct.stainId || 'none'} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, stainId: value === 'none' ? undefined : value })}
                   >
                     <SelectTrigger data-testid="select-create-stain">
                       <SelectValue placeholder="Select stain" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {stainAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🎨 {asset.name} — {asset.type}
@@ -1448,14 +1448,14 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="create-upholstery">Upholstery</Label>
                   <Select 
-                    value={newProduct.upholsteryId || ''} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, upholsteryId: value || undefined })}
+                    value={newProduct.upholsteryId || 'none'} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, upholsteryId: value === 'none' ? undefined : value })}
                   >
                     <SelectTrigger data-testid="select-create-upholstery">
                       <SelectValue placeholder="Select upholstery" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {upholsteryAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🛋️ {asset.name} — {asset.type}
@@ -1477,14 +1477,14 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="create-hardware">Hardware</Label>
                   <Select 
-                    value={newProduct.hardwareId || ''} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, hardwareId: value || undefined })}
+                    value={newProduct.hardwareId || 'none'} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, hardwareId: value === 'none' ? undefined : value })}
                   >
                     <SelectTrigger data-testid="select-create-hardware">
                       <SelectValue placeholder="Select hardware" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {hardwareAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🔩 {asset.name} — {asset.type}
@@ -1506,14 +1506,14 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="create-finish">Finish</Label>
                   <Select 
-                    value={newProduct.finishId || ''} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, finishId: value || undefined })}
+                    value={newProduct.finishId || 'none'} 
+                    onValueChange={(value) => setNewProduct({ ...newProduct, finishId: value === 'none' ? undefined : value })}
                   >
                     <SelectTrigger data-testid="select-create-finish">
                       <SelectValue placeholder="Select finish" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {finishAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           ✨ {asset.name} — {asset.type}
