@@ -107,7 +107,8 @@ export default function AdminAssets() {
   const createMaterialMutation = useMutation({
     mutationFn: async (data: MaterialFormData) => {
       const response = await apiRequest("POST", "/api/admin/materials", data);
-      return response.json();
+      const result = await response.json();
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
@@ -119,6 +120,7 @@ export default function AdminAssets() {
       resetNewMaterial();
     },
     onError: (error: any) => {
+      console.error("Create material error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create material",
