@@ -342,7 +342,7 @@ export default function AdminAssets() {
                           <h3 className="font-semibold text-lg" data-testid={`text-material-name-${material.id}`}>
                             {material.name}
                           </h3>
-                          {material.color && (
+                          {material.color && material.subType !== 'wood-type' && (
                             <div
                               className="w-6 h-6 rounded-full border-2 border-border"
                               style={{ backgroundColor: material.color }}
@@ -459,26 +459,28 @@ export default function AdminAssets() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="create-color">Color</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="create-color"
-                  type="color"
-                  value={newMaterial.color}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
-                  className="w-20 h-10"
-                  data-testid="input-create-color"
-                />
-                <Input
-                  value={newMaterial.color}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
-                  placeholder="#000000"
-                  className="flex-1"
-                  data-testid="input-create-color-hex"
-                />
+            {currentTabConfig.subType !== 'wood-type' && (
+              <div className="space-y-2">
+                <Label htmlFor="create-color">Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="create-color"
+                    type="color"
+                    value={newMaterial.color}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
+                    className="w-20 h-10"
+                    data-testid="input-create-color"
+                  />
+                  <Input
+                    value={newMaterial.color}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
+                    placeholder="#000000"
+                    className="flex-1"
+                    data-testid="input-create-color-hex"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label>Texture Image</Label>
@@ -569,26 +571,28 @@ export default function AdminAssets() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-color">Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="edit-color"
-                    type="color"
-                    value={editingMaterial.color || "#000000"}
-                    onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
-                    className="w-20 h-10"
-                    data-testid="input-edit-color"
-                  />
-                  <Input
-                    value={editingMaterial.color || "#000000"}
-                    onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
-                    placeholder="#000000"
-                    className="flex-1"
-                    data-testid="input-edit-color-hex"
-                  />
+              {editingMaterial.subType !== 'wood-type' && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-color">Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="edit-color"
+                      type="color"
+                      value={editingMaterial.color || "#000000"}
+                      onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
+                      className="w-20 h-10"
+                      data-testid="input-edit-color"
+                    />
+                    <Input
+                      value={editingMaterial.color || "#000000"}
+                      onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
+                      placeholder="#000000"
+                      className="flex-1"
+                      data-testid="input-edit-color-hex"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Texture Image</Label>
