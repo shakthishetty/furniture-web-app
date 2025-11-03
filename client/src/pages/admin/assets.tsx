@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit2, Trash2, ImageIcon, TreeDeciduous, Droplet, Sofa, Wrench, Sparkles, Lightbulb } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -289,48 +288,19 @@ export default function AdminAssets() {
         {TAB_CONFIG.map((tab) => (
           <TabsContent key={tab.id} value={tab.id} className="space-y-4" data-testid={`tab-content-${tab.id}`}>
             {isLoading ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Texture</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      {currentTabConfig.subType !== 'wood-type' && <TableHead className="w-[80px]">Color</TableHead>}
-                      <TableHead className="w-[120px]">Status</TableHead>
-                      <TableHead className="w-[180px] text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {[...Array(5)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Skeleton className="h-16 w-16 rounded" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-32" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        {currentTabConfig.subType !== 'wood-type' && (
-                          <TableCell>
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                          </TableCell>
-                        )}
-                        <TableCell>
-                          <Skeleton className="h-6 w-20" />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-8 w-16" />
-                            <Skeleton className="h-8 w-16" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-48 w-full" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : materials.length === 0 ? (
               <Card>
@@ -349,88 +319,79 @@ export default function AdminAssets() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Texture</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      {currentTabConfig.subType !== 'wood-type' && <TableHead className="w-[80px]">Color</TableHead>}
-                      <TableHead className="w-[120px]">Status</TableHead>
-                      <TableHead className="w-[180px] text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {materials.map((material) => (
-                      <TableRow key={material.id} data-testid={`row-material-${material.id}`}>
-                        <TableCell>
-                          {material.textureUrl ? (
-                            <img
-                              src={material.textureUrl}
-                              alt={material.name}
-                              className="w-16 h-16 object-cover rounded border"
-                              data-testid={`img-material-${material.id}`}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {materials.map((material) => (
+                  <Card key={material.id} data-testid={`card-material-${material.id}`}>
+                    <CardHeader className="p-0">
+                      {material.textureUrl ? (
+                        <img
+                          src={material.textureUrl}
+                          alt={material.name}
+                          className="w-full h-48 object-cover rounded-t-lg"
+                          data-testid={`img-material-${material.id}`}
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-muted flex items-center justify-center rounded-t-lg">
+                          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-lg" data-testid={`text-material-name-${material.id}`}>
+                            {material.name}
+                          </h3>
+                          {material.color && material.subType !== 'wood-type' && (
+                            <div
+                              className="w-6 h-6 rounded-full border-2 border-border"
+                              style={{ backgroundColor: material.color }}
+                              data-testid={`color-swatch-${material.id}`}
                             />
-                          ) : (
-                            <div className="w-16 h-16 bg-muted flex items-center justify-center rounded border">
-                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                            </div>
                           )}
-                        </TableCell>
-                        <TableCell className="font-medium" data-testid={`text-material-name-${material.id}`}>
-                          {material.name}
-                        </TableCell>
-                        <TableCell className="max-w-md" data-testid={`text-material-description-${material.id}`}>
-                          {material.description || <span className="text-muted-foreground italic">No description</span>}
-                        </TableCell>
-                        {currentTabConfig.subType !== 'wood-type' && (
-                          <TableCell>
-                            {material.color && (
-                              <div
-                                className="w-8 h-8 rounded-full border-2 border-border"
-                                style={{ backgroundColor: material.color }}
-                                data-testid={`color-swatch-${material.id}`}
-                              />
-                            )}
-                          </TableCell>
+                        </div>
+                        {material.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-material-description-${material.id}`}>
+                            {material.description}
+                          </p>
                         )}
-                        <TableCell>
-                          <Badge
-                            variant={material.isAvailable ? "default" : "secondary"}
-                            className={material.isAvailable ? "bg-green-100 text-green-800" : ""}
-                            data-testid={`badge-availability-${material.id}`}
-                          >
-                            {material.isAvailable ? "Available" : "Unavailable"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditMaterial(material)}
-                              data-testid={`button-edit-${material.id}`}
-                            >
-                              <Edit2 className="h-3 w-3 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleDeleteMaterial(material.id)}
-                              data-testid={`button-delete-${material.id}`}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant={material.isAvailable ? "default" : "secondary"}
+                          className={material.isAvailable ? "bg-green-100 text-green-800" : ""}
+                          data-testid={`badge-availability-${material.id}`}
+                        >
+                          {material.isAvailable ? "Available" : "Unavailable"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleEditMaterial(material)}
+                          data-testid={`button-edit-${material.id}`}
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteMaterial(material.id)}
+                          data-testid={`button-delete-${material.id}`}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>
