@@ -94,23 +94,23 @@ export default function AdminAssets() {
   const currentTabConfig = TAB_CONFIG.find((tab) => tab.id === activeTab) || TAB_CONFIG[0];
 
   const { data: materialsData, isLoading } = useQuery<MaterialsResponse>({
-    queryKey: ["/api/admin/customizations/materials/all", currentTabConfig.subType],
+    queryKey: ["/api/admin/materials/all", currentTabConfig.subType],
     queryFn: async () => {
       const params = new URLSearchParams({
         subType: currentTabConfig.subType,
       });
-      const response = await apiRequest("GET", `/api/admin/customizations/materials/all?${params.toString()}`);
+      const response = await apiRequest("GET", `/api/admin/materials/all?${params.toString()}`);
       return response.json();
     },
   });
 
   const createMaterialMutation = useMutation({
     mutationFn: async (data: MaterialFormData) => {
-      const response = await apiRequest("POST", "/api/admin/customizations/materials", data);
+      const response = await apiRequest("POST", "/api/admin/materials", data);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/customizations/materials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
       toast({
         title: "Success",
         description: "Material created successfully",
@@ -129,11 +129,11 @@ export default function AdminAssets() {
 
   const updateMaterialMutation = useMutation({
     mutationFn: async ({ materialId, data }: { materialId: string; data: Partial<Material> }) => {
-      const response = await apiRequest("PATCH", `/api/admin/customizations/materials/${materialId}`, data);
+      const response = await apiRequest("PATCH", `/api/admin/materials/${materialId}`, data);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/customizations/materials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
       toast({
         title: "Success",
         description: "Material updated successfully",
@@ -152,11 +152,11 @@ export default function AdminAssets() {
 
   const deleteMaterialMutation = useMutation({
     mutationFn: async (materialId: string) => {
-      const response = await apiRequest("DELETE", `/api/admin/customizations/materials/${materialId}`);
+      const response = await apiRequest("DELETE", `/api/admin/materials/${materialId}`);
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/customizations/materials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/materials/all"] });
       toast({
         title: "Success",
         description: "Material deleted successfully",
@@ -195,10 +195,10 @@ export default function AdminAssets() {
         type: currentTabConfig.type,
         subType: currentTabConfig.subType,
         description: preset.description,
-        priceModifier: "0",
+        priceModifier: preset.priceModifier,
         priceMultiplier: "1.0",
-        textureUrl: "",
-        color: "#000000",
+        textureUrl: preset.textureUrl || "",
+        color: preset.color || "#000000",
         isAvailable: true,
       });
     }
@@ -342,7 +342,7 @@ export default function AdminAssets() {
                           <h3 className="font-semibold text-lg" data-testid={`text-material-name-${material.id}`}>
                             {material.name}
                           </h3>
-                          {material.color && material.subType !== 'wood-type' && (
+                          {material.color && (
                             <div
                               className="w-6 h-6 rounded-full border-2 border-border"
                               style={{ backgroundColor: material.color }}
@@ -358,6 +358,18 @@ export default function AdminAssets() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
+                        {material.priceModifier && material.priceModifier !== "0" && (
+                          <Badge variant="outline" data-testid={`badge-price-modifier-${material.id}`}>
+                            {material.priceModifier.startsWith("+") || material.priceModifier.startsWith("-")
+                              ? material.priceModifier
+                              : `+${material.priceModifier}`}
+                          </Badge>
+                        )}
+                        {material.priceMultiplier && material.priceMultiplier !== "1.0" && material.priceMultiplier !== "1" && (
+                          <Badge variant="outline" data-testid={`badge-price-multiplier-${material.id}`}>
+                            ×{material.priceMultiplier}
+                          </Badge>
+                        )}
                         <Badge
                           variant={material.isAvailable ? "default" : "secondary"}
                           className={material.isAvailable ? "bg-green-100 text-green-800" : ""}
@@ -426,13 +438,21 @@ export default function AdminAssets() {
                 <SelectContent>
                   {(presetsBySubType[currentTabConfig.subType] || []).map((preset) => (
                     <SelectItem key={preset.name} value={preset.name} data-testid={`preset-option-${preset.name}`}>
-                      {preset.name}
+                      <div className="flex items-center gap-2">
+                        {preset.color && (
+                          <div
+                            className="w-4 h-4 rounded-full border"
+                            style={{ backgroundColor: preset.color }}
+                          />
+                        )}
+                        <span>{preset.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Selecting a preset will auto-fill the name and description. You can customize any field or create a completely new material.
+                Selecting a preset will auto-fill the form below. You can still customize any field.
               </p>
             </div>
 
@@ -459,28 +479,50 @@ export default function AdminAssets() {
               />
             </div>
 
-            {currentTabConfig.subType !== 'wood-type' && (
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="create-color">Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="create-color"
-                    type="color"
-                    value={newMaterial.color}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
-                    className="w-20 h-10"
-                    data-testid="input-create-color"
-                  />
-                  <Input
-                    value={newMaterial.color}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
-                    placeholder="#000000"
-                    className="flex-1"
-                    data-testid="input-create-color-hex"
-                  />
-                </div>
+                <Label htmlFor="create-price-modifier">Price Modifier</Label>
+                <Input
+                  id="create-price-modifier"
+                  value={newMaterial.priceModifier}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, priceModifier: e.target.value })}
+                  placeholder="e.g., +150 or +15%"
+                  data-testid="input-create-price-modifier"
+                />
               </div>
-            )}
+
+              <div className="space-y-2">
+                <Label htmlFor="create-price-multiplier">Price Multiplier *</Label>
+                <Input
+                  id="create-price-multiplier"
+                  value={newMaterial.priceMultiplier}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, priceMultiplier: e.target.value })}
+                  placeholder="e.g., 1.2"
+                  data-testid="input-create-price-multiplier"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-color">Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="create-color"
+                  type="color"
+                  value={newMaterial.color}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
+                  className="w-20 h-10"
+                  data-testid="input-create-color"
+                />
+                <Input
+                  value={newMaterial.color}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, color: e.target.value })}
+                  placeholder="#000000"
+                  className="flex-1"
+                  data-testid="input-create-color-hex"
+                />
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label>Texture Image</Label>
@@ -527,7 +569,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleCreateMaterial}
-              disabled={!newMaterial.name || createMaterialMutation.isPending}
+              disabled={!newMaterial.name || !newMaterial.priceMultiplier || createMaterialMutation.isPending}
               data-testid="button-submit-create"
             >
               {createMaterialMutation.isPending ? "Creating..." : "Create Material"}
@@ -571,28 +613,50 @@ export default function AdminAssets() {
                 />
               </div>
 
-              {editingMaterial.subType !== 'wood-type' && (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-color">Color</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="edit-color"
-                      type="color"
-                      value={editingMaterial.color || "#000000"}
-                      onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
-                      className="w-20 h-10"
-                      data-testid="input-edit-color"
-                    />
-                    <Input
-                      value={editingMaterial.color || "#000000"}
-                      onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
-                      placeholder="#000000"
-                      className="flex-1"
-                      data-testid="input-edit-color-hex"
-                    />
-                  </div>
+                  <Label htmlFor="edit-price-modifier">Price Modifier</Label>
+                  <Input
+                    id="edit-price-modifier"
+                    value={editingMaterial.priceModifier || ""}
+                    onChange={(e) => setEditingMaterial({ ...editingMaterial, priceModifier: e.target.value })}
+                    placeholder="e.g., +150 or +15%"
+                    data-testid="input-edit-price-modifier"
+                  />
                 </div>
-              )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price-multiplier">Price Multiplier *</Label>
+                  <Input
+                    id="edit-price-multiplier"
+                    value={editingMaterial.priceMultiplier}
+                    onChange={(e) => setEditingMaterial({ ...editingMaterial, priceMultiplier: e.target.value })}
+                    placeholder="e.g., 1.2"
+                    data-testid="input-edit-price-multiplier"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-color">Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="edit-color"
+                    type="color"
+                    value={editingMaterial.color || "#000000"}
+                    onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
+                    className="w-20 h-10"
+                    data-testid="input-edit-color"
+                  />
+                  <Input
+                    value={editingMaterial.color || "#000000"}
+                    onChange={(e) => setEditingMaterial({ ...editingMaterial, color: e.target.value })}
+                    placeholder="#000000"
+                    className="flex-1"
+                    data-testid="input-edit-color-hex"
+                  />
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label>Texture Image</Label>
@@ -642,6 +706,7 @@ export default function AdminAssets() {
               onClick={handleUpdateMaterial}
               disabled={
                 !editingMaterial?.name ||
+                !editingMaterial?.priceMultiplier ||
                 updateMaterialMutation.isPending
               }
               data-testid="button-submit-edit"
