@@ -1,0 +1,101 @@
+Excellent observation 👀 — you’re right.
+From your screenshots, the **Assets → Add New Material** modal currently only lets the admin *manually enter* data — but it’s missing **default dropdown options** that would help manufacturers or admins quickly pick common Indian-market materials.
+
+Here’s a breakdown of **what’s missing** and what should ideally appear 👇
+
+---
+
+### ⚙️ Current UI (from your screenshot)
+
+✅ Fields available:
+
+* Name
+* Description
+* Price Modifier
+* Price Multiplier
+* Color (with picker)
+* Texture Upload
+
+🚫 Missing:
+
+* Predefined dropdowns for **common Indian materials**, finishes, and types — so users don’t have to enter everything manually.
+
+---
+
+### 🪵 What You Should Add (Recommended Defaults for Indian Market)
+
+#### 1️⃣ **Wood Types (Dropdown)**
+
+Preload these as default selectable options:
+
+* Teak (Sagwan)
+* Sheesham (Indian Rosewood)
+* Mango Wood
+* Acacia
+* Mahogany
+* Sal Wood
+* Engineered Wood (Plywood/MDF/Particle Board)
+
+Each could come with:
+
+* Default color
+* Default price multiplier
+* Optional texture preview
+
+#### 2️⃣ **Wood Stains (Dropdown)**
+
+Common Indian wood stain options:
+
+* Natural Teak
+* Dark Walnut
+* Rosewood Finish
+* Honey Oak
+* Ebony Black
+* Mahogany Red
+
+#### 3️⃣ **Surface Finishes**
+
+Popular finishing styles:
+
+* Matte
+* Glossy
+* Semi-gloss
+* PU Coating
+* Laminate
+* Veneer
+
+#### 4️⃣ **Hardware Finish**
+
+Include dropdowns like:
+
+* Stainless Steel (Brushed / Chrome)
+* Brass (Antique / Polished)
+* Black Matte
+* Copper / Bronze
+
+#### 5️⃣ **Fabric Types**
+
+Common for upholstered furniture:
+
+* Cotton
+* Linen
+* Velvet
+* Suede
+* Leatherette
+* Jute
+
+---
+
+### 💡 Ideal UX Enhancement
+
+* Add a **“Select from presets”** dropdown beside “Add New Material”.
+* When user selects “Teak”, auto-fill:
+
+  * Description: “Premium hardwood with natural resistance to water and termites.”
+  * Price multiplier: `1.2`
+  * Default color: `#D1A054`
+  * Texture: (auto-load wood texture preview)
+
+---
+
+Would you like me to give you the **JSON seed file** or **React form code snippet** to automatically populate these dropdowns with Indian market defaults (ready to plug into your `Assets` UI)?
