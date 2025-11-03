@@ -171,7 +171,7 @@ export const materials = pgTable("materials", {
   subType: varchar("sub_type"), // wood-type, wood-stain, upholstery, hardware, surface-finish
   description: text("description"),
   priceModifier: varchar("price_modifier").default("0"), // flat price addition (e.g., "+150" or "+15%")
-  priceMultiplier: varchar("price_multiplier").notNull(), // multiplier for base price
+  priceMultiplier: varchar("price_multiplier").default("1.0"), // multiplier for base price
   textureUrl: varchar("texture_url"), // URL to texture image
   color: varchar("color"), // hex color code for swatches
   stock: integer("stock").default(0), // manual stock tracking
