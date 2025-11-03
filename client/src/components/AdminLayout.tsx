@@ -26,7 +26,8 @@ import {
   Store,
   Wrench,
   Building2,
-  MessageCircle
+  MessageCircle,
+  Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -68,6 +69,11 @@ const adminMenuItems = [
     title: "Discounts",
     url: "/discounts",
     icon: Tag,
+  },
+  {
+    title: "Assets",
+    url: "/assets",
+    icon: Layers,
   },
   {
     title: "Analytics",
