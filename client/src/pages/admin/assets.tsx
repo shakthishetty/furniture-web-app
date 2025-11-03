@@ -9,12 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit2, Trash2, ImageIcon, TreeDeciduous, Droplet, Sofa, Wrench, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Edit2, Trash2, ImageIcon, TreeDeciduous, Droplet, Sofa, Wrench, Sparkles, Lightbulb } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SimpleUploader } from "@/components/SimpleUploader";
 import type { Material } from "@shared/schema";
+import { presetsBySubType } from "@shared/materialPresets";
 
 interface MaterialsResponse {
   materials: Material[];
@@ -180,6 +183,25 @@ export default function AdminAssets() {
       color: "#000000",
       isAvailable: true,
     });
+  };
+
+  const handlePresetSelect = (presetName: string) => {
+    const presetsForTab = presetsBySubType[currentTabConfig.subType] || [];
+    const preset = presetsForTab.find((p) => p.name === presetName);
+    
+    if (preset) {
+      setNewMaterial({
+        name: preset.name,
+        type: currentTabConfig.type,
+        subType: currentTabConfig.subType,
+        description: preset.description,
+        priceModifier: preset.priceModifier,
+        priceMultiplier: "1.0",
+        textureUrl: preset.textureUrl || "",
+        color: preset.color || "#000000",
+        isAvailable: true,
+      });
+    }
   };
 
   const handleCreateMaterial = () => {
@@ -399,6 +421,41 @@ export default function AdminAssets() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Preset Selection */}
+            <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+              <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                Quick start: Select a preset to auto-fill common {currentTabConfig.label.toLowerCase()} with default values
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <Label htmlFor="preset-select">Select Preset (Optional)</Label>
+              <Select onValueChange={handlePresetSelect}>
+                <SelectTrigger id="preset-select" data-testid="select-preset">
+                  <SelectValue placeholder={`Choose a preset ${currentTabConfig.label.toLowerCase().slice(0, -1)}...`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(presetsBySubType[currentTabConfig.subType] || []).map((preset) => (
+                    <SelectItem key={preset.name} value={preset.name} data-testid={`preset-option-${preset.name}`}>
+                      <div className="flex items-center gap-2">
+                        {preset.color && (
+                          <div
+                            className="w-4 h-4 rounded-full border"
+                            style={{ backgroundColor: preset.color }}
+                          />
+                        )}
+                        <span>{preset.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Selecting a preset will auto-fill the form below. You can still customize any field.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="create-name">Name *</Label>
               <Input
