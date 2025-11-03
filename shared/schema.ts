@@ -453,6 +453,7 @@ export const assets = pgTable("assets", {
   category: varchar("category").notNull(), // "wood", "stain", "upholstery", "hardware", "finish"
   name: varchar("name").notNull(),
   type: varchar("type").notNull(), // e.g., "Hardwood", "Softwood", "Matte", "Gloss", "Fabric", etc.
+  color: varchar("color"), // Color field for stain and upholstery only
   imageUrl: varchar("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

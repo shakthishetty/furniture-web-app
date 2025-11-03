@@ -20,6 +20,7 @@ interface Asset {
   name: string;
   type: string;
   category: string;
+  color?: string;
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -28,6 +29,7 @@ interface Asset {
 interface AssetFormData {
   name: string;
   type: string;
+  color?: string;
   imageUrl?: string;
 }
 
@@ -66,6 +68,7 @@ export default function AdminAssets() {
   const [newAsset, setNewAsset] = useState<AssetFormData>({
     name: '',
     type: '',
+    color: '',
   });
   const [isAddCustomTypeDialogOpen, setIsAddCustomTypeDialogOpen] = useState(false);
   const [isEditCustomTypeDialogOpen, setIsEditCustomTypeDialogOpen] = useState(false);
@@ -102,7 +105,7 @@ export default function AdminAssets() {
         description: "Asset created successfully",
       });
       setIsCreateDialogOpen(false);
-      setNewAsset({ name: '', type: '' });
+      setNewAsset({ name: '', type: '', color: '' });
     },
     onError: (error: any) => {
       toast({
@@ -188,6 +191,7 @@ export default function AdminAssets() {
         data: {
           name: editingAsset.name,
           type: editingAsset.type,
+          color: editingAsset.color,
           imageUrl: editingAsset.imageUrl,
         },
       });
@@ -278,6 +282,8 @@ export default function AdminAssets() {
       );
     }
 
+    const showColorColumn = activeTab === 'stain' || activeTab === 'upholstery';
+    
     return (
       <Table>
         <TableHeader>
@@ -285,6 +291,7 @@ export default function AdminAssets() {
             <TableHead>Image</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Type</TableHead>
+            {showColorColumn && <TableHead>Color</TableHead>}
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -307,6 +314,21 @@ export default function AdminAssets() {
               </TableCell>
               <TableCell data-testid={`asset-name-${asset.id}`}>{asset.name}</TableCell>
               <TableCell data-testid={`asset-type-${asset.id}`}>{asset.type}</TableCell>
+              {showColorColumn && (
+                <TableCell data-testid={`asset-color-${asset.id}`}>
+                  {asset.color ? (
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-8 h-8 rounded border border-border" 
+                        style={{ backgroundColor: asset.color }}
+                      />
+                      <span className="text-sm text-muted-foreground">{asset.color}</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+              )}
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
@@ -434,6 +456,29 @@ export default function AdminAssets() {
                 </Button>
               </div>
             </div>
+            {(activeTab === 'stain' || activeTab === 'upholstery') && (
+              <div>
+                <Label htmlFor="create-color">Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="create-color"
+                    type="color"
+                    value={newAsset.color || '#000000'}
+                    onChange={(e) => setNewAsset({ ...newAsset, color: e.target.value })}
+                    className="w-20 h-10 p-1 cursor-pointer"
+                    data-testid="input-color"
+                  />
+                  <Input
+                    type="text"
+                    value={newAsset.color || ''}
+                    onChange={(e) => setNewAsset({ ...newAsset, color: e.target.value })}
+                    placeholder="#000000"
+                    className="flex-1"
+                    data-testid="input-color-hex"
+                  />
+                </div>
+              </div>
+            )}
             <div>
               <Label>Image</Label>
               <SimpleUploader
@@ -461,7 +506,7 @@ export default function AdminAssets() {
               variant="outline"
               onClick={() => {
                 setIsCreateDialogOpen(false);
-                setNewAsset({ name: '', type: '' });
+                setNewAsset({ name: '', type: '', color: '' });
               }}
               data-testid="button-cancel"
             >
@@ -532,6 +577,29 @@ export default function AdminAssets() {
                   </Button>
                 </div>
               </div>
+              {(editingAsset.category === 'stain' || editingAsset.category === 'upholstery') && (
+                <div>
+                  <Label htmlFor="edit-color">Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="edit-color"
+                      type="color"
+                      value={editingAsset.color || '#000000'}
+                      onChange={(e) => setEditingAsset({ ...editingAsset, color: e.target.value })}
+                      className="w-20 h-10 p-1 cursor-pointer"
+                      data-testid="input-edit-color"
+                    />
+                    <Input
+                      type="text"
+                      value={editingAsset.color || ''}
+                      onChange={(e) => setEditingAsset({ ...editingAsset, color: e.target.value })}
+                      placeholder="#000000"
+                      className="flex-1"
+                      data-testid="input-edit-color-hex"
+                    />
+                  </div>
+                </div>
+              )}
               <div>
                 <Label>Image</Label>
                 <SimpleUploader
