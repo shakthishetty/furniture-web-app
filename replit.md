@@ -29,6 +29,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Core Features & Implementations
 - **Admin Authentication**: Separate admin login system with hardcoded credentials (furniture@gmail.com / password) that doesn't affect customer login flow. All admin routes are protected and redirect to /admin-login if not authenticated.
+- **Centralized Assets Module**: Comprehensive material library management system that eliminates repetitive data entry:
+    - **Five Material Categories**: Wood Types, Wood Stains, Fabrics, Hardware, Surface Finishes - each managed separately with dedicated tabs
+    - **Indian Market Defaults**: Preloaded with 25+ materials including Teak, Sheesham, Oak, Mahogany, Mango wood, various stains, premium fabrics, and hardware finishes
+    - **Visual Management**: Image/texture upload for each material, color swatches, price modifiers, stock tracking, and availability toggles
+    - **Product Integration**: Product customization modal selects from centralized library instead of creating materials inline, ensuring consistency
+    - **CRUD Operations**: Full create, read, update, delete capabilities with real-time validation and batch operations
+    - **Type Safety**: Materials organized by type (wood, fabric, metal, finish) and subType (wood-type, wood-stain, upholstery, hardware, surface-finish) for precise filtering
 - **Manufacturer Notifications**: When an admin assigns a manufacturer to an order, the manufacturer receives a notification with the order number and product names.
 - **Discount System**: Comprehensive CRUD operations for percentage and flat discounts, with validation rules (min order value, usage limits, validity periods) and checkout integration.
 - **Automatic Product Status**: Calculates product availability (Active, Partial, Out of Stock, Draft) based on stock levels and customization setup completeness. Admin views include color-coded badges, progress bars, and missing setup indicators.
