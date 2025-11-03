@@ -1400,18 +1400,7 @@ export default function AdminProducts() {
                       <SelectItem value="none">None</SelectItem>
                       {woodAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
-                          <div className="flex items-center gap-2">
-                            {asset.imageUrl ? (
-                              <img 
-                                src={asset.imageUrl} 
-                                alt={asset.name}
-                                className="w-6 h-6 object-cover rounded border"
-                              />
-                            ) : (
-                              <span>🪵</span>
-                            )}
-                            <span>{asset.name} — {asset.type}</span>
-                          </div>
+                          🪵 {asset.name} — {asset.type}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1440,24 +1429,7 @@ export default function AdminProducts() {
                       <SelectItem value="none">None</SelectItem>
                       {stainAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
-                          <div className="flex items-center gap-2">
-                            {asset.imageUrl ? (
-                              <img 
-                                src={asset.imageUrl} 
-                                alt={asset.name}
-                                className="w-6 h-6 object-cover rounded border"
-                              />
-                            ) : (
-                              <span>🎨</span>
-                            )}
-                            {asset.color && (
-                              <div 
-                                className="w-4 h-4 rounded border border-gray-300"
-                                style={{ backgroundColor: asset.color }}
-                              />
-                            )}
-                            <span>{asset.name} — {asset.type}</span>
-                          </div>
+                          🎨 {asset.name} — {asset.type}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1486,24 +1458,7 @@ export default function AdminProducts() {
                       <SelectItem value="none">None</SelectItem>
                       {upholsteryAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
-                          <div className="flex items-center gap-2">
-                            {asset.imageUrl ? (
-                              <img 
-                                src={asset.imageUrl} 
-                                alt={asset.name}
-                                className="w-6 h-6 object-cover rounded border"
-                              />
-                            ) : (
-                              <span>🛋️</span>
-                            )}
-                            {asset.color && (
-                              <div 
-                                className="w-4 h-4 rounded border border-gray-300"
-                                style={{ backgroundColor: asset.color }}
-                              />
-                            )}
-                            <span>{asset.name} — {asset.type}</span>
-                          </div>
+                          🛋️ {asset.name} — {asset.type}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1532,18 +1487,7 @@ export default function AdminProducts() {
                       <SelectItem value="none">None</SelectItem>
                       {hardwareAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
-                          <div className="flex items-center gap-2">
-                            {asset.imageUrl ? (
-                              <img 
-                                src={asset.imageUrl} 
-                                alt={asset.name}
-                                className="w-6 h-6 object-cover rounded border"
-                              />
-                            ) : (
-                              <span>🔩</span>
-                            )}
-                            <span>{asset.name} — {asset.type}</span>
-                          </div>
+                          🔩 {asset.name} — {asset.type}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1572,18 +1516,7 @@ export default function AdminProducts() {
                       <SelectItem value="none">None</SelectItem>
                       {finishAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
-                          <div className="flex items-center gap-2">
-                            {asset.imageUrl ? (
-                              <img 
-                                src={asset.imageUrl} 
-                                alt={asset.name}
-                                className="w-6 h-6 object-cover rounded border"
-                              />
-                            ) : (
-                              <span>✨</span>
-                            )}
-                            <span>{asset.name} — {asset.type}</span>
-                          </div>
+                          ✨ {asset.name} — {asset.type}
                         </SelectItem>
                       ))}
                     </SelectContent>
