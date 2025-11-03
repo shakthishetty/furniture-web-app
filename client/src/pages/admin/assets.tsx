@@ -120,6 +120,10 @@ export default function AdminAssets() {
   const deleteAssetMutation = useMutation({
     mutationFn: async (assetId: string) => {
       const response = await apiRequest("DELETE", `/api/admin/assets/${assetId}`);
+      // 204 No Content responses don't have a body
+      if (response.status === 204) {
+        return null;
+      }
       return response.json();
     },
     onSuccess: () => {
