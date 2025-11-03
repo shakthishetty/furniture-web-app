@@ -93,11 +93,11 @@ interface ProductFormData {
   pdfUrl?: string;
   inStock: boolean;
   stock?: number;
-  woodId?: string;
-  stainId?: string;
-  upholsteryId?: string;
-  hardwareId?: string;
-  finishId?: string;
+  woodIds?: string[];
+  stainIds?: string[];
+  upholsteryIds?: string[];
+  hardwareIds?: string[];
+  finishIds?: string[];
 }
 
 interface Asset {
@@ -201,7 +201,12 @@ export default function AdminProducts() {
     categoryId: '',
     status: 'draft',
     inStock: true,
-    stock: 0
+    stock: 0,
+    woodIds: [],
+    stainIds: [],
+    upholsteryIds: [],
+    hardwareIds: [],
+    finishIds: []
   });
   const [newCategory, setNewCategory] = useState({
     name: '',
@@ -1383,21 +1388,27 @@ export default function AdminProducts() {
             <div className="space-y-4">
               <Separator />
               <h3 className="text-lg font-medium">Material Selection</h3>
-              <p className="text-sm text-muted-foreground">Select the materials used in this product from your Assets library.</p>
+              <p className="text-sm text-muted-foreground">Select multiple materials for each category from your Assets library.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Wood Type Selection */}
+                {/* Wood Type Multi-Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="create-wood">Wood Type</Label>
+                  <Label htmlFor="create-wood">Wood Types</Label>
                   <Select 
-                    value={newProduct.woodId || 'none'} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, woodId: value === 'none' ? undefined : value })}
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value && !newProduct.woodIds?.includes(value)) {
+                        setNewProduct({ 
+                          ...newProduct, 
+                          woodIds: [...(newProduct.woodIds || []), value] 
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger data-testid="select-create-wood">
-                      <SelectValue placeholder="Select wood type" />
+                      <SelectValue placeholder="Add wood type..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
                       {woodAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🪵 {asset.name} — {asset.type}
@@ -1405,28 +1416,54 @@ export default function AdminProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {newProduct.woodId && woodAssets?.assets.find(a => a.id === newProduct.woodId) && (
-                    <div className="mt-2 p-2 border rounded bg-muted/50">
-                      <AssetOption 
-                        asset={woodAssets.assets.find(a => a.id === newProduct.woodId)!} 
-                        icon="🪵"
-                      />
+                  {newProduct.woodIds && newProduct.woodIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newProduct.woodIds.map((id) => {
+                        const asset = woodAssets?.assets.find(a => a.id === id);
+                        if (!asset) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                            {asset.imageUrl ? (
+                              <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                            ) : (
+                              <span className="text-base">🪵</span>
+                            )}
+                            <span className="font-medium">{asset.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewProduct({ 
+                                ...newProduct, 
+                                woodIds: newProduct.woodIds?.filter(i => i !== id) 
+                              })}
+                              className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Stain Selection */}
+                {/* Stain Multi-Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="create-stain">Stain</Label>
+                  <Label htmlFor="create-stain">Stains</Label>
                   <Select 
-                    value={newProduct.stainId || 'none'} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, stainId: value === 'none' ? undefined : value })}
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value && !newProduct.stainIds?.includes(value)) {
+                        setNewProduct({ 
+                          ...newProduct, 
+                          stainIds: [...(newProduct.stainIds || []), value] 
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger data-testid="select-create-stain">
-                      <SelectValue placeholder="Select stain" />
+                      <SelectValue placeholder="Add stain..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
                       {stainAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🎨 {asset.name} — {asset.type}
@@ -1434,28 +1471,54 @@ export default function AdminProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {newProduct.stainId && stainAssets?.assets.find(a => a.id === newProduct.stainId) && (
-                    <div className="mt-2 p-2 border rounded bg-muted/50">
-                      <AssetOption 
-                        asset={stainAssets.assets.find(a => a.id === newProduct.stainId)!} 
-                        icon="🎨"
-                      />
+                  {newProduct.stainIds && newProduct.stainIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newProduct.stainIds.map((id) => {
+                        const asset = stainAssets?.assets.find(a => a.id === id);
+                        if (!asset) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                            {asset.imageUrl ? (
+                              <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                            ) : (
+                              <span className="text-base">🎨</span>
+                            )}
+                            <span className="font-medium">{asset.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewProduct({ 
+                                ...newProduct, 
+                                stainIds: newProduct.stainIds?.filter(i => i !== id) 
+                              })}
+                              className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Upholstery Selection */}
+                {/* Upholstery Multi-Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="create-upholstery">Upholstery</Label>
                   <Select 
-                    value={newProduct.upholsteryId || 'none'} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, upholsteryId: value === 'none' ? undefined : value })}
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value && !newProduct.upholsteryIds?.includes(value)) {
+                        setNewProduct({ 
+                          ...newProduct, 
+                          upholsteryIds: [...(newProduct.upholsteryIds || []), value] 
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger data-testid="select-create-upholstery">
-                      <SelectValue placeholder="Select upholstery" />
+                      <SelectValue placeholder="Add upholstery..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
                       {upholsteryAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🛋️ {asset.name} — {asset.type}
@@ -1463,28 +1526,54 @@ export default function AdminProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {newProduct.upholsteryId && upholsteryAssets?.assets.find(a => a.id === newProduct.upholsteryId) && (
-                    <div className="mt-2 p-2 border rounded bg-muted/50">
-                      <AssetOption 
-                        asset={upholsteryAssets.assets.find(a => a.id === newProduct.upholsteryId)!} 
-                        icon="🛋️"
-                      />
+                  {newProduct.upholsteryIds && newProduct.upholsteryIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newProduct.upholsteryIds.map((id) => {
+                        const asset = upholsteryAssets?.assets.find(a => a.id === id);
+                        if (!asset) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                            {asset.imageUrl ? (
+                              <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                            ) : (
+                              <span className="text-base">🛋️</span>
+                            )}
+                            <span className="font-medium">{asset.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewProduct({ 
+                                ...newProduct, 
+                                upholsteryIds: newProduct.upholsteryIds?.filter(i => i !== id) 
+                              })}
+                              className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Hardware Selection */}
+                {/* Hardware Multi-Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="create-hardware">Hardware</Label>
                   <Select 
-                    value={newProduct.hardwareId || 'none'} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, hardwareId: value === 'none' ? undefined : value })}
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value && !newProduct.hardwareIds?.includes(value)) {
+                        setNewProduct({ 
+                          ...newProduct, 
+                          hardwareIds: [...(newProduct.hardwareIds || []), value] 
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger data-testid="select-create-hardware">
-                      <SelectValue placeholder="Select hardware" />
+                      <SelectValue placeholder="Add hardware..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
                       {hardwareAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           🔩 {asset.name} — {asset.type}
@@ -1492,28 +1581,54 @@ export default function AdminProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {newProduct.hardwareId && hardwareAssets?.assets.find(a => a.id === newProduct.hardwareId) && (
-                    <div className="mt-2 p-2 border rounded bg-muted/50">
-                      <AssetOption 
-                        asset={hardwareAssets.assets.find(a => a.id === newProduct.hardwareId)!} 
-                        icon="🔩"
-                      />
+                  {newProduct.hardwareIds && newProduct.hardwareIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newProduct.hardwareIds.map((id) => {
+                        const asset = hardwareAssets?.assets.find(a => a.id === id);
+                        if (!asset) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                            {asset.imageUrl ? (
+                              <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                            ) : (
+                              <span className="text-base">🔩</span>
+                            )}
+                            <span className="font-medium">{asset.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewProduct({ 
+                                ...newProduct, 
+                                hardwareIds: newProduct.hardwareIds?.filter(i => i !== id) 
+                              })}
+                              className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Finish Selection */}
+                {/* Finish Multi-Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="create-finish">Finish</Label>
+                  <Label htmlFor="create-finish">Finishes</Label>
                   <Select 
-                    value={newProduct.finishId || 'none'} 
-                    onValueChange={(value) => setNewProduct({ ...newProduct, finishId: value === 'none' ? undefined : value })}
+                    value="" 
+                    onValueChange={(value) => {
+                      if (value && !newProduct.finishIds?.includes(value)) {
+                        setNewProduct({ 
+                          ...newProduct, 
+                          finishIds: [...(newProduct.finishIds || []), value] 
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger data-testid="select-create-finish">
-                      <SelectValue placeholder="Select finish" />
+                      <SelectValue placeholder="Add finish..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
                       {finishAssets?.assets.map((asset) => (
                         <SelectItem key={asset.id} value={asset.id}>
                           ✨ {asset.name} — {asset.type}
@@ -1521,12 +1636,32 @@ export default function AdminProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {newProduct.finishId && finishAssets?.assets.find(a => a.id === newProduct.finishId) && (
-                    <div className="mt-2 p-2 border rounded bg-muted/50">
-                      <AssetOption 
-                        asset={finishAssets.assets.find(a => a.id === newProduct.finishId)!} 
-                        icon="✨"
-                      />
+                  {newProduct.finishIds && newProduct.finishIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newProduct.finishIds.map((id) => {
+                        const asset = finishAssets?.assets.find(a => a.id === id);
+                        if (!asset) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                            {asset.imageUrl ? (
+                              <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                            ) : (
+                              <span className="text-base">✨</span>
+                            )}
+                            <span className="font-medium">{asset.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewProduct({ 
+                                ...newProduct, 
+                                finishIds: newProduct.finishIds?.filter(i => i !== id) 
+                              })}
+                              className="ml-1 text-muted-foreground hover:text-foreground"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

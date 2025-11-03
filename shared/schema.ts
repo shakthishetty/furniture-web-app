@@ -160,11 +160,11 @@ export const products = pgTable("products", {
   pdfUrl: varchar("pdf_url"), // URL to PDF documentation/catalog
   additionalImages: text("additional_images"), // JSON array of additional image URLs
   dimensions: text("dimensions"), // JSON string for default dimensions
-  woodId: varchar("wood_id"), // reference to assets table (wood category)
-  stainId: varchar("stain_id"), // reference to assets table (stain category)
-  upholsteryId: varchar("upholstery_id"), // reference to assets table (upholstery category)
-  hardwareId: varchar("hardware_id"), // reference to assets table (hardware category)
-  finishId: varchar("finish_id"), // reference to assets table (finish category)
+  woodIds: varchar("wood_ids").array(), // references to assets table (wood category)
+  stainIds: varchar("stain_ids").array(), // references to assets table (stain category)
+  upholsteryIds: varchar("upholstery_ids").array(), // references to assets table (upholstery category)
+  hardwareIds: varchar("hardware_ids").array(), // references to assets table (hardware category)
+  finishIds: varchar("finish_ids").array(), // references to assets table (finish category)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
