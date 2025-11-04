@@ -518,10 +518,9 @@ export default function AdminProducts() {
     switch (computedStatus) {
       case "active":
         return <Badge className="bg-green-100 text-green-800 border-green-300">🟢 Active</Badge>;
-      case "partial":
+      case "inactive":
         return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">🟡 Partial</Badge>;
       case "out_of_stock":
-      case "out of stock":
         return <Badge className="bg-red-100 text-red-800 border-red-300">🔴 Out of Stock</Badge>;
       case "draft":
         return <Badge className="bg-gray-100 text-gray-800 border-gray-300">⚪ Draft</Badge>;
@@ -645,8 +644,8 @@ export default function AdminProducts() {
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="partial">Partial</SelectItem>
-                  <SelectItem value="out of stock">Out of Stock</SelectItem>
+                  <SelectItem value="inactive">Partial</SelectItem>
+                  <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1022,8 +1021,8 @@ export default function AdminProducts() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="partial">Partial</SelectItem>
-                      <SelectItem value="out of stock">Out of Stock</SelectItem>
+                      <SelectItem value="inactive">Partial</SelectItem>
+                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1228,8 +1227,8 @@ export default function AdminProducts() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
-                    <SelectItem value="out of stock">Out of Stock</SelectItem>
+                    <SelectItem value="inactive">Partial</SelectItem>
+                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
