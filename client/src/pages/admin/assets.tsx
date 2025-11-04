@@ -390,7 +390,7 @@ export default function AdminAssets() {
                 data-testid={`button-add-${activeTab}`}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add New {assetCategories.find(c => c.value === activeTab)?.label}
+                Add New Asset
               </Button>
             </div>
 
@@ -407,7 +407,7 @@ export default function AdminAssets() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent data-testid="dialog-create-asset">
           <DialogHeader>
-            <DialogTitle>Add New {assetCategories.find(c => c.value === activeTab)?.label}</DialogTitle>
+            <DialogTitle>Add New Asset</DialogTitle>
             <DialogDescription>
               Create a new asset for the {activeTab} category.
             </DialogDescription>
