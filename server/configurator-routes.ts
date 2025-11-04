@@ -147,11 +147,22 @@ router.get('/materials', async (req, res) => {
   }
 });
 
-// Get a single material by ID (public endpoint for displaying order details)
+// Get a single material/asset by ID (public endpoint for displaying order details)
 router.get('/materials/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
+    // Try to fetch from assets table first (new system)
+    const [asset] = await db
+      .select()
+      .from(assets)
+      .where(eq(assets.id, id));
+
+    if (asset) {
+      return res.json(asset);
+    }
+    
+    // Fallback to materials table for backward compatibility
     const [material] = await db
       .select()
       .from(materials)
