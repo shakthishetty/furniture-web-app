@@ -44,7 +44,13 @@ const createProductSchema = z.object({
   // Accept both string and array for additionalImages
   additionalImages: z.union([z.string(), z.array(z.string())]).optional(),
   inStock: z.boolean().default(true),
-  stock: z.number().int().min(0).default(0)
+  stock: z.number().int().min(0).default(0),
+  // Material selection IDs
+  woodIds: z.array(z.string()).optional(),
+  stainIds: z.array(z.string()).optional(),
+  upholsteryIds: z.array(z.string()).optional(),
+  hardwareIds: z.array(z.string()).optional(),
+  finishIds: z.array(z.string()).optional()
 });
 
 const adminProductUpdateSchema = z.object({
@@ -65,7 +71,13 @@ const adminProductUpdateSchema = z.object({
   // Accept both string and array
   additionalImages: z.union([z.string(), z.array(z.string())]).optional(),
   inStock: z.boolean().optional(),
-  stock: z.number().int().min(0).optional()
+  stock: z.number().int().min(0).optional(),
+  // Material selection IDs
+  woodIds: z.array(z.string()).optional(),
+  stainIds: z.array(z.string()).optional(),
+  upholsteryIds: z.array(z.string()).optional(),
+  hardwareIds: z.array(z.string()).optional(),
+  finishIds: z.array(z.string()).optional()
 });
 
 const router = express.Router();
@@ -354,7 +366,13 @@ router.post("/products", requireAdmin, async (req, res) => {
           validation.data.additionalImages) : 
         undefined,
       inStock: validation.data.inStock,
-      stock: validation.data.stock
+      stock: validation.data.stock,
+      // Include material selection IDs
+      woodIds: validation.data.woodIds,
+      stainIds: validation.data.stainIds,
+      upholsteryIds: validation.data.upholsteryIds,
+      hardwareIds: validation.data.hardwareIds,
+      finishIds: validation.data.finishIds
     };
     
     // Remove undefined values
@@ -444,6 +462,13 @@ router.patch("/products/:id", requireAdmin, async (req, res) => {
         JSON.stringify(validation.data.additionalImages) : 
         validation.data.additionalImages;
     }
+    
+    // Handle material selection IDs
+    if (validation.data.woodIds !== undefined) updateData.woodIds = validation.data.woodIds;
+    if (validation.data.stainIds !== undefined) updateData.stainIds = validation.data.stainIds;
+    if (validation.data.upholsteryIds !== undefined) updateData.upholsteryIds = validation.data.upholsteryIds;
+    if (validation.data.hardwareIds !== undefined) updateData.hardwareIds = validation.data.hardwareIds;
+    if (validation.data.finishIds !== undefined) updateData.finishIds = validation.data.finishIds;
     
     // Handle category slug derivation if categoryId changed
     if (validation.data.categoryId) {
