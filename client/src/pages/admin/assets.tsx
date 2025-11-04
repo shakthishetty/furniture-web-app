@@ -288,7 +288,28 @@ export default function AdminAssets() {
       );
     }
 
+    // Group assets by name
+    const groupedAssets = assets.reduce((acc, asset) => {
+      if (!acc[asset.name]) {
+        acc[asset.name] = [];
+      }
+      acc[asset.name].push(asset);
+      return acc;
+    }, {} as Record<string, Asset[]>);
+
     const showColorColumn = activeTab === 'stain' || activeTab === 'upholstery';
+    
+    // Badge colors for different types
+    const badgeColors = [
+      'bg-blue-100 text-blue-800 border-blue-300',
+      'bg-green-100 text-green-800 border-green-300',
+      'bg-purple-100 text-purple-800 border-purple-300',
+      'bg-orange-100 text-orange-800 border-orange-300',
+      'bg-pink-100 text-pink-800 border-pink-300',
+      'bg-cyan-100 text-cyan-800 border-cyan-300',
+      'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'bg-indigo-100 text-indigo-800 border-indigo-300',
+    ];
     
     return (
       <Table>
@@ -302,15 +323,15 @@ export default function AdminAssets() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {assets.map((asset) => (
-            <TableRow key={asset.id} data-testid={`asset-row-${asset.id}`}>
+          {Object.entries(groupedAssets).map(([name, assetGroup]) => (
+            <TableRow key={`group-${name}`} data-testid={`asset-row-${name}`}>
               <TableCell>
-                {asset.imageUrl ? (
+                {assetGroup[0].imageUrl ? (
                   <img
-                    src={asset.imageUrl}
-                    alt={asset.name}
+                    src={assetGroup[0].imageUrl}
+                    alt={name}
                     className="h-12 w-12 object-cover rounded"
-                    data-testid={`asset-image-${asset.id}`}
+                    data-testid={`asset-image-${name}`}
                   />
                 ) : (
                   <div className="h-12 w-12 bg-muted rounded flex items-center justify-center">
@@ -318,43 +339,64 @@ export default function AdminAssets() {
                   </div>
                 )}
               </TableCell>
-              <TableCell data-testid={`asset-name-${asset.id}`}>{asset.name}</TableCell>
-              <TableCell data-testid={`asset-type-${asset.id}`}>{asset.type}</TableCell>
+              <TableCell data-testid={`asset-name-${name}`}>{name}</TableCell>
+              <TableCell data-testid={`asset-type-${name}`}>
+                <div className="flex flex-wrap gap-2">
+                  {assetGroup.map((asset, index) => (
+                    <span
+                      key={asset.id}
+                      className={`px-2 py-1 rounded-md text-xs font-medium border ${badgeColors[index % badgeColors.length]}`}
+                      data-testid={`type-badge-${asset.id}`}
+                    >
+                      {asset.type}
+                    </span>
+                  ))}
+                </div>
+              </TableCell>
               {showColorColumn && (
-                <TableCell data-testid={`asset-color-${asset.id}`}>
-                  {asset.color ? (
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-8 h-8 rounded border border-border" 
-                        style={{ backgroundColor: asset.color }}
-                      />
-                      <span className="text-sm text-muted-foreground">{asset.color}</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">-</span>
-                  )}
+                <TableCell data-testid={`asset-color-${name}`}>
+                  <div className="flex flex-wrap gap-2">
+                    {assetGroup.map((asset) => (
+                      asset.color ? (
+                        <div key={asset.id} className="flex items-center gap-2">
+                          <div 
+                            className="w-8 h-8 rounded border border-border" 
+                            style={{ backgroundColor: asset.color }}
+                          />
+                          <span className="text-sm text-muted-foreground">{asset.color}</span>
+                        </div>
+                      ) : null
+                    ))}
+                  </div>
                 </TableCell>
               )}
               <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditAsset(asset)}
-                    data-testid={`button-edit-${asset.id}`}
-                  >
-                    <Edit2 className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteAsset(asset)}
-                    data-testid={`button-delete-${asset.id}`}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
+                <div className="flex flex-col gap-2 items-end">
+                  {assetGroup.map((asset, index) => (
+                    <div key={asset.id} className="flex justify-end gap-2">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${badgeColors[index % badgeColors.length]}`}>
+                        {asset.type}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditAsset(asset)}
+                        data-testid={`button-edit-${asset.id}`}
+                      >
+                        <Edit2 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteAsset(asset)}
+                        data-testid={`button-delete-${asset.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </TableCell>
             </TableRow>
