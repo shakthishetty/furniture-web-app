@@ -177,7 +177,8 @@ function OrderCard({ order }: { order: OrderWithTracking }) {
           const response = await apiRequest("GET", `/api/configurator/materials/${materialId}`);
           if (response.ok) {
             const material = await response.json();
-            map[materialId] = material.name;
+            // Store both name and type for grouped assets (e.g., "Oak - Red Oak")
+            map[materialId] = material.type ? `${material.name} - ${material.type}` : material.name;
           }
         } catch (e) {
           console.error(`Error fetching material ${materialId}:`, e);

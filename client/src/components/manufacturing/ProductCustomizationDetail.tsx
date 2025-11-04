@@ -208,12 +208,12 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                     </div>
                     <div className="pl-4 sm:pl-8 space-y-2">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 bg-gradient-to-r from-amber-50/50 to-background dark:from-amber-950/10 dark:to-background rounded-xl border border-amber-200/30 dark:border-amber-800/30">
-                        <span className="text-sm font-semibold">{woodType.name}</span>
+                        <span className="text-sm font-semibold">{woodType.type ? `${woodType.name} - ${woodType.type}` : woodType.name}</span>
                         {woodType.color && (
                           <div 
                             className="w-10 h-10 rounded-lg border-2 border-border shadow-md ring-2 ring-offset-2 ring-amber-400/20 flex-shrink-0"
                             style={{ backgroundColor: woodType.color }}
-                            title={woodType.name}
+                            title={woodType.type ? `${woodType.name} - ${woodType.type}` : woodType.name}
                           />
                         )}
                       </div>
@@ -238,11 +238,11 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                             <div 
                               className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-purple-400/20 flex-shrink-0"
                               style={{ backgroundColor: woodStain.color }}
-                              title={woodStain.name}
+                              title={woodStain.type ? `${woodStain.name} - ${woodStain.type}` : woodStain.name}
                             />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold truncate">{woodStain.name}</div>
+                            <div className="text-sm font-semibold truncate">{woodStain.type ? `${woodStain.name} - ${woodStain.type}` : woodStain.name}</div>
                             {woodStain.color && (
                               <div className="text-xs text-muted-foreground font-mono mt-0.5 break-all">{woodStain.color}</div>
                             )}
@@ -270,11 +270,11 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                             <div 
                               className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-blue-400/20 flex-shrink-0"
                               style={{ backgroundColor: upholstery.color }}
-                              title={upholstery.name}
+                              title={upholstery.type ? `${upholstery.name} - ${upholstery.type}` : upholstery.name}
                             />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold truncate">{upholstery.name}</div>
+                            <div className="text-sm font-semibold truncate">{upholstery.type ? `${upholstery.name} - ${upholstery.type}` : upholstery.name}</div>
                             {upholstery.color && (
                               <div className="text-xs text-muted-foreground font-mono mt-0.5 break-all">{upholstery.color}</div>
                             )}
@@ -302,11 +302,11 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                             <div 
                               className="w-12 h-12 rounded-lg border-2 border-border shadow-lg ring-2 ring-offset-2 ring-slate-400/20 flex-shrink-0"
                               style={{ backgroundColor: hardwareFinish.color }}
-                              title={hardwareFinish.name}
+                              title={hardwareFinish.type ? `${hardwareFinish.name} - ${hardwareFinish.type}` : hardwareFinish.name}
                             />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold truncate">{hardwareFinish.name}</div>
+                            <div className="text-sm font-semibold truncate">{hardwareFinish.type ? `${hardwareFinish.name} - ${hardwareFinish.type}` : hardwareFinish.name}</div>
                             {hardwareFinish.description && (
                               <div className="text-xs text-muted-foreground mt-0.5">{hardwareFinish.description}</div>
                             )}
@@ -326,7 +326,7 @@ export function ProductCustomizationDetail({ item, updatedAt }: ProductCustomiza
                     </div>
                     <div className="pl-4 sm:pl-8 space-y-2">
                       <div className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-yellow-50/50 to-background dark:from-yellow-950/10 dark:to-background rounded-xl border border-yellow-200/30 dark:border-yellow-800/30">
-                        <span className="text-sm font-semibold">{surfaceFinish.name}</span>
+                        <span className="text-sm font-semibold">{surfaceFinish.type ? `${surfaceFinish.name} - ${surfaceFinish.type}` : surfaceFinish.name}</span>
                       </div>
                       {surfaceFinish.description && (
                         <p className="text-xs text-muted-foreground pl-0 sm:pl-4 italic">{surfaceFinish.description}</p>
