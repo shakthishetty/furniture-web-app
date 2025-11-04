@@ -16,6 +16,7 @@ import { loadFurnitureModel, updateFurnitureMaterial, updateFurnitureDimensions,
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/hooks/useAuth";
+import { NestedAssetSelector } from "@/components/NestedAssetSelector";
 
 interface Configuration {
   material?: string;
@@ -630,23 +631,28 @@ export default function Configurator() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '2.' : '1.'}</span>
                   Wood Type
+                  {configuration.woodType && woodTypes.length > 0 && (() => {
+                    const selected = woodTypes.find((w: any) => w.id === configuration.woodType);
+                    return selected ? (
+                      <span className="ml-3 text-sm font-normal text-gray-600">
+                        {selected.name} - {selected.type}
+                      </span>
+                    ) : null;
+                  })()}
                 </h3>
-                <Select
-                  value={configuration.woodType || ''}
-                  onValueChange={(value) => updateConfiguration('woodType', value)}
-                  disabled={woodTypes.length === 0}
-                >
-                  <SelectTrigger data-testid="wood-type-select" className="w-full mt-3">
-                    <SelectValue placeholder={woodTypes.length > 0 ? "Choose wood type" : "No options available"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {woodTypes.map((wood: any) => (
-                      <SelectItem key={wood.id} value={wood.id}>
-                        {wood.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {woodTypes.length > 0 ? (
+                  <NestedAssetSelector
+                    assets={woodTypes}
+                    value={configuration.woodType || null}
+                    onChange={(value) => updateConfiguration('woodType', value)}
+                    placeholder="Choose wood type"
+                    className="mt-3"
+                  />
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No wood type options available</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -752,23 +758,29 @@ export default function Configurator() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '4.' : '3.'}</span>
                   Upholstery
+                  {configuration.upholstery && upholsteryOptions.length > 0 && (() => {
+                    const selected = upholsteryOptions.find((f: any) => f.id === configuration.upholstery);
+                    return selected ? (
+                      <span className="ml-3 text-sm font-normal text-gray-600">
+                        {selected.name} - {selected.type}
+                      </span>
+                    ) : null;
+                  })()}
                 </h3>
-                <Select
-                  value={configuration.upholstery || ''}
-                  onValueChange={(value) => updateConfiguration('upholstery', value)}
-                  disabled={upholsteryOptions.length === 0}
-                >
-                  <SelectTrigger data-testid="upholstery-select" className="w-full mt-3">
-                    <SelectValue placeholder={upholsteryOptions.length > 0 ? "Choose upholstery" : "No options available"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {upholsteryOptions.map((fabric: any) => (
-                      <SelectItem key={fabric.id} value={fabric.id}>
-                        {fabric.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {upholsteryOptions.length > 0 ? (
+                  <NestedAssetSelector
+                    assets={upholsteryOptions}
+                    value={configuration.upholstery || null}
+                    onChange={(value) => updateConfiguration('upholstery', value)}
+                    placeholder="Choose upholstery"
+                    className="mt-3"
+                    showColorSwatch={true}
+                  />
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No upholstery options available</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -780,23 +792,28 @@ export default function Configurator() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '5.' : '4.'}</span>
                   Hardware Finish
+                  {configuration.hardware && hardwareOptions.length > 0 && (() => {
+                    const selected = hardwareOptions.find((h: any) => h.id === configuration.hardware);
+                    return selected ? (
+                      <span className="ml-3 text-sm font-normal text-gray-600">
+                        {selected.name} - {selected.type}
+                      </span>
+                    ) : null;
+                  })()}
                 </h3>
-                <Select
-                  value={configuration.hardware || ''}
-                  onValueChange={(value) => updateConfiguration('hardware', value)}
-                  disabled={hardwareOptions.length === 0}
-                >
-                  <SelectTrigger data-testid="hardware-select" className="w-full mt-3">
-                    <SelectValue placeholder={hardwareOptions.length > 0 ? "Choose hardware finish" : "No options available"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {hardwareOptions.map((hardware: any) => (
-                      <SelectItem key={hardware.id} value={hardware.id}>
-                        {hardware.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {hardwareOptions.length > 0 ? (
+                  <NestedAssetSelector
+                    assets={hardwareOptions}
+                    value={configuration.hardware || null}
+                    onChange={(value) => updateConfiguration('hardware', value)}
+                    placeholder="Choose hardware finish"
+                    className="mt-3"
+                  />
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No hardware options available</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -808,23 +825,28 @@ export default function Configurator() {
                 <h3 className="text-lg font-semibold text-gray-900">
                   <span className="mr-2">{(product.category?.toLowerCase().includes('chair') || product.name?.toLowerCase().includes('chair')) ? '6.' : '5.'}</span>
                   Surface Finish
+                  {configuration.finish && surfaceFinishOptions.length > 0 && (() => {
+                    const selected = surfaceFinishOptions.find((f: any) => f.id === configuration.finish);
+                    return selected ? (
+                      <span className="ml-3 text-sm font-normal text-gray-600">
+                        {selected.name} - {selected.type}
+                      </span>
+                    ) : null;
+                  })()}
                 </h3>
-                <Select
-                  value={configuration.finish || ''}
-                  onValueChange={(value) => updateConfiguration('finish', value)}
-                  disabled={surfaceFinishOptions.length === 0}
-                >
-                  <SelectTrigger data-testid="finish-select" className="w-full mt-3">
-                    <SelectValue placeholder={surfaceFinishOptions.length > 0 ? "Choose surface finish" : "No options available"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {surfaceFinishOptions.map((finish: any) => (
-                      <SelectItem key={finish.id} value={finish.id}>
-                        {finish.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {surfaceFinishOptions.length > 0 ? (
+                  <NestedAssetSelector
+                    assets={surfaceFinishOptions}
+                    value={configuration.finish || null}
+                    onChange={(value) => updateConfiguration('finish', value)}
+                    placeholder="Choose surface finish"
+                    className="mt-3"
+                  />
+                ) : (
+                  <div className="mt-3 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <p className="text-sm text-gray-500">No surface finish options available</p>
+                  </div>
+                )}
               </div>
             </div>
 
