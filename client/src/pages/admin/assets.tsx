@@ -414,12 +414,12 @@ export default function AdminAssets() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="create-name">Name</Label>
+              <Label htmlFor="create-name">{activeTab === 'wood' ? 'Wood Type' : 'Name'}</Label>
               <Input
                 id="create-name"
                 value={newAsset.name}
                 onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                placeholder="Enter asset name"
+                placeholder={activeTab === 'wood' ? 'Enter wood type' : 'Enter asset name'}
                 data-testid="input-name"
               />
             </div>
@@ -535,12 +535,12 @@ export default function AdminAssets() {
           {editingAsset && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-name">Name</Label>
+                <Label htmlFor="edit-name">{editingAsset.category === 'wood' ? 'Wood Type' : 'Name'}</Label>
                 <Input
                   id="edit-name"
                   value={editingAsset.name}
                   onChange={(e) => setEditingAsset({ ...editingAsset, name: e.target.value })}
-                  placeholder="Enter asset name"
+                  placeholder={editingAsset.category === 'wood' ? 'Enter wood type' : 'Enter asset name'}
                   data-testid="input-edit-name"
                 />
               </div>
