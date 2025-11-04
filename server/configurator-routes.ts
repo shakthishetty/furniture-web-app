@@ -27,54 +27,8 @@ router.get('/products', async (req, res) => {
       products = await storage.getAllProducts();
     }
     
-    // Filter to only show active products (in stock and complete customization setup)
-    const activeProducts = [];
-    
-    for (const product of products) {
-      // Get material counts for this product with material details
-      const productMaterialsList = await db
-        .select({
-          subType: materials.subType
-        })
-        .from(productMaterials)
-        .innerJoin(materials, eq(productMaterials.materialId, materials.id))
-        .where(and(
-          eq(productMaterials.productId, product.id),
-          eq(productMaterials.isEnabled, true)
-        ));
-
-      const materialCounts = {
-        woodTypes: 0,
-        woodStains: 0,
-        upholstery: 0,
-        hardwareFinish: 0,
-        surfaceFinish: 0,
-      };
-
-      productMaterialsList.forEach(item => {
-        const subType = item.subType;
-        if (subType === 'wood-type') materialCounts.woodTypes++;
-        else if (subType === 'wood-stain') materialCounts.woodStains++;
-        else if (subType === 'upholstery') materialCounts.upholstery++;
-        else if (subType === 'hardware-finish' || subType === 'hardware') materialCounts.hardwareFinish++;
-        else if (subType === 'surface-finish') materialCounts.surfaceFinish++;
-      });
-
-      const statusResult = calculateProductStatus(
-        {
-          status: product.status ?? undefined,
-          stock: product.stock ?? undefined,
-          inStock: product.inStock ?? undefined,
-          category: product.category ?? undefined
-        },
-        materialCounts
-      );
-
-      // Only include products with 'active' status
-      if (statusResult.computedStatus === 'active') {
-        activeProducts.push(product);
-      }
-    }
+    // Filter to only show products with active status
+    const activeProducts = products.filter(product => product.status === 'active');
     
     res.json({ products: activeProducts });
   } catch (error) {
