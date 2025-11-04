@@ -64,7 +64,9 @@ const defaultTypeOptions: Record<string, string[]> = {
 export default function AdminAssets() {
   const [activeTab, setActiveTab] = useState("wood");
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [editingAssetGroup, setEditingAssetGroup] = useState<Asset[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditGroupDialogOpen, setIsEditGroupDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
@@ -175,6 +177,11 @@ export default function AdminAssets() {
   const handleEditAsset = (asset: Asset) => {
     setEditingAsset(asset);
     setIsEditDialogOpen(true);
+  };
+
+  const handleEditAssetGroup = (assetGroup: Asset[]) => {
+    setEditingAssetGroup(assetGroup);
+    setIsEditGroupDialogOpen(true);
   };
 
   const handleDeleteAsset = (asset: Asset) => {
@@ -371,33 +378,15 @@ export default function AdminAssets() {
                 </TableCell>
               )}
               <TableCell className="text-right">
-                <div className="flex flex-col gap-2 items-end">
-                  {assetGroup.map((asset, index) => (
-                    <div key={asset.id} className="flex justify-end gap-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${badgeColors[index % badgeColors.length]}`}>
-                        {asset.type}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditAsset(asset)}
-                        data-testid={`button-edit-${asset.id}`}
-                      >
-                        <Edit2 className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteAsset(asset)}
-                        data-testid={`button-delete-${asset.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditAssetGroup(assetGroup)}
+                  data-testid={`button-edit-group-${name}`}
+                >
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit Group
+                </Button>
               </TableCell>
             </TableRow>
           ))}
@@ -578,6 +567,143 @@ export default function AdminAssets() {
               data-testid="button-create"
             >
               {createAssetMutation.isPending ? "Creating..." : "Create Asset"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Asset Group Dialog */}
+      <Dialog open={isEditGroupDialogOpen} onOpenChange={setIsEditGroupDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="dialog-edit-group">
+          <DialogHeader>
+            <DialogTitle>Edit Asset Group: {editingAssetGroup[0]?.name}</DialogTitle>
+            <DialogDescription>
+              Manage all types for this asset. Each type can have different properties.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAssetGroup.length > 0 && (
+            <div className="space-y-6">
+              {/* Common Properties */}
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <h3 className="font-semibold">Common Properties</h3>
+                <div>
+                  <Label>Group Name</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{editingAssetGroup[0].name}</p>
+                </div>
+                <div>
+                  <Label>Image</Label>
+                  {editingAssetGroup[0].imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={editingAssetGroup[0].imageUrl}
+                        alt="Group preview"
+                        className="h-24 w-24 object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Individual Types */}
+              <div className="space-y-3">
+                <h3 className="font-semibold">Types in this group ({editingAssetGroup.length})</h3>
+                {editingAssetGroup.map((asset, index) => {
+                  const badgeColors = [
+                    'bg-blue-100 text-blue-800 border-blue-300',
+                    'bg-green-100 text-green-800 border-green-300',
+                    'bg-purple-100 text-purple-800 border-purple-300',
+                    'bg-orange-100 text-orange-800 border-orange-300',
+                    'bg-pink-100 text-pink-800 border-pink-300',
+                    'bg-cyan-100 text-cyan-800 border-cyan-300',
+                    'bg-yellow-100 text-yellow-800 border-yellow-300',
+                    'bg-indigo-100 text-indigo-800 border-indigo-300',
+                  ];
+                  
+                  return (
+                    <div key={asset.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className={`px-3 py-1 rounded-md text-sm font-medium border ${badgeColors[index % badgeColors.length]}`}>
+                            {asset.type}
+                          </span>
+                          {(asset.category === 'stain' || asset.category === 'upholstery') && asset.color && (
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-6 h-6 rounded border border-border" 
+                                style={{ backgroundColor: asset.color }}
+                              />
+                              <span className="text-sm text-muted-foreground">{asset.color}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              handleEditAsset(asset);
+                              setIsEditGroupDialogOpen(false);
+                            }}
+                            data-testid={`button-edit-type-${asset.id}`}
+                          >
+                            <Edit2 className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              handleDeleteAsset(asset);
+                              setIsEditGroupDialogOpen(false);
+                            }}
+                            data-testid={`button-delete-type-${asset.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                      {asset.description && (
+                        <p className="text-sm text-muted-foreground">{asset.description}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add New Type to Group */}
+              <div className="p-4 border rounded-lg border-dashed">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setNewAsset({
+                      name: editingAssetGroup[0].name,
+                      type: '',
+                      color: '',
+                      description: '',
+                    });
+                    setIsEditGroupDialogOpen(false);
+                    setIsCreateDialogOpen(true);
+                  }}
+                  data-testid="button-add-type-to-group"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Type to "{editingAssetGroup[0].name}"
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditGroupDialogOpen(false);
+                setEditingAssetGroup([]);
+              }}
+              data-testid="button-close-group"
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
