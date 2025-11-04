@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,15 +23,16 @@ interface Asset {
   category: string;
   color?: string;
   imageUrl?: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 interface AssetFormData {
-  name: string;
   type: string;
   color?: string;
   imageUrl?: string;
+  description?: string;
 }
 
 interface AssetsResponse {
@@ -66,9 +68,9 @@ export default function AdminAssets() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
   const [newAsset, setNewAsset] = useState<AssetFormData>({
-    name: '',
     type: '',
     color: '',
+    description: '',
   });
   const [isAddCustomTypeDialogOpen, setIsAddCustomTypeDialogOpen] = useState(false);
   const [isEditCustomTypeDialogOpen, setIsEditCustomTypeDialogOpen] = useState(false);
@@ -105,7 +107,7 @@ export default function AdminAssets() {
         description: "Asset created successfully",
       });
       setIsCreateDialogOpen(false);
-      setNewAsset({ name: '', type: '', color: '' });
+      setNewAsset({ type: '', color: '', description: '' });
     },
     onError: (error: any) => {
       toast({
@@ -118,7 +120,7 @@ export default function AdminAssets() {
 
   // Update asset mutation
   const updateAssetMutation = useMutation({
-    mutationFn: async ({ assetId, data }: { assetId: string; data: Partial<AssetFormData> }) => {
+    mutationFn: async ({ assetId, data }: { assetId: string; data: any }) => {
       const response = await apiRequest("PATCH", `/api/admin/assets/${assetId}`, data);
       return response.json();
     },
@@ -189,11 +191,12 @@ export default function AdminAssets() {
       updateAssetMutation.mutate({
         assetId: editingAsset.id,
         data: {
-          // For wood assets, use type as name
-          name: editingAsset.category === 'wood' ? editingAsset.type : editingAsset.name,
+          // Use type as name for all assets
+          name: editingAsset.type,
           type: editingAsset.type,
           color: editingAsset.color,
           imageUrl: editingAsset.imageUrl,
+          description: editingAsset.description,
         },
       });
     }
@@ -203,8 +206,8 @@ export default function AdminAssets() {
     const assetData = {
       ...newAsset,
       category: activeTab,
-      // For wood assets, use type as name if name is not provided
-      name: activeTab === 'wood' ? newAsset.type : newAsset.name,
+      // Use type as name for all assets
+      name: newAsset.type,
     };
     createAssetMutation.mutate(assetData);
   };
@@ -417,20 +420,8 @@ export default function AdminAssets() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {activeTab !== 'wood' && (
-              <div>
-                <Label htmlFor="create-name">Name</Label>
-                <Input
-                  id="create-name"
-                  value={newAsset.name}
-                  onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                  placeholder="Enter asset name"
-                  data-testid="input-name"
-                />
-              </div>
-            )}
             <div>
-              <Label htmlFor="create-type">{activeTab === 'wood' ? 'Wood Type' : 'Type'}</Label>
+              <Label htmlFor="create-type">Type</Label>
               <div className="flex gap-2">
                 <Select
                   value={newAsset.type}
@@ -506,13 +497,24 @@ export default function AdminAssets() {
                 </div>
               )}
             </div>
+            <div>
+              <Label htmlFor="create-description">Description (Optional)</Label>
+              <Textarea
+                id="create-description"
+                value={newAsset.description || ''}
+                onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })}
+                placeholder="Enter asset description"
+                rows={3}
+                data-testid="input-description"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setIsCreateDialogOpen(false);
-                setNewAsset({ name: '', type: '', color: '' });
+                setNewAsset({ type: '', color: '', description: '' });
               }}
               data-testid="button-cancel"
             >
@@ -520,7 +522,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleCreateAsset}
-              disabled={(activeTab === 'wood' ? !newAsset.type : (!newAsset.name || !newAsset.type)) || createAssetMutation.isPending}
+              disabled={!newAsset.type || createAssetMutation.isPending}
               data-testid="button-create"
             >
               {createAssetMutation.isPending ? "Creating..." : "Create Asset"}
@@ -540,20 +542,8 @@ export default function AdminAssets() {
           </DialogHeader>
           {editingAsset && (
             <div className="space-y-4">
-              {editingAsset.category !== 'wood' && (
-                <div>
-                  <Label htmlFor="edit-name">Name</Label>
-                  <Input
-                    id="edit-name"
-                    value={editingAsset.name}
-                    onChange={(e) => setEditingAsset({ ...editingAsset, name: e.target.value })}
-                    placeholder="Enter asset name"
-                    data-testid="input-edit-name"
-                  />
-                </div>
-              )}
               <div>
-                <Label htmlFor="edit-type">{editingAsset.category === 'wood' ? 'Wood Type' : 'Type'}</Label>
+                <Label htmlFor="edit-type">Type</Label>
                 <div className="flex gap-2">
                   <Select
                     value={editingAsset.type}
@@ -629,6 +619,17 @@ export default function AdminAssets() {
                   </div>
                 )}
               </div>
+              <div>
+                <Label htmlFor="edit-description">Description (Optional)</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingAsset.description || ''}
+                  onChange={(e) => setEditingAsset({ ...editingAsset, description: e.target.value })}
+                  placeholder="Enter asset description"
+                  rows={3}
+                  data-testid="input-edit-description"
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -644,7 +645,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleUpdateAsset}
-              disabled={(editingAsset?.category === 'wood' ? !editingAsset?.type : (!editingAsset?.name || !editingAsset?.type)) || updateAssetMutation.isPending}
+              disabled={!editingAsset?.type || updateAssetMutation.isPending}
               data-testid="button-save"
             >
               {updateAssetMutation.isPending ? "Saving..." : "Save Changes"}
