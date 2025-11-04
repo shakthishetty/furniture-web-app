@@ -51,6 +51,12 @@ interface Product {
     height: number;
     depth: number;
   };
+  // Material selection IDs
+  woodIds?: string[];
+  stainIds?: string[];
+  upholsteryIds?: string[];
+  hardwareIds?: string[];
+  finishIds?: string[];
   // Computed status fields from backend
   computedStatus?: 'active' | 'partial' | 'out_of_stock' | 'draft';
   completionPercentage?: number;
@@ -876,6 +882,73 @@ export default function AdminProducts() {
                   </p>
                 </div>
               )}
+              
+              {/* Selected Materials */}
+              {(() => {
+                const hasAnyMaterials = 
+                  (viewingProduct.woodIds && viewingProduct.woodIds.length > 0) ||
+                  (viewingProduct.stainIds && viewingProduct.stainIds.length > 0) ||
+                  (viewingProduct.upholsteryIds && viewingProduct.upholsteryIds.length > 0) ||
+                  (viewingProduct.hardwareIds && viewingProduct.hardwareIds.length > 0) ||
+                  (viewingProduct.finishIds && viewingProduct.finishIds.length > 0);
+                
+                if (!hasAnyMaterials) return null;
+                
+                const materialCategories = [
+                  { title: 'Wood', ids: viewingProduct.woodIds, assetsQuery: woodAssets },
+                  { title: 'Stain', ids: viewingProduct.stainIds, assetsQuery: stainAssets },
+                  { title: 'Upholstery', ids: viewingProduct.upholsteryIds, assetsQuery: upholsteryAssets },
+                  { title: 'Hardware', ids: viewingProduct.hardwareIds, assetsQuery: hardwareAssets },
+                  { title: 'Finish', ids: viewingProduct.finishIds, assetsQuery: finishAssets }
+                ];
+                
+                return (
+                  <div className="border-t pt-4">
+                    <Label className="text-base font-semibold mb-3 block">Selected Materials</Label>
+                    <div className="space-y-4">
+                      {materialCategories.map(({ title, ids, assetsQuery }) => {
+                        if (!ids || ids.length === 0) return null;
+                        
+                        const categoryAssets = assetsQuery?.assets.filter(
+                          (asset: any) => ids.includes(asset.id)
+                        ) || [];
+                        
+                        if (categoryAssets.length === 0) return null;
+                        
+                        return (
+                          <div key={title}>
+                            <Label className="text-sm font-medium text-muted-foreground mb-2 block">
+                              {title} ({categoryAssets.length})
+                            </Label>
+                            <div className="flex flex-wrap gap-2">
+                              {categoryAssets.map((asset: any) => (
+                                <div
+                                  key={asset.id}
+                                  className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-muted/30"
+                                >
+                                  {asset.imageUrl && (
+                                    <img
+                                      src={asset.imageUrl}
+                                      alt={asset.name}
+                                      className="w-8 h-8 object-cover rounded border"
+                                    />
+                                  )}
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium">{asset.type}</span>
+                                    {asset.color && (
+                                      <span className="text-xs text-muted-foreground">{asset.color}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
               
               {/* Additional Images */}
               {viewingProduct.additionalImages && viewingProduct.additionalImages.length > 0 && (
