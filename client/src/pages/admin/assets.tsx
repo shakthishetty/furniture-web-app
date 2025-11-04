@@ -193,8 +193,7 @@ export default function AdminAssets() {
       updateAssetMutation.mutate({
         assetId: editingAsset.id,
         data: {
-          // Use type as name for all assets
-          name: editingAsset.type,
+          name: editingAsset.name,
           type: editingAsset.type,
           color: editingAsset.color,
           imageUrl: editingAsset.imageUrl,
@@ -208,8 +207,6 @@ export default function AdminAssets() {
     const assetData = {
       ...newAsset,
       category: activeTab,
-      // Use type as name for all assets
-      name: newAsset.type,
     };
     createAssetMutation.mutate(assetData);
   };
@@ -669,7 +666,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleUpdateAsset}
-              disabled={!editingAsset?.type || updateAssetMutation.isPending}
+              disabled={!editingAsset?.name || !editingAsset?.type || updateAssetMutation.isPending}
               data-testid="button-save"
             >
               {updateAssetMutation.isPending ? "Saving..." : "Save Changes"}
