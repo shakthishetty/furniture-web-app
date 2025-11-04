@@ -189,7 +189,8 @@ export default function AdminAssets() {
       updateAssetMutation.mutate({
         assetId: editingAsset.id,
         data: {
-          name: editingAsset.name,
+          // For wood assets, use type as name
+          name: editingAsset.category === 'wood' ? editingAsset.type : editingAsset.name,
           type: editingAsset.type,
           color: editingAsset.color,
           imageUrl: editingAsset.imageUrl,
@@ -199,10 +200,13 @@ export default function AdminAssets() {
   };
 
   const handleCreateAsset = () => {
-    createAssetMutation.mutate({
+    const assetData = {
       ...newAsset,
       category: activeTab,
-    });
+      // For wood assets, use type as name if name is not provided
+      name: activeTab === 'wood' ? newAsset.type : newAsset.name,
+    };
+    createAssetMutation.mutate(assetData);
   };
 
   const handleImageUpload = (url: string, isEditing: boolean = false) => {
@@ -413,18 +417,20 @@ export default function AdminAssets() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {activeTab !== 'wood' && (
+              <div>
+                <Label htmlFor="create-name">Name</Label>
+                <Input
+                  id="create-name"
+                  value={newAsset.name}
+                  onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                  placeholder="Enter asset name"
+                  data-testid="input-name"
+                />
+              </div>
+            )}
             <div>
-              <Label htmlFor="create-name">{activeTab === 'wood' ? 'Wood Type' : 'Name'}</Label>
-              <Input
-                id="create-name"
-                value={newAsset.name}
-                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
-                placeholder={activeTab === 'wood' ? 'Enter wood type' : 'Enter asset name'}
-                data-testid="input-name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="create-type">Type</Label>
+              <Label htmlFor="create-type">{activeTab === 'wood' ? 'Wood Type' : 'Type'}</Label>
               <div className="flex gap-2">
                 <Select
                   value={newAsset.type}
@@ -514,7 +520,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleCreateAsset}
-              disabled={!newAsset.name || !newAsset.type || createAssetMutation.isPending}
+              disabled={(activeTab === 'wood' ? !newAsset.type : (!newAsset.name || !newAsset.type)) || createAssetMutation.isPending}
               data-testid="button-create"
             >
               {createAssetMutation.isPending ? "Creating..." : "Create Asset"}
@@ -534,18 +540,20 @@ export default function AdminAssets() {
           </DialogHeader>
           {editingAsset && (
             <div className="space-y-4">
+              {editingAsset.category !== 'wood' && (
+                <div>
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingAsset.name}
+                    onChange={(e) => setEditingAsset({ ...editingAsset, name: e.target.value })}
+                    placeholder="Enter asset name"
+                    data-testid="input-edit-name"
+                  />
+                </div>
+              )}
               <div>
-                <Label htmlFor="edit-name">{editingAsset.category === 'wood' ? 'Wood Type' : 'Name'}</Label>
-                <Input
-                  id="edit-name"
-                  value={editingAsset.name}
-                  onChange={(e) => setEditingAsset({ ...editingAsset, name: e.target.value })}
-                  placeholder={editingAsset.category === 'wood' ? 'Enter wood type' : 'Enter asset name'}
-                  data-testid="input-edit-name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-type">Type</Label>
+                <Label htmlFor="edit-type">{editingAsset.category === 'wood' ? 'Wood Type' : 'Type'}</Label>
                 <div className="flex gap-2">
                   <Select
                     value={editingAsset.type}
@@ -636,7 +644,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleUpdateAsset}
-              disabled={!editingAsset?.name || !editingAsset?.type || updateAssetMutation.isPending}
+              disabled={(editingAsset?.category === 'wood' ? !editingAsset?.type : (!editingAsset?.name || !editingAsset?.type)) || updateAssetMutation.isPending}
               data-testid="button-save"
             >
               {updateAssetMutation.isPending ? "Saving..." : "Save Changes"}
