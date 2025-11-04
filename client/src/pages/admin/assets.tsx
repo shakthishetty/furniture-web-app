@@ -29,6 +29,7 @@ interface Asset {
 }
 
 interface AssetFormData {
+  name: string;
   type: string;
   color?: string;
   imageUrl?: string;
@@ -68,6 +69,7 @@ export default function AdminAssets() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
   const [newAsset, setNewAsset] = useState<AssetFormData>({
+    name: '',
     type: '',
     color: '',
     description: '',
@@ -107,7 +109,7 @@ export default function AdminAssets() {
         description: "Asset created successfully",
       });
       setIsCreateDialogOpen(false);
-      setNewAsset({ type: '', color: '', description: '' });
+      setNewAsset({ name: '', type: '', color: '', description: '' });
     },
     onError: (error: any) => {
       toast({
@@ -453,6 +455,17 @@ export default function AdminAssets() {
                 </Button>
               </div>
             </div>
+            <div>
+              <Label htmlFor="create-name">Name</Label>
+              <Input
+                id="create-name"
+                type="text"
+                value={newAsset.name}
+                onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value })}
+                placeholder="Enter asset name"
+                data-testid="input-name"
+              />
+            </div>
             {(activeTab === 'stain' || activeTab === 'upholstery') && (
               <div>
                 <Label htmlFor="create-color">Color</Label>
@@ -514,7 +527,7 @@ export default function AdminAssets() {
               variant="outline"
               onClick={() => {
                 setIsCreateDialogOpen(false);
-                setNewAsset({ type: '', color: '', description: '' });
+                setNewAsset({ name: '', type: '', color: '', description: '' });
               }}
               data-testid="button-cancel"
             >
@@ -522,7 +535,7 @@ export default function AdminAssets() {
             </Button>
             <Button
               onClick={handleCreateAsset}
-              disabled={!newAsset.type || createAssetMutation.isPending}
+              disabled={!newAsset.name || !newAsset.type || createAssetMutation.isPending}
               data-testid="button-create"
             >
               {createAssetMutation.isPending ? "Creating..." : "Create Asset"}
@@ -574,6 +587,17 @@ export default function AdminAssets() {
                     + Add Custom Type
                   </Button>
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  type="text"
+                  value={editingAsset.name}
+                  onChange={(e) => setEditingAsset({ ...editingAsset, name: e.target.value })}
+                  placeholder="Enter asset name"
+                  data-testid="input-edit-name"
+                />
               </div>
               {(editingAsset.category === 'stain' || editingAsset.category === 'upholstery') && (
                 <div>
