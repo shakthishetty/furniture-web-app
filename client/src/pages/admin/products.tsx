@@ -709,7 +709,7 @@ export default function AdminProducts() {
                       </p>
                       <div className="flex gap-2 flex-wrap">
                         {product.categoryId ? getCategoryBadge(product.category) : <Badge variant="outline">Uncategorized</Badge>}
-                        {getComputedStatusBadge(product.computedStatus)}
+                        {getComputedStatusBadge(product.status)}
                         {product.additionalImages && product.additionalImages.length > 0 && (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700">
                             <Upload className="h-3 w-3 mr-1" />

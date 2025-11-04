@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { storage } from './storage';
 import { db } from './db';
-import { materials, productMaterials } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { materials, productMaterials, assets } from '@shared/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 import { 
   createConfigurationSchema,
   updateConfigurationSchema,
@@ -110,48 +110,43 @@ router.get('/products/:id/materials', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
     
-    // Get all enabled materials for this product with material details
-    const productMaterialsList = await db
-      .select({
-        id: productMaterials.id,
-        materialId: productMaterials.materialId,
-        isDefault: productMaterials.isDefault,
-        sortOrder: productMaterials.sortOrder,
-        material: materials
-      })
-      .from(productMaterials)
-      .innerJoin(materials, eq(productMaterials.materialId, materials.id))
-      .where(and(
-        eq(productMaterials.productId, id),
-        eq(productMaterials.isEnabled, true)
-      ))
-      .orderBy(productMaterials.sortOrder);
-    
-    // Group materials by type and subType
+    // Group materials by category
     const groupedMaterials: Record<string, any[]> = {};
     
-    productMaterialsList.forEach(item => {
-      const mat = item.material;
-      const key = mat.subType || mat.type;
+    // Helper function to fetch assets by IDs and add to grouped materials
+    const fetchAndGroupAssets = async (assetIds: string[] | null, categoryKey: string) => {
+      if (!assetIds || assetIds.length === 0) return;
       
-      if (!groupedMaterials[key]) {
-        groupedMaterials[key] = [];
+      const assetsList = await db
+        .select()
+        .from(assets)
+        .where(inArray(assets.id, assetIds));
+      
+      if (!groupedMaterials[categoryKey]) {
+        groupedMaterials[categoryKey] = [];
       }
       
-      groupedMaterials[key].push({
-        id: mat.id,
-        name: mat.name,
-        description: mat.description,
-        type: mat.type,
-        subType: mat.subType,
-        color: mat.color,
-        textureUrl: mat.textureUrl,
-        priceMultiplier: mat.priceMultiplier,
-        priceModifier: mat.priceModifier,
-        stock: mat.stock,
-        isDefault: item.isDefault
+      assetsList.forEach(asset => {
+        groupedMaterials[categoryKey].push({
+          id: asset.id,
+          name: asset.name,
+          type: asset.type,
+          category: asset.category,
+          color: asset.color,
+          imageUrl: asset.imageUrl,
+          description: asset.description
+        });
       });
-    });
+    };
+    
+    // Fetch assets for each category
+    await Promise.all([
+      fetchAndGroupAssets(product.woodIds, 'wood-type'),
+      fetchAndGroupAssets(product.stainIds, 'wood-stain'),
+      fetchAndGroupAssets(product.upholsteryIds, 'upholstery'),
+      fetchAndGroupAssets(product.hardwareIds, 'hardware-finish'),
+      fetchAndGroupAssets(product.finishIds, 'surface-finish')
+    ]);
     
     res.json({ materials: groupedMaterials });
   } catch (error) {
