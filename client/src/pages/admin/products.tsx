@@ -731,31 +731,6 @@ export default function AdminProducts() {
                           </Badge>
                         )}
                       </div>
-                      {/* Customization Completion Progress */}
-                      {product.completionPercentage !== undefined && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">🛠️ Customization: {product.completionPercentage}% complete</span>
-                            {product.missingSetup && product.missingSetup.length > 0 && (
-                              <span className="text-yellow-600 text-xs">
-                                Missing: {product.missingSetup.join(', ')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all ${
-                                product.completionPercentage === 100 
-                                  ? 'bg-green-500' 
-                                  : product.completionPercentage >= 50 
-                                    ? 'bg-yellow-500' 
-                                    : 'bg-red-500'
-                              }`}
-                              style={{ width: `${product.completionPercentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1659,6 +1634,45 @@ export default function AdminProducts() {
                   )}
                 </div>
               </div>
+              
+              {/* Customization Completion Indicator */}
+              {(() => {
+                const categories = [
+                  { name: 'Wood', hasSelection: (newProduct.woodIds?.length || 0) > 0 },
+                  { name: 'Stain', hasSelection: (newProduct.stainIds?.length || 0) > 0 },
+                  { name: 'Upholstery', hasSelection: (newProduct.upholsteryIds?.length || 0) > 0 },
+                  { name: 'Hardware', hasSelection: (newProduct.hardwareIds?.length || 0) > 0 },
+                  { name: 'Finish', hasSelection: (newProduct.finishIds?.length || 0) > 0 }
+                ];
+                const completedCount = categories.filter(c => c.hasSelection).length;
+                const completionPercentage = Math.round((completedCount / categories.length) * 100);
+                const missingCategories = categories.filter(c => !c.hasSelection).map(c => c.name);
+                
+                return (
+                  <div className="mt-4 p-4 border rounded-lg bg-muted/30 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">🛠️ Customization: {completionPercentage}% complete</span>
+                      {missingCategories.length > 0 && (
+                        <span className="text-yellow-600 text-xs">
+                          Missing: {missingCategories.join(', ')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          completionPercentage === 100 
+                            ? 'bg-green-500' 
+                            : completionPercentage >= 50 
+                              ? 'bg-yellow-500' 
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
           
