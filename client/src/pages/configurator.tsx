@@ -716,16 +716,27 @@ export default function Configurator() {
                         data-testid={`stain-${stain.id}`}
                       >
                         <div
-                          className={`w-full aspect-square rounded border-2 transition-all relative ${
+                          className={`w-full aspect-square rounded border-2 transition-all relative overflow-hidden ${
                             isSelected
                               ? 'border-[#254127] border-4'
                               : 'border-gray-300 hover:border-gray-400'
                           }`}
-                          style={{ backgroundColor: stain.color || '#B8860B' }}
                         >
+                          {stain.imageUrl ? (
+                            <img 
+                              src={stain.imageUrl} 
+                              alt={stain.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div 
+                              className="w-full h-full"
+                              style={{ backgroundColor: stain.color || '#B8860B' }}
+                            />
+                          )}
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center">
+                              <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
                                 <svg className="w-4 h-4 text-[#254127]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                 </svg>
