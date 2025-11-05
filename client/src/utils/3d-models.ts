@@ -179,12 +179,30 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
       
       materials.forEach((mat: any) => {
         if (mat && mat.color) {
-          // Check if this material is likely wood-based (not fabric/leather)
-          // We identify fabric/leather by looking for material names or properties
           const materialName = mat.name?.toLowerCase() || '';
           const meshName = (child.name || '').toLowerCase();
           
-          // Skip if material/mesh name suggests it's fabric, leather, or upholstery
+          // WHITELIST approach: Only apply to parts that are explicitly wooden
+          const isWoodPart = 
+            materialName.includes('wood') ||
+            materialName.includes('frame') ||
+            materialName.includes('leg') ||
+            materialName.includes('armrest') ||
+            materialName.includes('arm') ||
+            materialName.includes('support') ||
+            materialName.includes('base') ||
+            materialName.includes('structure') ||
+            meshName.includes('wood') ||
+            meshName.includes('frame') ||
+            meshName.includes('leg') ||
+            meshName.includes('armrest') ||
+            meshName.includes('arm_rest') ||
+            meshName.includes('arm') ||
+            meshName.includes('support') ||
+            meshName.includes('base') ||
+            meshName.includes('structure');
+          
+          // BLACKLIST approach: Skip fabric/upholstery parts
           const isFabric = 
             materialName.includes('fabric') || 
             materialName.includes('leather') || 
@@ -199,9 +217,7 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             meshName.includes('leather') || 
             meshName.includes('upholstery') ||
             meshName.includes('cushion') ||
-            meshName.includes('seat_pad') ||
             meshName.includes('seat') ||
-            meshName.includes('back_rest') ||
             meshName.includes('back') ||
             meshName.includes('backrest') ||
             meshName.includes('woven') ||
@@ -211,18 +227,16 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             meshName.includes('pad') ||
             meshName.includes('panel');
           
-          // Also check if material is marked as upholstery
           const isMarkedAsUpholstery = (mat as any).isUpholstery === true;
           
-          // Only apply to wood materials (skip fabric and marked upholstery)
-          if (!isFabric && !isMarkedAsUpholstery) {
+          // Apply stain if it's a wood part AND not fabric
+          if (isWoodPart && !isFabric && !isMarkedAsUpholstery) {
             if (typeof color === 'string') {
               mat.color.setHex(parseInt(color.replace('#', '0x')));
             } else {
               mat.color.setHex(color);
             }
             
-            // Set PBR properties for better dark color visibility
             if (mat.roughness !== undefined) {
               mat.roughness = 0.7;
             }
@@ -231,12 +245,6 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             }
             
             mat.needsUpdate = true;
-          } else if (isFabric) {
-            // Restore original color for fabric parts when wood stain is applied
-            if ((mat as any).originalColor) {
-              mat.color.copy((mat as any).originalColor);
-              mat.needsUpdate = true;
-            }
           }
         }
       });
