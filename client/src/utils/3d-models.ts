@@ -214,11 +214,8 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
           // Also check if material is marked as upholstery
           const isMarkedAsUpholstery = (mat as any).isUpholstery === true;
           
-          // Additional check: if material has a texture map, it's likely fabric
-          const hasTexture = mat.map !== null && mat.map !== undefined;
-          
-          // Only apply to wood materials (skip fabric, marked upholstery, and textured materials)
-          if (!isFabric && !isMarkedAsUpholstery && !hasTexture) {
+          // Only apply to wood materials (skip fabric and marked upholstery)
+          if (!isFabric && !isMarkedAsUpholstery) {
             if (typeof color === 'string') {
               mat.color.setHex(parseInt(color.replace('#', '0x')));
             } else {
@@ -234,7 +231,7 @@ export function applyWoodStain(furniture: THREE.Group, color: string | number) {
             }
             
             mat.needsUpdate = true;
-          } else if (isFabric || hasTexture) {
+          } else if (isFabric) {
             // Restore original color for fabric parts when wood stain is applied
             if ((mat as any).originalColor) {
               mat.color.copy((mat as any).originalColor);
