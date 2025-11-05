@@ -1008,7 +1008,7 @@ export default function AdminProducts() {
 
       {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl" data-testid="dialog-edit-product">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-edit-product">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
             <DialogDescription>
@@ -1017,7 +1017,7 @@ export default function AdminProducts() {
           </DialogHeader>
           
           {editingProduct && (
-            <div className="space-y-4 py-4 max-h-96 overflow-y-auto">
+            <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Product Name</Label>
                 <Input
@@ -1205,6 +1205,290 @@ export default function AdminProducts() {
                       </Button>
                     </div>
                   )}
+                </div>
+              </div>
+              
+              {/* Material Selection Section */}
+              <div className="space-y-4">
+                <Separator />
+                <h3 className="text-lg font-medium">Material Selection</h3>
+                <p className="text-sm text-muted-foreground">Select multiple materials for each category from your Assets library.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Wood Type Multi-Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-wood">Wood Types</Label>
+                    <Select 
+                      value="" 
+                      onValueChange={(value) => {
+                        if (value && !editingProduct.woodIds?.includes(value)) {
+                          setEditingProduct({ 
+                            ...editingProduct, 
+                            woodIds: [...(editingProduct.woodIds || []), value] 
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-edit-wood">
+                        <SelectValue placeholder="Add wood type..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {woodAssets?.assets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            🪵 {asset.name} — {asset.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {editingProduct.woodIds && editingProduct.woodIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {editingProduct.woodIds.map((id) => {
+                          const asset = woodAssets?.assets.find(a => a.id === id);
+                          if (!asset) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                              {asset.imageUrl ? (
+                                <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                              ) : (
+                                <span className="text-base">🪵</span>
+                              )}
+                              <span className="font-medium">{asset.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProduct({ 
+                                  ...editingProduct, 
+                                  woodIds: editingProduct.woodIds?.filter(i => i !== id) 
+                                })}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Stain Multi-Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-stain">Stains</Label>
+                    <Select 
+                      value="" 
+                      onValueChange={(value) => {
+                        if (value && !editingProduct.stainIds?.includes(value)) {
+                          setEditingProduct({ 
+                            ...editingProduct, 
+                            stainIds: [...(editingProduct.stainIds || []), value] 
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-edit-stain">
+                        <SelectValue placeholder="Add stain..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {stainAssets?.assets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            🎨 {asset.name} — {asset.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {editingProduct.stainIds && editingProduct.stainIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {editingProduct.stainIds.map((id) => {
+                          const asset = stainAssets?.assets.find(a => a.id === id);
+                          if (!asset) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                              {asset.imageUrl ? (
+                                <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                              ) : (
+                                <span className="text-base">🎨</span>
+                              )}
+                              <span className="font-medium">{asset.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProduct({ 
+                                  ...editingProduct, 
+                                  stainIds: editingProduct.stainIds?.filter(i => i !== id) 
+                                })}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upholstery Multi-Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-upholstery">Upholstery</Label>
+                    <Select 
+                      value="" 
+                      onValueChange={(value) => {
+                        if (value && !editingProduct.upholsteryIds?.includes(value)) {
+                          setEditingProduct({ 
+                            ...editingProduct, 
+                            upholsteryIds: [...(editingProduct.upholsteryIds || []), value] 
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-edit-upholstery">
+                        <SelectValue placeholder="Add upholstery..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {upholsteryAssets?.assets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            🛋️ {asset.name} — {asset.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {editingProduct.upholsteryIds && editingProduct.upholsteryIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {editingProduct.upholsteryIds.map((id) => {
+                          const asset = upholsteryAssets?.assets.find(a => a.id === id);
+                          if (!asset) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                              {asset.imageUrl ? (
+                                <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                              ) : (
+                                <span className="text-base">🛋️</span>
+                              )}
+                              <span className="font-medium">{asset.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProduct({ 
+                                  ...editingProduct, 
+                                  upholsteryIds: editingProduct.upholsteryIds?.filter(i => i !== id) 
+                                })}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hardware Multi-Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-hardware">Hardware</Label>
+                    <Select 
+                      value="" 
+                      onValueChange={(value) => {
+                        if (value && !editingProduct.hardwareIds?.includes(value)) {
+                          setEditingProduct({ 
+                            ...editingProduct, 
+                            hardwareIds: [...(editingProduct.hardwareIds || []), value] 
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-edit-hardware">
+                        <SelectValue placeholder="Add hardware..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hardwareAssets?.assets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            🔩 {asset.name} — {asset.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {editingProduct.hardwareIds && editingProduct.hardwareIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {editingProduct.hardwareIds.map((id) => {
+                          const asset = hardwareAssets?.assets.find(a => a.id === id);
+                          if (!asset) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                              {asset.imageUrl ? (
+                                <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                              ) : (
+                                <span className="text-base">🔩</span>
+                              )}
+                              <span className="font-medium">{asset.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProduct({ 
+                                  ...editingProduct, 
+                                  hardwareIds: editingProduct.hardwareIds?.filter(i => i !== id) 
+                                })}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Finish Multi-Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-finish">Finishes</Label>
+                    <Select 
+                      value="" 
+                      onValueChange={(value) => {
+                        if (value && !editingProduct.finishIds?.includes(value)) {
+                          setEditingProduct({ 
+                            ...editingProduct, 
+                            finishIds: [...(editingProduct.finishIds || []), value] 
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-edit-finish">
+                        <SelectValue placeholder="Add finish..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {finishAssets?.assets.map((asset) => (
+                          <SelectItem key={asset.id} value={asset.id}>
+                            ✨ {asset.name} — {asset.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {editingProduct.finishIds && editingProduct.finishIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {editingProduct.finishIds.map((id) => {
+                          const asset = finishAssets?.assets.find(a => a.id === id);
+                          if (!asset) return null;
+                          return (
+                            <div key={id} className="flex items-center gap-2 p-2 border rounded bg-muted/50 text-sm">
+                              {asset.imageUrl ? (
+                                <img src={asset.imageUrl} alt={asset.name} className="w-6 h-6 object-cover rounded" />
+                              ) : (
+                                <span className="text-base">✨</span>
+                              )}
+                              <span className="font-medium">{asset.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProduct({ 
+                                  ...editingProduct, 
+                                  finishIds: editingProduct.finishIds?.filter(i => i !== id) 
+                                })}
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
