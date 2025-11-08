@@ -875,7 +875,6 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Simple file upload endpoint - handle raw file data like Replit system
 router.post("/objects/upload", requireAdmin, express.raw({limit: '50mb', type: '*/*'}), async (req, res) => {
   try {
     const contentType = req.headers['content-type'] || 'application/octet-stream';

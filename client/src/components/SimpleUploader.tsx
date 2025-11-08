@@ -24,7 +24,7 @@ export function SimpleUploader({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Direct upload to local server using raw file data (like Replit system)
+  
   const uploadFileDirectly = async (file: File) => {
     // Convert file to ArrayBuffer for raw upload
     const arrayBuffer = await file.arrayBuffer();

@@ -66,9 +66,8 @@ export function registerOrderRoutes(app: Express): void {
       }
 
       // Get the base URL for success/cancel redirects
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : `http://localhost:${process.env.PORT || 5000}`;
+      const baseUrl = `http://localhost:${process.env.PORT || 5000}`;
+
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
